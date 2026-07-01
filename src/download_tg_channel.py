@@ -1,38 +1,32 @@
 import os
-import json
 import asyncio
 from pathlib import Path
 
 from telethon import TelegramClient
 from telethon.tl.types import MessageMediaPhoto, MessageMediaDocument
 
-PROJECT_DIR = Path(__file__).parent.parent
-CONFIG_FILE = Path.home() / ".tg_downloader_config.json"
-PHOTO_DIR = PROJECT_DIR / "download" / "photo"
-VIDEO_DIR = PROJECT_DIR / "download" / "video"
-STATE_FILE = PROJECT_DIR / "download" / ".downloaded_state.json"
+from tg_core import (
+    load_config,
+    load_state,
+    save_state,
+    generate_photo_filename,
+    get_original_filename,
+    is_video_mime,
+    generate_document_filename,
+    classify_media,
+    append_id_to_filename,
+    PHOTO_DIR,
+    VIDEO_DIR,
+)
+
 CHANNEL_USERNAME = "AIguoman18"
 FETCH_LIMIT = 50
 
-def load_config():
-    if CONFIG_FILE.exists():
-        return json.loads(CONFIG_FILE.read_text())
-    return {}
-
-def load_state():
-    if STATE_FILE.exists():
-        return set(json.loads(STATE_FILE.read_text()))
-    return set()
-
-def save_state(state):
-    STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    STATE_FILE.write_text(json.dumps(sorted(state), indent=2))
 
 async def main():
     config = load_config()
     api_id = config.get("api_id")
     api_hash = config.get("api_hash")
-    phone = config.get("phone")
 
     client = TelegramClient(str(Path.home() / ".tg_downloader_session"), api_id, api_hash)
     await client.connect()
@@ -68,10 +62,12 @@ async def main():
         media = message.media
         is_photo = isinstance(media, MessageMediaPhoto)
         is_document = isinstance(media, MessageMediaDocument)
+        mime_type = media.document.mime_type if is_document else ""
 
-        if is_photo:
-            date_prefix = message.date.strftime("%Y%m%d_%H%M%S")
-            filename = f"{date_prefix}_photo_{message.id}.jpg"
+        media_type, _ = classify_media(is_photo, is_document, mime_type)
+
+        if media_type == "photo":
+            filename = generate_photo_filename(message.date, message.id)
             filepath = PHOTO_DIR / filename
             try:
                 await client.download_media(message, file=str(filepath))
@@ -83,29 +79,15 @@ async def main():
             except Exception as e:
                 print(f"  [ERR] 下載失敗 msg#{message.id}: {e}")
 
-        elif is_document:
-            mime = media.document.mime_type or ""
-            attrs = media.document.attributes
-            original_name = ""
-            for attr in attrs:
-                if hasattr(attr, 'file_name') and attr.file_name:
-                    original_name = attr.file_name
-                    break
+        elif media_type == "document":
+            original_name = get_original_filename(message.media.document.attributes)
+            filename = generate_document_filename(message.date, message.id, original_name, mime_type)
 
-            if original_name:
-                name_clean = original_name.strip()
-            else:
-                ext = ".mp4" if mime.startswith("video/") else ".jpg" if mime.startswith("image/") else ".bin"
-                date_prefix = message.date.strftime("%Y%m%d_%H%M%S")
-                name_clean = f"{date_prefix}_media_{message.id}{ext}"
-
-            is_video = mime.startswith("video/")
-            target_dir = VIDEO_DIR if is_video else PHOTO_DIR
-            filepath = target_dir / name_clean
+            target_dir = VIDEO_DIR if is_video_mime(mime_type) else PHOTO_DIR
+            filepath = target_dir / filename
             if filepath.exists():
-                name_part = filepath.stem
-                ext_part = filepath.suffix
-                filepath = target_dir / f"{name_part}_{message.id}{ext_part}"
+                filename = append_id_to_filename(filename, message.id)
+                filepath = target_dir / filename
 
             try:
                 await client.download_media(message, file=str(filepath))
@@ -113,13 +95,14 @@ async def main():
                 save_state(downloaded)
                 new_count += 1
                 size_mb = os.path.getsize(filepath) / (1024 * 1024)
-                label = "影片" if is_video else "圖片" if mime.startswith("image/") else "檔案"
-                print(f"  [OK] {label}: {name_clean} ({size_mb:.1f}MB)")
+                label = "影片" if is_video_mime(mime_type) else "圖片" if mime_type.startswith("image/") else "檔案"
+                print(f"  [OK] {label}: {filename} ({size_mb:.1f}MB)")
             except Exception as e:
                 print(f"  [ERR] 下載失敗 msg#{message.id}: {e}")
 
     print(f"\n完成！新增: {new_count} 個檔案，總計: {len(downloaded)} 個")
     await client.disconnect()
+
 
 if __name__ == "__main__":
     asyncio.run(main())
