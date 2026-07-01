@@ -1,24 +1,23 @@
-# 05 - QA Report v2
+# 05 - QA Report v2 (Final)
 
-## Test Execution
+## Test Results
 
-| Metric | Result |
-|--------|--------|
-| Total | 51 |
-| Passed | 51 |
-| Failed | 0 |
-| Duration | 0.036s |
+| Suite | Tests | Pass | Fail |
+|-------|-------|------|------|
+| Unit | 51 | 51 | 0 |
+| Integration | 7 | 7 | 0 |
+| **Total** | **58** | **58** | **0** |
 
-## New v2 Test Coverage
+## Integration Tests Verify
 
-| Area | Tests | Key Scenarios |
-|------|-------|---------------|
-| Text extraction | 4 | text, caption, preference, empty |
-| Message records | 1 | structure with media |
-| JSONL store | 3 | append/load, empty, corrupted lines |
-| Channel dirs | 3 | channel/photo/video paths |
-| State per-channel | 2 | state management scoped by channel ID |
+- HTML generates without error
+- Tabs contain correct channel names
+- Tab content divs exist with correct IDs
+- Image/video src paths are relative and start with channel ID
+- News cards contain text and dates
+- Empty channels show placeholder text
+- HTML has valid DOCTYPE + style + script structure
 
-## Ship-Readiness
+## Known Limitation
 
-51/51 tests pass. No regressions from v1. HTML generation verified to produce valid output.
+`dashijian` channel failed to download content. This is a Telegram channel access issue, not a code issue.

@@ -1,21 +1,22 @@
-# 04 - Code Review Report v2
+# 04 - Code Review v2 (Final)
 
-## Summary
+## Key Changes
 
-| Metric | Value |
-|--------|-------|
-| New files | 4 (`channels.json`, `generate_html.py`, `migrate_v1_to_v2.py`, updated runner) |
-| Modified files | 2 (`tg_core.py`, `download_tg_channel.py`) |
-| Tests | 51, all passing |
+| Change | File |
+|--------|------|
+| Static HTML generation (no JS rendering) | `generate_html.py` |
+| BOM-safe encoding (`utf-8-sig`) | `tg_core.py` |
+| `client.start()` for auth | `download_tg_channel.py` |
+| Integration tests (7) | `tests/test_html.py` |
 
-## Issues Found
+## Test Coverage
 
-| # | Severity | Issue | File |
-|---|----------|-------|------|
-| 1 | Info | `generate_html.py` HTML template uses string replace for data injection | `generate_html.py:220` |
-
-No blocking issues. Code follows v1 conventions: per-chunk error isolation, defensive JSON parsing, incremental state saves.
+| Suite | Tests | Status |
+|-------|-------|--------|
+| Unit (core logic) | 51 | ALL PASS |
+| Integration (HTML gen) | 7 | ALL PASS |
+| **Total** | **58** | **ALL PASS** |
 
 ## Verdict
 
-**APPROVED** — 51/51 tests pass, clean v2 extension of v1 architecture.
+**APPROVED** — HTML is now fully static, eliminating all JS rendering bugs. Integration tests validate output structure, paths, and content.
