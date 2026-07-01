@@ -139,9 +139,9 @@ function switchTab(tab, contentId) {
 }
 
 function buildMediaFileHTML(f, base) {
-  var path = base + '/' + f.path;
+  var path = base + f.path;
   if (f.type === 'video') {
-    return '<a href="' + path + '" target="_blank"><video src="' + path + '" preload="metadata"></video></a>';
+    return '<a href="' + path + '" target="_blank"><video src="' + path + '" preload="metadata" controls></video></a>';
   }
   return '<a href="' + path + '" target="_blank"><img src="' + path + '" alt="" loading="lazy"></a>';
 }
@@ -181,19 +181,18 @@ function buildMessages(msgs, base) {
 }
 
 function render() {
-  var base = window.location.href.replace(/index\\.html$/, '');
   var tabsHTML = '';
   var contentsHTML = '';
   gChannels.forEach(function(ch, i) {
     var tabId = 'tab-' + ch.id;
     tabsHTML += '<div class="tab' + (i === 0 ? ' active' : '') + '" onclick="switchTab(this,\\'' + tabId + '\\')">' + ch.name + '</div>';
 
+    var baseDir = ch.id + '/';
     var inner = '';
     if (ch.mode === 'text') {
-      var baseDir = base + ch.id + '/';
       inner = buildMessages(ch.messages, baseDir);
     } else {
-      inner = buildSplitGallery(ch.photos, ch.videos, base + ch.id + '/');
+      inner = buildSplitGallery(ch.photos, ch.videos, baseDir);
     }
     contentsHTML += '<div id="' + tabId + '" class="tab-content' + (i === 0 ? ' active' : '') + '">' + inner + '</div>';
   });
