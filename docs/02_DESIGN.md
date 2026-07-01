@@ -1,29 +1,29 @@
-# 02 - Design Document
+# 02 - 設計文件
 
-## Design Philosophy
+## 設計理念
 
-**Simplicity over flexibility.** Single-channel, single-user, single-run. No daemon, no web server, no database. The tool is a stateless CLI script that runs, downloads, and exits. Complexity lives only where it prevents data loss: incremental state tracking and error resilience.
+**簡潔優先於彈性。** 單一頻道、單一使用者、單次執行。沒有常駐服務、沒有網頁伺服器、沒有資料庫。此工具是一個無狀態的 CLI 腳本，執行、下載、結束。複雜度只存在於防止資料遺失的機制中：增量狀態追蹤和錯誤恢復能力。
 
 ---
 
-## 1. System Architecture
+## 1. 系統架構
 
 ```
 ┌─────────────────────────────────────────────┐
-│              Scheduler Layer                 │
-│  cron (macOS) / Task Scheduler (Windows)     │
+│               排程層                         │
+│  cron (macOS) / 工作排程器 (Windows)         │
 │         │                  │                 │
 │         ▼                  ▼                 │
 │  run_downloader.sh    run_downloader.ps1     │
 │         │                  │                 │
 │         └──────┬───────────┘                 │
 │                ▼                              │
-│     download_tg_channel.py (core)            │
+│     download_tg_channel.py（核心）           │
 │                │                              │
 │     ┌──────────┼──────────┐                   │
 │     ▼          ▼          ▼                   │
-│  Config    Telethon    State                  │
-│  (~/.json)  (API)    (.json)                  │
+│  設定檔     Telethon    狀態檔               │
+│  (~/.json)  (API)      (.json)               │
 │                │                              │
 │        ┌───────┴───────┐                       │
 │        ▼               ▼                       │
@@ -31,91 +31,91 @@
 └─────────────────────────────────────────────┘
 ```
 
-### Layer Responsibilities
+### 各層職責
 
-| Layer | Responsibility | Files |
-|-------|---------------|-------|
-| Scheduler | OS-level periodic invocation | `run_downloader.sh`, `run_downloader.ps1` |
-| Core | API connection, message iteration, media download, state management | `download_tg_channel.py` |
-| Config | Credential storage outside repo | `~/.tg_downloader_config.json` |
-| State | Incremental download tracking | `download/.downloaded_state.json` |
-| Storage | Media file organization | `download/photo/`, `download/video/` |
-| Logging | Execution output and error capture | `download/download.log` |
+| 層級 | 職責 | 檔案 |
+|------|------|------|
+| 排程層 | 作業系統層級的定時觸發 | `run_downloader.sh`、`run_downloader.ps1` |
+| 核心層 | API 連線、訊息迭代、媒體下載、狀態管理 | `download_tg_channel.py` |
+| 設定層 | 將憑證存放於程式碼倉庫之外 | `~/.tg_downloader_config.json` |
+| 狀態層 | 增量下載追蹤 | `download/.downloaded_state.json` |
+| 儲存層 | 媒體檔案分類整理 | `download/photo/`、`download/video/` |
+| 日誌層 | 執行輸出與錯誤擷取 | `download/download.log` |
 
 ---
 
-## 2. Core Module Design (`download_tg_channel.py`)
+## 2. 核心模組設計（`download_tg_channel.py`）
 
-### 2.1 Entry Point
+### 2.1 進入點
 
 ```python
 if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-Single async entry. No argument parsing needed -- all configuration is file-based.
+單一非同步進入點。無需命令列參數解析，所有組態皆以檔案為基礎。
 
-### 2.2 Main Flow
+### 2.2 主流程
 
 ```
 main()
   │
-  ├─ 1. load_config()         → read ~/.tg_downloader_config.json
-  ├─ 2. client.connect()      → establish Telegram session
-  ├─ 3. is_user_authorized()  → gate: exit if NEEDS_AUTH
-  ├─ 4. get_entity(channel)   → resolve channel username
-  ├─ 5. load_state()          → read .downloaded_state.json
-  ├─ 6. iter_messages()       → loop: fetch up to FETCH_LIMIT messages
-  │     ├─ skip: no media
-  │     ├─ skip: already downloaded (by message ID)
-  │     ├─ skip: id ≤ max_downloaded (early break optimization)
-  │     ├─ is_photo → download_photo()
-  │     └─ is_document → download_document()
+  ├─ 1. load_config()         → 讀取 ~/.tg_downloader_config.json
+  ├─ 2. client.connect()      → 建立 Telegram 連線階段（session）
+  ├─ 3. is_user_authorized()  → 閘門：若未授權則輸出 NEEDS_AUTH 並離開
+  ├─ 4. get_entity(channel)   → 解析頻道使用者名稱
+  ├─ 5. load_state()          → 讀取 .downloaded_state.json
+  ├─ 6. iter_messages()       → 迴圈：拉取最多 FETCH_LIMIT 筆訊息
+  │     ├─ 跳過：無媒體
+  │     ├─ 跳過：已下載（依訊息 ID 判斷）
+  │     ├─ 跳過：id ≤ max_downloaded（提早中斷最佳化）
+  │     ├─ 是圖片 → download_photo()
+  │     └─ 是文件 → download_document()
   └─ 7. client.disconnect()
 ```
 
-### 2.3 Message Processing Decision Tree
+### 2.3 訊息處理決策樹
 
 ```
-message.media?
-  ├─ None          → skip (text-only message)
+message.media？
+  ├─ None               → 跳過（純文字訊息）
   ├─ MessageMediaPhoto
-  │   └─ download as: {YYYYMMDD_HHMMSS}_photo_{msg_id}.jpg
+  │   └─ 下載為：{YYYYMMDD_HHMMSS}_photo_{訊息ID}.jpg
   └─ MessageMediaDocument
-      ├─ Has original file_name? → use original name
-      ├─ No file_name?
-      │   ├─ video/* MIME → {date}_media_{id}.mp4
-      │   ├─ image/* MIME → {date}_media_{id}.jpg
-      │   └─ other       → {date}_media_{id}.bin
-      └─ File exists? → append _{msg_id} to stem
+      ├─ 有原始檔名？ → 使用原始檔名
+      ├─ 無檔名？
+      │   ├─ video/* MIME → {日期}_media_{ID}.mp4
+      │   ├─ image/* MIME → {日期}_media_{ID}.jpg
+      │   └─ 其他         → {日期}_media_{ID}.bin
+      └─ 檔案已存在？ → 在檔名主幹後附加 _{訊息ID}
 ```
 
-### 2.4 State Management
+### 2.4 狀態管理
 
 ```json
 // .downloaded_state.json
 [1001, 1002, 1003, 1005, 1010]
 ```
 
-- **Data structure:** Sorted JSON array of downloaded message IDs
-- **Persistence:** Saved immediately after each successful download (not batched at end)
-- **Rationale:** If the script crashes mid-run, re-download is minimal (at most 1 file)
-- **Early break optimization:** `max(downloaded)` compared to incoming message IDs; since Telegram returns messages in descending ID order, once we hit an ID ≤ max_downloaded, all remaining messages are known to be downloaded
+- **資料結構：** 已排序的 JSON 陣列，存放已下載的訊息 ID
+- **持久化時機：** 每次下載成功後立即寫入（非批次結束時才寫入）
+- **設計理由：** 若腳本執行中途崩潰，重新下載的範圍極小（最多 1 個檔案）
+- **提早中斷最佳化：** 將 `max(downloaded)` 與接收到的訊息 ID 比對；因為 Telegram 回傳訊息時是依 ID 降冪排列，一旦遇到 ID ≤ max_downloaded，後續所有訊息即已知已下載完畢
 
-### 2.5 File Naming Convention
+### 2.5 檔案命名規範
 
-| Media Type | Pattern | Example |
-|-----------|---------|---------|
-| Photo | `{date}_photo_{msg_id}.jpg` | `20250201_143022_photo_1234.jpg` |
-| Document (named) | `{original_name}` | `my_video.mp4` |
-| Document (unnamed, video) | `{date}_media_{msg_id}.mp4` | `20250201_143022_media_1234.mp4` |
-| Duplicate filename | `{stem}_{msg_id}{ext}` | `my_video_1234.mp4` |
+| 媒體類型 | 命名模式 | 範例 |
+|----------|----------|------|
+| 圖片 | `{日期}_photo_{訊息ID}.jpg` | `20250201_143022_photo_1234.jpg` |
+| 文件（有原始檔名） | `{原始檔名}` | `my_video.mp4` |
+| 文件（無檔名，影片） | `{日期}_media_{訊息ID}.mp4` | `20250201_143022_media_1234.mp4` |
+| 檔名重複時 | `{主幹}_{訊息ID}{副檔名}` | `my_video_1234.mp4` |
 
 ---
 
-## 3. Configuration Design
+## 3. 組態設計
 
-### 3.1 Credentials (`~/.tg_downloader_config.json`)
+### 3.1 憑證設定（`~/.tg_downloader_config.json`）
 
 ```json
 {
@@ -125,25 +125,25 @@ message.media?
 }
 ```
 
-**Security design:**
-- Stored in `$HOME`, outside the project directory
-- Excluded from git via `.gitignore`
-- Session file (`~/.tg_downloader_session.session`) created by Telethon, also outside repo
+**安全性設計：**
+- 存放於 `$HOME`（使用者家目錄），位於專案目錄之外
+- 透過 `.gitignore` 排除於 git 追蹤之外
+- 連線階段檔（`~/.tg_downloader_session.session`）由 Telethon 自動建立，同樣位於程式碼倉庫之外
 
-### 3.2 Hardcoded Constants (in-code config)
+### 3.2 寫死的常數（程式碼內組態）
 
-| Constant | Value | Purpose |
-|----------|-------|---------|
-| `CHANNEL_USERNAME` | `"AIguoman18"` | Target channel |
-| `FETCH_LIMIT` | `50` | Max messages per run |
+| 常數 | 值 | 用途 |
+|------|-----|------|
+| `CHANNEL_USERNAME` | `"AIguoman18"` | 目標頻道 |
+| `FETCH_LIMIT` | `50` | 每次執行最多處理的訊息數 |
 
-**Design decision:** Channel username is hardcoded rather than configurable. Rationale: single-channel scope, keeping the tool as a zero-config daemon after initial setup. If multi-channel support is ever needed (explicitly out of scope per PRD), this becomes a config file parameter.
+**設計決策：** 頻道名稱寫死在程式碼中，而非可設定。理由：此為單一頻道用途，完成初始設定後即為零組態的常駐工具。若未來需要多頻道支援（PRD 已明確排除於本次範圍），此參數將改為設定檔參數。
 
 ---
 
-## 4. Scheduler Script Design
+## 4. 排程腳本設計
 
-### 4.1 macOS (`run_downloader.sh`)
+### 4.1 macOS（`run_downloader.sh`）
 
 ```bash
 #!/bin/bash
@@ -153,13 +153,13 @@ cd "/Users/leedavid/Documents/Project/Adult Dream"
 /usr/bin/python3 src/download_tg_channel.py >> download/download.log 2>&1
 ```
 
-**Design notes:**
-- Explicit `HOME` export: `cron` runs with a minimal environment; Telethon looks for session/config files under `$HOME`
-- Explicit `PATH`: ensures `python3` is found even in `cron`'s restricted environment
-- Absolute paths: no ambiguity regardless of `cron`'s working directory
-- `2>&1` redirect: captures both stdout and stderr to the log
+**設計說明：**
+- 明確匯出 `HOME`：`cron` 執行時環境變數極少，Telethon 需要在 `$HOME` 下尋找連線階段檔和設定檔
+- 明確指定 `PATH`：確保在 `cron` 受限環境中仍能找到 `python3`
+- 絕對路徑：無論 `cron` 的工作目錄為何都不會有歧義
+- `2>&1` 重定向：將 stdout 和 stderr 同時擷取到日誌檔
 
-### 4.2 Windows (`run_downloader.ps1`)
+### 4.2 Windows（`run_downloader.ps1`）
 
 ```powershell
 $ProjectDir = Split-Path -Parent $PSScriptRoot
@@ -170,72 +170,72 @@ Set-Location -LiteralPath $ProjectDir
 cmd /c "python `"$Script`" 2>&1" | Out-File -FilePath $LogFile -Append -Encoding utf8
 ```
 
-**Design notes:**
-- `$PSScriptRoot`: PowerShell auto-variable, resolves to script location regardless of working directory
-- `cmd /c` wrapper: prevents PowerShell from wrapping stderr output in error record noise (`CategoryInfo`, `FullyQualifiedErrorId`)
-- `Out-File -Encoding utf8`: avoids PowerShell's default UTF-16 which produces mojibake
-- `-Append`: preserves log history across runs
+**設計說明：**
+- `$PSScriptRoot`：PowerShell 自動變數，無論當前工作目錄為何，都能解析為腳本所在目錄
+- `cmd /c` 包裝：防止 PowerShell 將 stderr 輸出包裝成錯誤記錄雜訊（如 `CategoryInfo`、`FullyQualifiedErrorId`）
+- `Out-File -Encoding utf8`：避免 PowerShell 預設的 UTF-16 編碼產生日誌亂碼
+- `-Append`：保留跨次執行的日誌歷史
 
 ---
 
-## 5. Error Handling Strategy
+## 5. 錯誤處理策略
 
-| Scenario | Behavior |
-|----------|----------|
-| Config file missing | `load_config()` returns `{}`; Telethon raises auth error → `"NEEDS_AUTH"` |
-| Network failure | Telethon exception → `[ERR]` log, script exits |
-| Channel not found | `get_entity()` exception → log and exit |
-| Single file download fails | `try/except` per file → `[ERR]` log, **continue** to next message |
-| State file corrupted | `load_state()` returns empty set → re-downloads all (safe) |
-| File already exists | Append `_msg_id` to filename to avoid collision |
+| 情境 | 處理方式 |
+|------|----------|
+| 設定檔不存在 | `load_config()` 回傳空 `{}`；Telethon 拋出認證錯誤 → `"NEEDS_AUTH"` |
+| 網路中斷 | Telethon 例外 → `[ERR]` 記錄，腳本結束 |
+| 頻道不存在 | `get_entity()` 例外 → 記錄並結束 |
+| 單一檔案下載失敗 | 每個檔案獨立的 `try/except` → `[ERR]` 記錄，**繼續**處理下一則訊息 |
+| 狀態檔損毀 | `load_state()` 回傳空集合 → 全部重新下載（安全的退化行為） |
+| 檔案已存在 | 在檔名後附加 `_訊息ID` 以避免衝突 |
 
-**Key design decision:** Per-file error isolation. A single failed download does not abort the entire run. The state file is only updated on success, so failed downloads are retried next run.
+**關鍵設計決策：** 每個檔案獨立隔離錯誤。單一下載失敗不會中止整次執行。狀態檔僅在下載成功後才更新，因此失敗的下載會在下次執行時重新嘗試。
 
 ---
 
-## 6. Directory Layout
+## 6. 目錄佈局
 
 ```
 Adult Dream/
 ├── src/
-│   ├── download_tg_channel.py    # Core logic
-│   ├── run_downloader.sh         # macOS scheduler entry
-│   └── run_downloader.ps1        # Windows scheduler entry
-├── download/                     # Runtime data (gitignored)
-│   ├── photo/                    # Downloaded photos
-│   ├── video/                    # Downloaded videos
-│   ├── .downloaded_state.json    # Incremental state
-│   └── download.log              # Execution log
-├── docs/                         # Workflow documents
-├── tests/                        # Test suite
+│   ├── download_tg_channel.py    # 核心邏輯
+│   ├── run_downloader.sh         # macOS 排程進入點
+│   └── run_downloader.ps1        # Windows 排程進入點
+├── download/                     # 執行期資料（gitignore 排除）
+│   ├── photo/                    # 已下載圖片
+│   ├── video/                    # 已下載影片
+│   ├── .downloaded_state.json    # 增量狀態
+│   └── download.log              # 執行日誌
+├── docs/                         # 工作流程文件
+├── tests/                        # 測試套件
 └── .gitignore
 ```
 
-**Separation principle:** `src/` for code (versioned), `download/` for runtime artifacts (gitignored). No config files in the repo.
+**分離原則：** `src/` 存放程式碼（受版本控管），`download/` 存放執行期產物（gitignore 排除）。程式碼倉庫中不存放任何設定檔。
 
 ---
 
-## 7. Cross-Platform Compatibility
+## 7. 跨平台相容性
 
-| Concern | macOS | Windows |
-|---------|-------|---------|
-| Path separator | `/` (native) | `\` handled by `pathlib.Path` |
-| Home directory | `/Users/leedavid` | `C:\Users\davidlee` resolved by `Path.home()` |
-| Python invocation | `/usr/bin/python3` | `python` (PATH) |
-| Scheduler | `cron` | Task Scheduler |
-| Log encoding | UTF-8 (native) | UTF-8 via `-Encoding utf8` |
-| Line endings | LF | CRLF (git `core.autocrlf`) |
+| 關注點 | macOS | Windows |
+|--------|-------|---------|
+| 路徑分隔符 | `/`（原生） | `\`，由 `pathlib.Path` 處理 |
+| 家目錄 | `/Users/leedavid` | `C:\Users\davidlee`，由 `Path.home()` 解析 |
+| Python 呼叫方式 | `/usr/bin/python3` | `python`（透過 PATH） |
+| 排程工具 | `cron` | 工作排程器 |
+| 日誌編碼 | UTF-8（原生） | UTF-8，透過 `-Encoding utf8` |
+| 換行符號 | LF | CRLF（git `core.autocrlf`） |
 
-`pathlib.Path` handles all path construction -- no manual string concatenation of paths anywhere in the core module.
+`pathlib.Path` 處理所有路徑建構，核心模組中沒有任何手動字串拼接路徑的程式碼。
 
 ---
 
-## 8. Key Design Trade-offs
+## 8. 關鍵設計取捨
 
-| Decision | Rationale |
-|----------|-----------|
-| Hardcoded channel name | Single-purpose tool; YAGNI. If multi-channel is needed, it's a v2 feature. |
-| State as sorted JSON array | Human-readable, debuggable with any text editor. Set of 50 ints is trivial. |
-| Save state after each file | Prevents data loss on crash. Cost: one extra `write()` per file (negligible). |
-| `FETCH_LIMIT=50` | Balances API rate limits with covering gaps. Assumes <50 new media messages between runs. |
-| No `pip` requirements file | Single dependency (`telethon`). Not worth the ceremony for one package. |
+| 決策 | 理由 |
+|------|------|
+| 頻道名稱寫死在程式碼中 | 單一用途工具，遵循 YAGNI 原則。若需要多頻道支援，留待 v2 處理。 |
+| 狀態以排序 JSON 陣列存放 | 人類可讀，用任何文字編輯器都能除錯。50 個整數的集合微不足道。 |
+| 每個檔案下載後立即儲存狀態 | 防止崩潰時資料遺失。成本：每個檔案多一次 `write()`（可忽略不計）。 |
+| `FETCH_LIMIT=50` | 在 API 速率限制和涵蓋缺口之間取得平衡。假設兩次執行之間的新媒體訊息少於 50 則。 |
+| 不使用 `requirements.txt` | 單一依賴（`telethon`）。不值得為一個套件增加額外的儀式。 |
