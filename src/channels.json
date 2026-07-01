@@ -1,0 +1,18 @@
+{
+  "channels": [
+    {
+      "id": "ai_guoman",
+      "username": "AIguoman18",
+      "name": "男人的幻想",
+      "mode": "media",
+      "fetch_limit": 50
+    },
+    {
+      "id": "dashijian",
+      "username": "dashijian",
+      "name": "東南亞大事件",
+      "mode": "text",
+      "fetch_limit": 50
+    }
+  ]
+}

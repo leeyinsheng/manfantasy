@@ -3,9 +3,8 @@ from pathlib import Path
 
 PROJECT_DIR = Path(__file__).parent.parent
 CONFIG_FILE = Path.home() / ".tg_downloader_config.json"
-PHOTO_DIR = PROJECT_DIR / "download" / "photo"
-VIDEO_DIR = PROJECT_DIR / "download" / "video"
-STATE_FILE = PROJECT_DIR / "download" / ".downloaded_state.json"
+DOWNLOAD_DIR = PROJECT_DIR / "download"
+CHANNELS_FILE = Path(__file__).parent / "channels.json"
 
 
 def load_config():
@@ -17,10 +16,41 @@ def load_config():
     return {}
 
 
-def load_state():
-    if STATE_FILE.exists():
+def load_channels():
+    if CHANNELS_FILE.exists():
         try:
-            data = json.loads(STATE_FILE.read_text())
+            data = json.loads(CHANNELS_FILE.read_text())
+            return data.get("channels", [])
+        except (json.JSONDecodeError, ValueError):
+            return []
+    return []
+
+
+def get_channel_dir(channel_id):
+    return DOWNLOAD_DIR / channel_id
+
+
+def get_photo_dir(channel_id):
+    return get_channel_dir(channel_id) / "photo"
+
+
+def get_video_dir(channel_id):
+    return get_channel_dir(channel_id) / "video"
+
+
+def get_state_file(channel_id):
+    return get_channel_dir(channel_id) / ".downloaded_state.json"
+
+
+def get_messages_file(channel_id):
+    return get_channel_dir(channel_id) / "messages.jsonl"
+
+
+def load_state(channel_id):
+    state_file = get_state_file(channel_id)
+    if state_file.exists():
+        try:
+            data = json.loads(state_file.read_text())
             if isinstance(data, list):
                 return set(data)
         except (json.JSONDecodeError, ValueError):
@@ -28,9 +58,47 @@ def load_state():
     return set()
 
 
-def save_state(state):
-    STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    STATE_FILE.write_text(json.dumps(sorted(state), indent=2))
+def save_state(channel_id, state):
+    state_file = get_state_file(channel_id)
+    state_file.parent.mkdir(parents=True, exist_ok=True)
+    state_file.write_text(json.dumps(sorted(state), indent=2))
+
+
+def extract_message_text(message):
+    text = message.text or message.caption or ""
+    return text.strip()
+
+
+def message_to_record(message, channel_id, media_files):
+    return {
+        "id": message.id,
+        "date": message.date.isoformat(),
+        "text": extract_message_text(message),
+        "channel": channel_id,
+        "media": media_files,
+    }
+
+
+def append_message_record(channel_id, record):
+    messages_file = get_messages_file(channel_id)
+    messages_file.parent.mkdir(parents=True, exist_ok=True)
+    with open(messages_file, "a", encoding="utf-8") as f:
+        f.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+
+def load_messages(channel_id):
+    messages_file = get_messages_file(channel_id)
+    records = []
+    if messages_file.exists():
+        with open(messages_file, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    try:
+                        records.append(json.loads(line))
+                    except (json.JSONDecodeError, ValueError):
+                        pass
+    return records
 
 
 def generate_photo_filename(message_date, message_id):
