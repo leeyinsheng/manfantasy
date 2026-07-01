@@ -35,6 +35,17 @@ class TestLoadConfig(unittest.TestCase):
         finally:
             temp_path.unlink()
 
+    def test_returns_empty_dict_on_corrupted_json(self):
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            f.write("{not valid json")
+            temp_path = Path(f.name)
+        try:
+            mod.CONFIG_FILE = temp_path
+            result = mod.load_config()
+            self.assertEqual(result, {})
+        finally:
+            temp_path.unlink()
+
 
 class TestLoadState(unittest.TestCase):
     def setUp(self):
@@ -62,6 +73,28 @@ class TestLoadState(unittest.TestCase):
     def test_loads_empty_array_as_empty_set(self):
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump([], f)
+            temp_path = Path(f.name)
+        try:
+            mod.STATE_FILE = temp_path
+            result = mod.load_state()
+            self.assertEqual(result, set())
+        finally:
+            temp_path.unlink()
+
+    def test_returns_empty_set_on_corrupted_json(self):
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            f.write("[1, 2, broken")
+            temp_path = Path(f.name)
+        try:
+            mod.STATE_FILE = temp_path
+            result = mod.load_state()
+            self.assertEqual(result, set())
+        finally:
+            temp_path.unlink()
+
+    def test_returns_empty_set_on_non_list_json(self):
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            json.dump({"ids": [1, 2, 3]}, f)
             temp_path = Path(f.name)
         try:
             mod.STATE_FILE = temp_path

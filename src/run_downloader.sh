@@ -1,9 +1,6 @@
 #!/bin/bash
-export HOME=/Users/leedavid
+export HOME="${HOME:-/Users/leedavid}"
+PROJECT_DIR="${PROJECT_DIR:-$HOME/Documents/Project/Adult Dream}"
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin
-cd "/Users/leedavid/Documents/Project/Adult Dream"
-/usr/bin/python3 -c "
-import sys
-sys.argv = ['', '/Users/leedavid/Documents/Project/Adult Dream/src/download_tg_channel.py']
-exec(open('/Users/leedavid/Documents/Project/Adult Dream/src/download_tg_channel.py').read())
-" >> "/Users/leedavid/Documents/Project/Adult Dream/download/download.log" 2>&1
+cd "$PROJECT_DIR"
+/usr/bin/python3 "$PROJECT_DIR/src/download_tg_channel.py" >> "$PROJECT_DIR/download/download.log" 2>&1

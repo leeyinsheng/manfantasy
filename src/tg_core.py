@@ -10,13 +10,21 @@ STATE_FILE = PROJECT_DIR / "download" / ".downloaded_state.json"
 
 def load_config():
     if CONFIG_FILE.exists():
-        return json.loads(CONFIG_FILE.read_text())
+        try:
+            return json.loads(CONFIG_FILE.read_text())
+        except (json.JSONDecodeError, ValueError):
+            return {}
     return {}
 
 
 def load_state():
     if STATE_FILE.exists():
-        return set(json.loads(STATE_FILE.read_text()))
+        try:
+            data = json.loads(STATE_FILE.read_text())
+            if isinstance(data, list):
+                return set(data)
+        except (json.JSONDecodeError, ValueError):
+            pass
     return set()
 
 
@@ -58,6 +66,8 @@ def generate_document_filename(message_date, message_id, original_name, mime_typ
 
 
 def classify_media(is_photo, is_document, mime_type=""):
+    if is_photo and is_document:
+        raise ValueError("Media cannot be both photo and document")
     if is_photo:
         return ("photo", None)
     if is_document:

@@ -100,6 +100,9 @@ async def main():
             except Exception as e:
                 print(f"  [ERR] 下載失敗 msg#{message.id}: {e}")
 
+        else:
+            print(f"  [SKIP] 未知媒體類型 msg#{message.id}")
+
     print(f"\n完成！新增: {new_count} 個檔案，總計: {len(downloaded)} 個")
     await client.disconnect()
 

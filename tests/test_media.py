@@ -51,6 +51,11 @@ class TestClassifyMedia(unittest.TestCase):
         self.assertEqual(media_type, "document")
         self.assertEqual(mime_type, "")
 
+    def test_both_photo_and_document_raises_error(self):
+        with self.assertRaises(ValueError) as ctx:
+            classify_media(is_photo=True, is_document=True)
+        self.assertIn("both", str(ctx.exception))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -4,4 +4,4 @@ $Script = Join-Path $PSScriptRoot "download_tg_channel.py"
 
 Set-Location -LiteralPath $ProjectDir
 
-& python $Script *>> $LogFile
+cmd /c "python `"$Script`" 2>&1" | Out-File -FilePath $LogFile -Append -Encoding utf8
