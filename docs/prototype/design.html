@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TG Archive — 頻道內容歸檔</title>
+<title>Adult Dream</title>
 <style>
   :root {
     --bg: #0f0f14;
@@ -41,6 +41,12 @@
   .tab-content { display: none; }
   .tab-content.active { display: block; }
 
+  .section-label {
+    font-size: 12px; font-weight: 600; text-transform: uppercase;
+    color: var(--text-dim); padding: 8px 4px 10px; letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border); margin-bottom: 10px;
+  }
+
   .card {
     background: var(--surface); border-radius: var(--radius);
     border: 1px solid var(--border); margin-bottom: 16px; overflow: hidden;
@@ -72,36 +78,57 @@
   }
   .gallery img:hover, .gallery video:hover { opacity: 0.8; }
 
-  .empty { text-align: center; padding: 60px 20px; color: var(--text-dim); font-size: 14px; }
+  .media-split { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .media-col { min-width: 0; }
+  .media-col .gallery { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .media-col .gallery img, .media-col .gallery video { height: 180px; }
 
+  @media (max-width: 768px) {
+    .media-split { grid-template-columns: 1fr; }
+    .media-col .gallery { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+    .media-col .gallery img, .media-col .gallery video { height: 140px; }
+  }
   @media (max-width: 640px) {
     .gallery { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
     .gallery img, .gallery video { height: 140px; }
     .card-media { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
     .card-media img, .card-media video { height: 120px; }
+    .media-col .gallery { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+    .media-col .gallery img, .media-col .gallery video { height: 120px; }
   }
 </style>
 </head>
 <body>
 <div class="container">
   <header>
-    <h1>TG Archive</h1>
+    <h1>Adult Dream</h1>
     <p>Telegram 頻道內容歸檔 · 本地瀏覽</p>
   </header>
 
   <div class="tabs">
-    <div class="tab active" onclick="switchTab(this, 'tab-media')">AIguoman18</div>
-    <div class="tab" onclick="switchTab(this, 'tab-news')">華人大事件</div>
+    <div class="tab active" onclick="switchTab(this, 'tab-fantasy')">男人的幻想</div>
+    <div class="tab" onclick="switchTab(this, 'tab-news')">東南亞大事件</div>
   </div>
 
-  <div id="tab-media" class="tab-content active">
-    <div class="gallery">
-      <img src="" alt="" onerror="this.style.background='var(--surface2)';this.style.display='flex';this.style.alignItems='center';this.style.justifyContent='center';this.outerHTML='<div style=\'background:var(--surface2);height:200px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:13px;border-radius:4px\'>20250701_143022_photo_1234.jpg</div>'">
-      <img src="" alt="" onerror="this.style.background='var(--surface2)';this.outerHTML='<div style=\'background:var(--surface2);height:200px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:13px;border-radius:4px\'>20250701_143500_photo_1235.jpg</div>'">
-      <img src="" alt="" onerror="this.style.background='var(--surface2)';this.outerHTML='<div style=\'background:var(--surface2);height:200px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:13px;border-radius:4px\'>20250701_144000_photo_1236.jpg</div>'">
-      <div style="background:var(--surface2);height:200px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:13px;border-radius:4px">20250701_150000_photo_1237.jpg</div>
-      <div style="background:var(--surface2);height:200px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:13px;border-radius:4px">20250702_080000_photo_1240.jpg</div>
-      <div style="background:var(--surface2);height:200px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:13px;border-radius:4px">demo_video.mp4</div>
+  <div id="tab-fantasy" class="tab-content active">
+    <div class="media-split">
+      <div class="media-col">
+        <div class="section-label">影片</div>
+        <div class="gallery">
+          <div style="background:var(--surface2);height:180px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:13px;border-radius:4px">demo_video_01.mp4</div>
+          <div style="background:var(--surface2);height:180px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:13px;border-radius:4px">20250701_160000_media_1238.mp4</div>
+        </div>
+      </div>
+      <div class="media-col">
+        <div class="section-label">圖片</div>
+        <div class="gallery">
+          <div style="background:var(--surface2);height:180px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:13px;border-radius:4px">20250701_143022_photo_1234.jpg</div>
+          <div style="background:var(--surface2);height:180px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:13px;border-radius:4px">20250701_143500_photo_1235.jpg</div>
+          <div style="background:var(--surface2);height:180px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:13px;border-radius:4px">20250701_144000_photo_1236.jpg</div>
+          <div style="background:var(--surface2);height:180px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:13px;border-radius:4px">20250701_150000_photo_1237.jpg</div>
+          <div style="background:var(--surface2);height:180px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:13px;border-radius:4px">20250702_080000_photo_1240.jpg</div>
+        </div>
+      </div>
     </div>
   </div>
 
