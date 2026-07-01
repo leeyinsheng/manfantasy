@@ -1,92 +1,97 @@
-# 01 - Product Requirements Document (PRD)
+# 01 - PRD v2：多頻道支援 + 網頁展示
 
-## Product Name
+## 版本變更
 
-**Telegram Channel Media Archiver** (TG-Downloader)
+v1 → v2 核心變動：從單一頻道媒體下載器，擴充為多頻道內容歸檔系統，支援文字訊息擷取與靜態網頁展示。
 
-## Elevator Pitch
+---
 
-一個輕量級的命令列工具，自動將指定 Telegram 頻道中的所有媒體內容（圖片、影片、文件）增量下載到本地儲存，支援 macOS / Windows 雙平台排程執行。
+## 新增功能需求
 
-## Problem Statement
+### F10 多頻道支援
 
-Telegram 頻道內的媒體檔案沒有官方提供的批次下載功能，使用者若想長期保存頻道內容，只能手動逐條下載，效率極低且容易遺漏。
+- 支援同時管理多個 Telegram 頻道
+- 每個頻道獨立的下載目錄與狀態檔，互不干擾
+- 透過設定檔定義頻道清單（名稱、識別碼、擷取模式）
 
-## Target Users
+**頻道清單：**
 
-- 需要備份 Telegram 頻道媒體內容的一般使用者
-- 單一使用者，單一頻道場景（非多租戶）
+| 頻道 | 識別碼 | 類型 | 擷取模式 |
+|------|--------|------|----------|
+| AIguoman18 | `AIguoman18` | 媒體頻道 | 僅媒體（圖片/影片） |
+| 華人大事件 | `dashijian` | 新聞頻道 | 文字 + 媒體 |
 
-## Core Features (Functional Requirements)
+### F11 文字訊息擷取
 
-| ID | Feature | Description |
-|----|---------|-------------|
-| F1 | Telegram 登入 | 透過 Telegram API 以使用者帳號登入，支援 session 持久化，首次使用後不需重複驗證 |
-| F2 | 頻道媒體擷取 | 從指定頻道拉取最新 N 條訊息（預設 50），過濾出含有媒體的訊息 |
-| F3 | 圖片下載 | 自動下載訊息中的圖片，以「時間戳_photo_訊息ID.jpg」命名 |
-| F4 | 影片下載 | 自動下載訊息中的影片文件，優先使用原始檔名，以「時間戳_media_訊息ID.mp4」為備用 |
-| F5 | 其他文件下載 | 支援下載非圖片/影片的文檔，依 MIME 類型智能分類存放目錄 |
-| F6 | 增量下載 | 基於本地狀態檔（`.downloaded_state.json`）記錄已下載訊息 ID，每次僅下載新內容 |
-| F7 | 自動分類儲存 | 圖片 → `download/photo/`，影片 → `download/video/`，其他文件按類型歸類 |
-| F8 | 排程執行 | 提供 macOS shell 腳本和 Windows PowerShell 腳本，可配合 cron / 工作排程器定時觸發 |
-| F9 | 日誌記錄 | 將執行輸出和錯誤寫入 `download/download.log`，方便排查問題 |
+- 針對啟用文字模式的頻道，一併擷取訊息文字內文
+- 將每條訊息儲存為結構化 JSON：`{id, date, text, media: [...]}`
+- 媒體檔案路徑記錄在 JSON 中，與文字內容關聯
+- 支援增量：新訊息追加到 `messages.json` 尾端
 
-## Non-Functional Requirements
+### F12 靜態網頁展示
 
-| ID | Requirement | Detail |
-|----|-------------|--------|
-| NF1 | 跨平台 | 支援 macOS 和 Windows 雙平台 |
-| NF2 | 無狀態斷點續傳 | 即使中途失敗，下次執行從上次成功處繼續 |
-| NF3 | 最小依賴 | 僅依賴 Python 3 + Telethon 套件 |
-| NF4 | 憑證安全 | API 憑證存放在使用者家目錄的 JSON 設定檔，不提交到程式碼倉庫 |
-| NF5 | 輕量級 | 非服務型應用，作為一次性腳本執行後即退出 |
+- 每次下載完成後自動生成 `download/index.html`
+- 功能：
+  - 雙頻道頁籤切換（AIguoman18 / 華人大事件）
+  - 媒體頻道：瀑布流圖片/影片展示
+  - 新聞頻道：訊息卡片（日期 + 文字內文 + 附圖）
+  - 響應式版面，手機 / 桌面皆可瀏覽
+- 純靜態：無需網頁伺服器，雙擊 `.html` 即可開啟
+- 資料透過 JS 檔案內嵌或 fetch 本地 JSON，不依賴網路
 
-## User Flow
+### F13 排程整合
 
-```
-首次使用:
-  1. 申請 Telegram API 憑證 (api_id, api_hash)
-  2. 建立 ~/.tg_downloader_config.json 設定檔
-  3. 手動執行腳本完成首次 Telegram 登入驗證（輸入手機號碼 + 驗證碼）
+- 下載腳本執行完後自動觸發網頁重新生成
+- 確保 `index.html` 始終反映最新下載內容
 
-日常使用:
-  1. 排程工具定時觸發 run_downloader.sh / run_downloader.ps1
-  2. 腳本自動連接 Telegram，拉取最新訊息
-  3. 比較本地狀態檔，僅下載新媒體
-  4. 依類型分類存放到對應目錄
-  5. 更新狀態檔，輸出執行日誌
-```
+---
 
-## Architecture Overview
+## 目錄結構（v2）
 
 ```
-run_downloader.{sh,ps1}     ← 排程觸發入口
-        │
-        ▼
-download_tg_channel.py      ← 核心邏輯
-        │
-        ├── Telethon ──── Telegram API ──── 指定頻道
-        │
-        ├── ~/.tg_downloader_config.json     ← API 憑證
-        │
-        └── download/
-            ├── photo/                       ← 圖片輸出
-            ├── video/                       ← 影片輸出
-            ├── .downloaded_state.json       ← 增量狀態
-            └── download.log                 ← 執行日誌
+download/
+├── ai_guoman/                      ← 頻道1：媒體為主
+│   ├── photo/
+│   ├── video/
+│   └── .downloaded_state.json
+├── dashijian/                      ← 頻道2：新聞+媒體
+│   ├── photo/
+│   ├── video/
+│   ├── messages.json               ← 訊息文字+媒體關聯
+│   └── .downloaded_state.json
+├── index.html                      ← 靜態展示網頁
+└── messages_data.js                ← JS 內嵌資料
 ```
 
-## Out of Scope
+---
 
-- 不支援多頻道同時下載
-- 不提供 GUI 介面
-- 不做訊息文字內容備份（僅媒體檔案）
-- 不支援 Telegram Bot 模式（僅使用者帳號模式）
-- 不支援 Docker 部署
-- 不做雲端同步 / 上傳
+## 使用者流程
 
-## Success Metrics
+```
+排程觸發
+  │
+  ├─ 1. 對每個頻道：連接 Telegram、拉取新訊息
+  ├─ 2. 依頻道模式處理
+  │     ├─ 媒體模式：下載圖片/影片
+  │     └─ 文字模式：擷取文字 + 下載媒體 → 寫入 messages.json
+  ├─ 3. 更新各頻道狀態檔
+  └─ 4. 觸發 generate_html.py → 產出 index.html
+```
 
-- 每次執行下載成功率 ≥ 95%
-- 重複執行無檔案重複下載
-- 無需人工介入即可排程自動運轉
+---
+
+## 與 v1 的相容性
+
+- AIguoman18 頻道的媒體下載邏輯不變
+- 現有 `download/photo/` `download/video/` 可遷移至 `download/ai_guoman/` 下
+- v1 狀態檔格式不變，無需資料遷移
+
+---
+
+## Out of Scope (v2)
+
+- 不支援 Telegram Bot 模式
+- 不做全文搜尋（留待 v3）
+- 不做資料庫儲存（JSON 檔案為基礎）
+- 不做動態網站或後端服務
+- 不做自動翻譯或內容過濾
