@@ -100,10 +100,22 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 
   .empty { text-align:center; padding:60px 20px; color:var(--text-dim); font-size:14px; }
 
+  .media-placeholder {
+    background: var(--surface2); border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-dim); font-size: 12px; text-align: center;
+    padding: 8px; word-break: break-all; min-height: 80px;
+  }
+  .gallery .media-placeholder { height: 200px; }
+  .card-media .media-placeholder { height: 150px; }
+  .media-col .gallery .media-placeholder { height: 180px; }
+  .video-placeholder::before { content: '\\25b6 '; font-size: 16px; }
+
   @media (max-width:768px) {
     .media-split { grid-template-columns:1fr; }
     .media-col .gallery { grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); }
     .media-col .gallery img,.media-col .gallery video { height:140px; }
+    .media-col .gallery .media-placeholder { height:140px; }
   }
   @media (max-width:640px) {
     .gallery { grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); }
@@ -112,6 +124,9 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     .card-media img,.card-media video { height:140px; }
     .media-col .gallery { grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); }
     .media-col .gallery img,.media-col .gallery video { height:130px; }
+    .gallery .media-placeholder { height:140px; }
+    .card-media .media-placeholder { height:140px; }
+    .media-col .gallery .media-placeholder { height:130px; }
   }
 </style>
 </head>
@@ -141,9 +156,9 @@ function switchTab(tab, contentId) {
 function buildMediaFileHTML(f, base) {
   var path = base + f.path;
   if (f.type === 'video') {
-    return '<a href="' + path + '" target="_blank"><video src="' + path + '" preload="metadata" controls></video></a>';
+    return '<a href="' + path + '" target="_blank"><video src="' + path + '" preload="metadata" controls onerror="this.style.display=\'none\';var d=document.createElement(\'div\');d.className=\'media-placeholder video-placeholder\';d.textContent=\'\\u25b6 \'+decodeURIComponent(\'' + encodeURIComponent(f.name || f.path.split('/').pop()) + '\');this.parentElement.appendChild(d);"></video></a>';
   }
-  return '<a href="' + path + '" target="_blank"><img src="' + path + '" alt="" loading="lazy"></a>';
+  return '<a href="' + path + '" target="_blank"><img src="' + path + '" alt="" loading="lazy" onerror="this.style.display=\'none\';var d=document.createElement(\'div\');d.className=\'media-placeholder\';d.textContent=decodeURIComponent(\'' + encodeURIComponent(f.name || f.path.split('/').pop()) + '\');this.parentElement.appendChild(d);"></a>';
 }
 
 function buildMediaGallery(files, base) {
