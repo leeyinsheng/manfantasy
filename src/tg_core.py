@@ -10,7 +10,7 @@ CHANNELS_FILE = Path(__file__).parent / "channels.json"
 def load_config():
     if CONFIG_FILE.exists():
         try:
-            return json.loads(CONFIG_FILE.read_text(encoding="utf-8"))
+            return json.loads(CONFIG_FILE.read_text(encoding="utf-8-sig"))
         except (json.JSONDecodeError, ValueError):
             return {}
     return {}
@@ -19,7 +19,7 @@ def load_config():
 def load_channels():
     if CHANNELS_FILE.exists():
         try:
-            data = json.loads(CHANNELS_FILE.read_text(encoding="utf-8"))
+            data = json.loads(CHANNELS_FILE.read_text(encoding="utf-8-sig"))
             return data.get("channels", [])
         except (json.JSONDecodeError, ValueError):
             return []

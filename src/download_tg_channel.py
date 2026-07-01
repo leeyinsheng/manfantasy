@@ -129,13 +129,10 @@ async def main():
     config = load_config()
     api_id = config.get("api_id")
     api_hash = config.get("api_hash")
+    phone = config.get("phone")
 
     client = TelegramClient(str(Path.home() / ".tg_downloader_session"), api_id, api_hash)
-    await client.connect()
-
-    if not await client.is_user_authorized():
-        print("NEEDS_AUTH")
-        return
+    await client.start(phone=phone)
 
     me = await client.get_me()
     print(f"已登入: {me.first_name}")
