@@ -1,241 +1,256 @@
-# 02 - 設計文件
+# 02 - 設計文件 v2
 
-## 設計理念
+## 版本變更摘要
 
-**簡潔優先於彈性。** 單一頻道、單一使用者、單次執行。沒有常駐服務、沒有網頁伺服器、沒有資料庫。此工具是一個無狀態的 CLI 腳本，執行、下載、結束。複雜度只存在於防止資料遺失的機制中：增量狀態追蹤和錯誤恢復能力。
+v1 → v2 新增三個模組、重構一個既有模組：
 
----
-
-## 1. 系統架構
-
-```
-┌─────────────────────────────────────────────┐
-│               排程層                         │
-│  cron (macOS) / 工作排程器 (Windows)         │
-│         │                  │                 │
-│         ▼                  ▼                 │
-│  run_downloader.sh    run_downloader.ps1     │
-│         │                  │                 │
-│         └──────┬───────────┘                 │
-│                ▼                              │
-│     download_tg_channel.py（核心）           │
-│                │                              │
-│     ┌──────────┼──────────┐                   │
-│     ▼          ▼          ▼                   │
-│  設定檔     Telethon    狀態檔               │
-│  (~/.json)  (API)      (.json)               │
-│                │                              │
-│        ┌───────┴───────┐                       │
-│        ▼               ▼                       │
-│   download/photo/  download/video/             │
-└─────────────────────────────────────────────┘
-```
-
-### 各層職責
-
-| 層級 | 職責 | 檔案 |
+| 模組 | 狀態 | 說明 |
 |------|------|------|
-| 排程層 | 作業系統層級的定時觸發 | `run_downloader.sh`、`run_downloader.ps1` |
-| 核心層 | API 連線、訊息迭代、媒體下載、狀態管理 | `download_tg_channel.py` |
-| 設定層 | 將憑證存放於程式碼倉庫之外 | `~/.tg_downloader_config.json` |
-| 狀態層 | 增量下載追蹤 | `download/.downloaded_state.json` |
-| 儲存層 | 媒體檔案分類整理 | `download/photo/`、`download/video/` |
-| 日誌層 | 執行輸出與錯誤擷取 | `download/download.log` |
+| `tg_core.py` | 擴充 | 新增訊息文字擷取、頻道組態 |
+| `download_tg_channel.py` | 重構 | 從單頻道改為多頻道迴圈 |
+| `generate_html.py` | 新增 | 靜態網頁生成器 |
+| `channels.json` | 新增 | 頻道定義設定檔 |
 
 ---
 
-## 2. 核心模組設計（`download_tg_channel.py`）
-
-### 2.1 進入點
-
-```python
-if __name__ == "__main__":
-    asyncio.run(main())
-```
-
-單一非同步進入點。無需命令列參數解析，所有組態皆以檔案為基礎。
-
-### 2.2 主流程
+## 1. 系統架構 v2
 
 ```
-main()
-  │
-  ├─ 1. load_config()         → 讀取 ~/.tg_downloader_config.json
-  ├─ 2. client.connect()      → 建立 Telegram 連線階段（session）
-  ├─ 3. is_user_authorized()  → 閘門：若未授權則輸出 NEEDS_AUTH 並離開
-  ├─ 4. get_entity(channel)   → 解析頻道使用者名稱
-  ├─ 5. load_state()          → 讀取 .downloaded_state.json
-  ├─ 6. iter_messages()       → 迴圈：拉取最多 FETCH_LIMIT 筆訊息
-  │     ├─ 跳過：無媒體
-  │     ├─ 跳過：已下載（依訊息 ID 判斷）
-  │     ├─ 跳過：id ≤ max_downloaded（提早中斷最佳化）
-  │     ├─ 是圖片 → download_photo()
-  │     └─ 是文件 → download_document()
-  └─ 7. client.disconnect()
+┌──────────────────────────────────────────────────┐
+│                 排程層                             │
+│    cron / 工作排程器                                │
+│         │                                          │
+│         ▼                                          │
+│  run_downloader.sh / .ps1                          │
+│         │                                          │
+│         ▼                                          │
+│  download_tg_channel.py（多頻道迴圈）               │
+│         │                                          │
+│         ├─ channel: AIguoman18                     │
+│         │   └─ 媒體模式：圖片/影片 → photo/video/   │
+│         │                                          │
+│         └─ channel: dashijian                      │
+│             └─ 文字模式：文字 → messages.json       │
+│                         媒體 → photo/video/        │
+│         │                                          │
+│         ▼                                          │
+│  generate_html.py                                  │
+│         │                                          │
+│         ├─ 讀取各頻道 messages.json                 │
+│         ├─ 讀取各頻道媒體檔案清單                    │
+│         └─ 輸出 download/index.html                 │
+└──────────────────────────────────────────────────┘
 ```
-
-### 2.3 訊息處理決策樹
-
-```
-message.media？
-  ├─ None               → 跳過（純文字訊息）
-  ├─ MessageMediaPhoto
-  │   └─ 下載為：{YYYYMMDD_HHMMSS}_photo_{訊息ID}.jpg
-  └─ MessageMediaDocument
-      ├─ 有原始檔名？ → 使用原始檔名
-      ├─ 無檔名？
-      │   ├─ video/* MIME → {日期}_media_{ID}.mp4
-      │   ├─ image/* MIME → {日期}_media_{ID}.jpg
-      │   └─ 其他         → {日期}_media_{ID}.bin
-      └─ 檔案已存在？ → 在檔名主幹後附加 _{訊息ID}
-```
-
-### 2.4 狀態管理
-
-```json
-// .downloaded_state.json
-[1001, 1002, 1003, 1005, 1010]
-```
-
-- **資料結構：** 已排序的 JSON 陣列，存放已下載的訊息 ID
-- **持久化時機：** 每次下載成功後立即寫入（非批次結束時才寫入）
-- **設計理由：** 若腳本執行中途崩潰，重新下載的範圍極小（最多 1 個檔案）
-- **提早中斷最佳化：** 將 `max(downloaded)` 與接收到的訊息 ID 比對；因為 Telegram 回傳訊息時是依 ID 降冪排列，一旦遇到 ID ≤ max_downloaded，後續所有訊息即已知已下載完畢
-
-### 2.5 檔案命名規範
-
-| 媒體類型 | 命名模式 | 範例 |
-|----------|----------|------|
-| 圖片 | `{日期}_photo_{訊息ID}.jpg` | `20250201_143022_photo_1234.jpg` |
-| 文件（有原始檔名） | `{原始檔名}` | `my_video.mp4` |
-| 文件（無檔名，影片） | `{日期}_media_{訊息ID}.mp4` | `20250201_143022_media_1234.mp4` |
-| 檔名重複時 | `{主幹}_{訊息ID}{副檔名}` | `my_video_1234.mp4` |
 
 ---
 
-## 3. 組態設計
+## 2. 頻道組態設計
 
-### 3.1 憑證設定（`~/.tg_downloader_config.json`）
+### 2.1 設定檔（`src/channels.json`）
 
 ```json
 {
-  "api_id": 123456,
-  "api_hash": "abcdef1234567890abcdef1234567890",
-  "phone": "+886912345678"
+  "channels": [
+    {
+      "id": "ai_guoman",
+      "username": "AIguoman18",
+      "name": "AIguoman18",
+      "mode": "media",
+      "fetch_limit": 50
+    },
+    {
+      "id": "dashijian",
+      "username": "dashijian",
+      "name": "華人大事件",
+      "mode": "text",
+      "fetch_limit": 50
+    }
+  ]
 }
 ```
 
-**安全性設計：**
-- 存放於 `$HOME`（使用者家目錄），位於專案目錄之外
-- 透過 `.gitignore` 排除於 git 追蹤之外
-- 連線階段檔（`~/.tg_downloader_session.session`）由 Telethon 自動建立，同樣位於程式碼倉庫之外
+**欄位說明：**
 
-### 3.2 寫死的常數（程式碼內組態）
+| 欄位 | 用途 |
+|------|------|
+| `id` | 內部識別碼，對應 `download/{id}/` 目錄名稱 |
+| `username` | Telegram 頻道 username（`@` 後面的部分） |
+| `name` | 顯示名稱，用於網頁頁籤標題 |
+| `mode` | `"media"` 僅下載媒體 / `"text"` 同時擷取文字 |
+| `fetch_limit` | 每次拉取訊息上限 |
 
-| 常數 | 值 | 用途 |
-|------|-----|------|
-| `CHANNEL_USERNAME` | `"AIguoman18"` | 目標頻道 |
-| `FETCH_LIMIT` | `50` | 每次執行最多處理的訊息數 |
+**設計取捨：** 使用 JSON 設定檔而非寫死在程式碼中，讓新增頻道只需編輯設定檔，不需改程式碼。
 
-**設計決策：** 頻道名稱寫死在程式碼中，而非可設定。理由：此為單一頻道用途，完成初始設定後即為零組態的常駐工具。若未來需要多頻道支援（PRD 已明確排除於本次範圍），此參數將改為設定檔參數。
+### 2.2 既有設定檔
+
+`~/.tg_downloader_config.json` 維持不變，僅存放 API 憑證。頻道清單與 API 憑證分離。
 
 ---
 
-## 4. 排程腳本設計
+## 3. 訊息資料模型
 
-### 4.1 macOS（`run_downloader.sh`）
+### 3.1 messages.json 結構
 
-```bash
-#!/bin/bash
-export HOME=/Users/leedavid
-export PATH=/usr/bin:/bin:/usr/sbin:/sbin
-cd "/Users/leedavid/Documents/Project/Adult Dream"
-/usr/bin/python3 src/download_tg_channel.py >> download/download.log 2>&1
+```json
+[
+  {
+    "id": 12345,
+    "date": "2025-07-01T14:30:22",
+    "text": "今天東南亞發生重大事件...",
+    "channel": "dashijian",
+    "media": [
+      {
+        "type": "photo",
+        "path": "photo/20250701_143022_photo_12345.jpg",
+        "size_kb": 245
+      }
+    ]
+  }
+]
 ```
 
-**設計說明：**
-- 明確匯出 `HOME`：`cron` 執行時環境變數極少，Telethon 需要在 `$HOME` 下尋找連線階段檔和設定檔
-- 明確指定 `PATH`：確保在 `cron` 受限環境中仍能找到 `python3`
-- 絕對路徑：無論 `cron` 的工作目錄為何都不會有歧義
-- `2>&1` 重定向：將 stdout 和 stderr 同時擷取到日誌檔
+**欄位說明：**
 
-### 4.2 Windows（`run_downloader.ps1`）
+| 欄位 | 型別 | 說明 |
+|------|------|------|
+| `id` | int | Telegram 訊息 ID |
+| `date` | str | ISO 8601 時間字串 |
+| `text` | str | 訊息文字內文（無文字時為空字串） |
+| `channel` | str | 所屬頻道 ID |
+| `media` | array | 附帶的媒體檔案清單 |
 
-```powershell
-$ProjectDir = Split-Path -Parent $PSScriptRoot
-$LogFile = Join-Path $ProjectDir "download\download.log"
-$Script = Join-Path $PSScriptRoot "download_tg_channel.py"
+### 3.2 增量寫入策略
 
-Set-Location -LiteralPath $ProjectDir
-cmd /c "python `"$Script`" 2>&1" | Out-File -FilePath $LogFile -Append -Encoding utf8
-```
+- 每下載完一條新訊息，將其 JSON 物件附加到 `messages.json` 陣列尾端
+- 不重寫整個檔案 — 透過 `json.dumps` 的逐條序列化實現
+- 網頁端讀取時按 `id` 降冪排列（最新在上）
 
-**設計說明：**
-- `$PSScriptRoot`：PowerShell 自動變數，無論當前工作目錄為何，都能解析為腳本所在目錄
-- `cmd /c` 包裝：防止 PowerShell 將 stderr 輸出包裝成錯誤記錄雜訊（如 `CategoryInfo`、`FullyQualifiedErrorId`）
-- `Out-File -Encoding utf8`：避免 PowerShell 預設的 UTF-16 編碼產生日誌亂碼
-- `-Append`：保留跨次執行的日誌歷史
-
----
-
-## 5. 錯誤處理策略
-
-| 情境 | 處理方式 |
-|------|----------|
-| 設定檔不存在 | `load_config()` 回傳空 `{}`；Telethon 拋出認證錯誤 → `"NEEDS_AUTH"` |
-| 網路中斷 | Telethon 例外 → `[ERR]` 記錄，腳本結束 |
-| 頻道不存在 | `get_entity()` 例外 → 記錄並結束 |
-| 單一檔案下載失敗 | 每個檔案獨立的 `try/except` → `[ERR]` 記錄，**繼續**處理下一則訊息 |
-| 狀態檔損毀 | `load_state()` 回傳空集合 → 全部重新下載（安全的退化行為） |
-| 檔案已存在 | 在檔名後附加 `_訊息ID` 以避免衝突 |
-
-**關鍵設計決策：** 每個檔案獨立隔離錯誤。單一下載失敗不會中止整次執行。狀態檔僅在下載成功後才更新，因此失敗的下載會在下次執行時重新嘗試。
-
----
-
-## 6. 目錄佈局
+**實作方式：** 採用 JSON Lines 風格（`.jsonl`），每行一個 JSON 物件，方便逐條附加而不需解析整個檔案：
 
 ```
-Adult Dream/
-├── src/
-│   ├── download_tg_channel.py    # 核心邏輯
-│   ├── run_downloader.sh         # macOS 排程進入點
-│   └── run_downloader.ps1        # Windows 排程進入點
-├── download/                     # 執行期資料（gitignore 排除）
-│   ├── photo/                    # 已下載圖片
-│   ├── video/                    # 已下載影片
-│   ├── .downloaded_state.json    # 增量狀態
-│   └── download.log              # 執行日誌
-├── docs/                         # 工作流程文件
-├── tests/                        # 測試套件
-└── .gitignore
+{"id":12345,"date":"...","text":"...","channel":"dashijian","media":[...]}
+{"id":12346,"date":"...","text":"...","channel":"dashijian","media":[...]}
 ```
 
-**分離原則：** `src/` 存放程式碼（受版本控管），`download/` 存放執行期產物（gitignore 排除）。程式碼倉庫中不存放任何設定檔。
+讀取時逐行解析，寫入時 `open(..., "a")` 附加一行。
 
 ---
 
-## 7. 跨平台相容性
+## 4. 核心模組變更（`tg_core.py`）
 
-| 關注點 | macOS | Windows |
-|--------|-------|---------|
-| 路徑分隔符 | `/`（原生） | `\`，由 `pathlib.Path` 處理 |
-| 家目錄 | `/Users/leedavid` | `C:\Users\davidlee`，由 `Path.home()` 解析 |
-| Python 呼叫方式 | `/usr/bin/python3` | `python`（透過 PATH） |
-| 排程工具 | `cron` | 工作排程器 |
-| 日誌編碼 | UTF-8（原生） | UTF-8，透過 `-Encoding utf8` |
-| 換行符號 | LF | CRLF（git `core.autocrlf`） |
+### 4.1 新增函式
 
-`pathlib.Path` 處理所有路徑建構，核心模組中沒有任何手動字串拼接路徑的程式碼。
+```python
+def load_channels():
+    """從 channels.json 讀取頻道清單"""
+    # 讀取 src/channels.json，回傳頻道定義列表
+
+def extract_message_text(message):
+    """從 Telegram Message 物件擷取純文字"""
+    # 回傳 message.text 或 message.caption 或 ""
+
+def message_to_record(message, channel_id, media_files):
+    """將訊息轉為 messages.jsonl 的一行記錄"""
+    # 回傳 dict: {id, date, text, channel, media}
+    # 轉為 JSON 字串
+
+def append_message_record(channel_dir, record):
+    """附加一筆訊息記錄到 messages.jsonl"""
+    # open(channel_dir / "messages.jsonl", "a")
+    # 寫入一行 JSON + 換行
+
+def get_channel_dir(channel_id):
+    """取得頻道的下載目錄路徑"""
+    # return download_dir / channel_id
+```
+
+### 4.2 既有函式相容性
+
+- `generate_photo_filename`、`generate_document_filename`、`classify_media` 等保持不變
+- `load_state` / `save_state` 增加 `channel_id` 參數，指向不同頻道的狀態檔
+- `PHOTO_DIR` / `VIDEO_DIR` / `STATE_FILE` 改為動態（依頻道）
 
 ---
 
-## 8. 關鍵設計取捨
+## 5. HTML 生成器設計（`generate_html.py`）
+
+### 5.1 架構
+
+```
+generate_html.py
+  │
+  ├─ load_all_messages()     ← 讀取所有頻道的 messages.jsonl
+  ├─ load_all_media()        ← 掃描媒體頻道的 photo/video 目錄
+  ├─ build_channel_data()    ← 組裝頻道資料結構
+  └─ render_html()           ← 用模板生成 index.html
+```
+
+### 5.2 網頁結構
+
+```
+index.html
+  ├─ header (標題: TG Archive)
+  ├─ nav (頻道頁籤)
+  │   ├─ [AIguoman18]  [華人大事件]
+  │   └─ 點擊切換顯示內容
+  ├─ content
+  │   ├─ 媒體模式（AIguoman18）：
+  │   │   └─ 圖片瀑布流 + 影片播放器
+  │   └─ 文字模式（華人大事件）：
+  │       └─ 訊息卡片（日期 → 文字 → 圖片縮圖，點擊放大）
+  └─ footer (更新時間)
+```
+
+### 5.3 資料傳遞方式
+
+採用內嵌 JSON 資料到 `<script>` 標籤中，不需額外的 HTTP 請求：
+
+```html
+<script>
+  window.CHANNEL_DATA = [
+    {
+      "id": "ai_guoman", "name": "AIguoman18", "mode": "media",
+      "media": [{"type":"photo","path":"photo/xxx.jpg"}, ...]
+    },
+    {
+      "id": "dashijian", "name": "華人大事件", "mode": "text",
+      "messages": [{"id":123,"date":"...","text":"...","media":[...]}, ...]
+    }
+  ];
+</script>
+```
+
+### 5.4 視覺設計
+
+- 深色背景 + 卡片式佈局
+- 新聞卡片：日期標籤 → 文字段落 → 圖片縮圖網格
+- 媒體展示：CSS Grid 瀑布流
+- 圖片點擊放大（純 CSS/JS lightbox，無外部依賴）
+- 影片使用 HTML5 `<video>` 標籤
+- 響應式：桌面 3 欄 → 平板 2 欄 → 手機 1 欄
+
+---
+
+## 6. 目錄遷移策略
+
+v1 的 `download/photo/` `download/video/` 遷移至 `download/ai_guoman/` 下：
+
+```
+download/photo/*.jpg  →  download/ai_guoman/photo/*.jpg
+download/video/*.mp4  →  download/ai_guoman/video/*.mp4
+download/.downloaded_state.json  →  download/ai_guoman/.downloaded_state.json
+```
+
+提供一次性遷移腳本 `src/migrate_v1_to_v2.py`。
+
+---
+
+## 7. 關鍵設計取捨
 
 | 決策 | 理由 |
 |------|------|
-| 頻道名稱寫死在程式碼中 | 單一用途工具，遵循 YAGNI 原則。若需要多頻道支援，留待 v2 處理。 |
-| 狀態以排序 JSON 陣列存放 | 人類可讀，用任何文字編輯器都能除錯。50 個整數的集合微不足道。 |
-| 每個檔案下載後立即儲存狀態 | 防止崩潰時資料遺失。成本：每個檔案多一次 `write()`（可忽略不計）。 |
-| `FETCH_LIMIT=50` | 在 API 速率限制和涵蓋缺口之間取得平衡。假設兩次執行之間的新媒體訊息少於 50 則。 |
-| 不使用 `requirements.txt` | 單一依賴（`telethon`）。不值得為一個套件增加額外的儀式。 |
+| JSONL 而非 JSON 陣列 | 逐行附加無需讀取整個檔案再寫回，適合增量寫入 |
+| 內嵌資料而非 fetch | 靜態 HTML 無法發起 fetch 請求（`file://` 協定的 CORS 限制） |
+| 頻道設定檔與 API 憑證分離 | `channels.json` 可提交到 git，`~/.tg_downloader_config.json` 不可 |
+| 每個頻道獨立目錄 | 避免媒體檔案檔名衝突，方便手動管理 |
+| 無前端框架 | 純 HTML/CSS/JS，零依賴，雙擊即開 |
