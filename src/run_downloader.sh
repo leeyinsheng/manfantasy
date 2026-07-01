@@ -1,5 +1,6 @@
 #!/bin/bash
 export HOME="${HOME:-/Users/leedavid}"
+export PYTHONIOENCODING=utf-8
 PROJECT_DIR="${PROJECT_DIR:-$HOME/Documents/Project/Adult Dream}"
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin
 cd "$PROJECT_DIR"
