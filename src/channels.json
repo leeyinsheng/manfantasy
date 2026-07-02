@@ -30,6 +30,15 @@
       "username": "dashijian",
       "name": "東南亞大事件",
       "mode": "text",
+      "group": "news",
+      "fetch_limit": 50
+    },
+    {
+      "id": "ll111",
+      "username": "ll111",
+      "name": "東南亞大事件",
+      "mode": "text",
+      "group": "news",
       "fetch_limit": 50
     }
   ]

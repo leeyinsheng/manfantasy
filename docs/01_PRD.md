@@ -2,7 +2,7 @@
 
 ## 版本變更
 
-v2 → v3 核心變動：新增2個頻道並合併顯示、平行下載加速、靜態網頁互動強化（燈箱/搜尋/分頁）。
+v2 → v3 核心變動：新增3個頻道並合併顯示、平行下載加速、靜態網頁互動強化（燈箱/搜尋/分頁）。
 
 ---
 
@@ -13,7 +13,8 @@ v2 → v3 核心變動：新增2個頻道並合併顯示、平行下載加速、
 | 1 | ai_guoman | AIguoman18 | text+media | 男人的幻想 | mens_fantasy | 既有，從 media 改為 text |
 | 2 | ciyuanb | ciyuanb | text+media | 男人的幻想 | mens_fantasy | **新增** |
 | 3 | llcosfc | llcosfc | text+media | 男人的幻想 | mens_fantasy | **新增** |
-| 4 | dashijian | dashijian | text | 東南亞大事件 | - | 不變 |
+| 4 | dashijian | dashijian | text | 東南亞大事件 | news | 既有，新增 group |
+| 5 | ll111 | ll111 | text | 東南亞大事件 | news | **新增** |
 
 ---
 
@@ -97,6 +98,15 @@ v2 → v3 核心變動：新增2個頻道並合併顯示、平行下載加速、
       "username": "dashijian",
       "name": "東南亞大事件",
       "mode": "text",
+      "group": "news",
+      "fetch_limit": 50
+    },
+    {
+      "id": "ll111",
+      "username": "ll111",
+      "name": "東南亞大事件",
+      "mode": "text",
+      "group": "news",
       "fetch_limit": 50
     }
   ]
@@ -114,9 +124,11 @@ v2 → v3 核心變動：新增2個頻道並合併顯示、平行下載加速、
 ```
 頁籤: [男人的幻想]  [東南亞大事件]
          │               │
-         │               └─ dashijian 獨立顯示
+         │               └─ 合併 dashijian + ll111 (news group)
+         │                    ├─ 所有訊息按時間降冪交錯排列
+         │                    └─ 每張訊息卡片標註來源頻道
          │
-         └─ 合併 ai_guoman + ciyuanb + llcosfc
+         └─ 合併 ai_guoman + ciyuanb + llcosfc (mens_fantasy group)
               ├─ 所有訊息按時間降冪交錯排列
               ├─ 每張訊息卡片標註來源頻道
               └─ 媒體圖庫合併顯示
@@ -129,18 +141,18 @@ v2 → v3 核心變動：新增2個頻道並合併顯示、平行下載加速、
 ```
 排程觸發
   │
-  ├─ 1. 平行連接三個頻道 (asyncio.gather)
+  ├─ 1. 平行連接五個頻道 (asyncio.gather)
   │     ├─ AIguoman18: 回溯擷取文字 + 新媒體
   │     ├─ ciyuanb: 擷取文字 + 下載媒體
-  │     └─ llcosfc: 擷取文字 + 下載媒體
+  │     ├─ llcosfc: 擷取文字 + 下載媒體
+  │     ├─ dashijian: 擷取文字 + 下載媒體
+  │     └─ ll111: 擷取文字 + 下載媒體
   │
-  ├─ 2. dashijian 獨立下載（與上列平行）
+  ├─ 2. 更新各頻道狀態檔
   │
-  ├─ 3. 更新各頻道狀態檔
-  │
-  └─ 4. 觸發 generate_html.py
-        ├─ 合併 mens_fantasy group 頻道
-        ├─ 獨立 dashijian 頻道
+  └─ 3. 觸發 generate_html.py
+        ├─ 合併 mens_fantasy group → 男人的幻想頁籤
+        ├─ 合併 news group → 東南亞大事件頁籤
         └─ 產出 index.html（燈箱 / 搜尋 / 分頁）
 ```
 
@@ -165,7 +177,12 @@ download/
 │   ├── video/
 │   ├── messages.jsonl
 │   └── .downloaded_state.json
-├── dashijian/                  ← 不變
+├── dashijian/                  ← 既有，改為 news group
+│   ├── photo/
+│   ├── video/
+│   ├── messages.jsonl
+│   └── .downloaded_state.json
+├── ll111/                       ← 新增
 │   ├── photo/
 │   ├── video/
 │   ├── messages.jsonl
