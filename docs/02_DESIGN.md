@@ -8,8 +8,10 @@ v2 → v3 核心變動：平行下載、頻道合併顯示、四個新 UI 元件
 |------|------|------|
 | `tg_core.py` | 不變 | 無需修改 |
 | `download_tg_channel.py` | 重構 | 多頻道 `asyncio.gather()` 平行處理 |
-| `generate_html.py` | 重構 | 新增燈箱/搜尋/分頁/合併邏輯 |
+| `generate_html.py` | 重構 | 新增燈箱/搜尋/分頁/合併邏輯，依 `design_20260702.html` 原型 |
 | `channels.json` | 擴充 | 新增 `group` 欄位，擴充至 4 頻道 |
+
+**原型參考：** `docs/prototype/design_20260702.html`
 
 ---
 
@@ -52,11 +54,45 @@ v2 → v3 核心變動：平行下載、頻道合併顯示、四個新 UI 元件
 
 ---
 
-## 2. 頻道組態設計 v3
+## 2. 視覺設計系統
 
-### 2.1 設定檔（`src/channels.json`）
+依 `design_20260702.html` 原型定義。
 
-新增 `group` 欄位，表示頻道所屬的合併群組。
+### 2.1 色彩
+
+| Token | 值 | 用途 |
+|-------|-----|------|
+| `--bg` | `#0a0a0a` | 頁面背景 |
+| `--surface` | `#161616` | 卡片、搜尋列背景 |
+| `--surface-2` | `#1e1e1e` | 次要表面（輸入框、載入按鈕） |
+| `--fg` | `#e5e5e5` | 主要文字 |
+| `--fg-secondary` | `#a0a0a0` | 次要文字 |
+| `--muted` | `#6a6a6a` | 禁用/輔助文字 |
+| `--border` | `#2a2a2a` | 邊框 |
+| `--accent` | `#d14334` | 主色調（紅色） |
+| `--accent-hover` | `#e05545` | hover 加深 |
+| `--accent-bg` | `rgba(209,67,52,0.08)` | 主色淡化背景 |
+
+### 2.2 字體
+
+| Token | 值 | 用途 |
+|-------|-----|------|
+| `--font-display` | `'Iowan Old Style', 'Charter', Georgia, serif` | 標題、日期、計數器 |
+| `--font-body` | `-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif` | 內文、介面元件 |
+
+### 2.3 基礎尺寸
+
+| Token | 值 | 用途 |
+|-------|-----|------|
+| `--radius` | `8px` | 圓角 |
+| `--max-w` | `840px` | 內容最大寬度 |
+| `html font-size` | `clamp(14px, 1vw + 10px, 17px)` | 流體字級 |
+
+---
+
+## 3. 頻道組態設計 v3
+
+### 3.1 設定檔（`src/channels.json`）
 
 ```json
 {
@@ -107,9 +143,9 @@ v2 → v3 核心變動：平行下載、頻道合併顯示、四個新 UI 元件
 
 ---
 
-## 3. 平行下載設計
+## 4. 平行下載設計
 
-### 3.1 並行策略
+### 4.1 並行策略
 
 ```
 download_tg_channel.py::main()
@@ -126,18 +162,16 @@ download_tg_channel.py::main()
   └─ 觸發 generate_html.generate()
 ```
 
-### 3.2 競爭條件分析
+### 4.2 競爭條件分析
 
 | 資源 | 是否共享 | 風險 |
 |------|----------|------|
-| 頻道狀態檔 (`.downloaded_state.json`) | 各頻道獨立 | 無 |
-| 訊息記錄檔 (`messages.jsonl`) | 各頻道獨立 | 無 |
+| 頻道狀態檔 | 各頻道獨立 | 無 |
+| 訊息記錄檔 | 各頻道獨立 | 無 |
 | 媒體下載目錄 | 各頻道獨立 | 無 |
 | TelegramClient | 共享 | Telethon 內建連線池管理 |
 
-**結論：** 各頻道完全隔離，無競爭條件。
-
-### 3.3 錯誤處理
+### 4.3 錯誤處理
 
 ```python
 results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -146,20 +180,18 @@ for channel, result in zip(channels, results):
         print(f"頻道 {channel['name']} 錯誤: {result}")
 ```
 
-單一頻道連線失敗、被踢出、被ban — 其他頻道正常繼續。
-
 ---
 
-## 4. 頻道合併顯示設計
+## 5. 頻道合併顯示設計
 
-### 4.1 合併邏輯
+### 5.1 合併邏輯
 
-`generate_html.py` 的 `_build_channel_data()` 處理合併：
+`_build_channel_data()` 依 `group` 欄位合併同組頻道：
 
 ```python
 def _build_channel_data():
     channels = tg_core.load_channels()
-    groups = {}  # group_name → [channel_entry, ...]
+    groups = {}
     standalone = []
 
     for ch in channels:
@@ -170,13 +202,12 @@ def _build_channel_data():
             standalone.append(ch)
 
     tabs = []
-    # 合併群組：一個 tab
     for grp_name, members in groups.items():
         merged = {
             "id": grp_name,
             "name": members[0]["name"],
             "mode": "text",
-            "messages": [],  # 合併所有成員的訊息
+            "messages": [],
             "photos": [],
             "videos": [],
         }
@@ -187,260 +218,253 @@ def _build_channel_data():
         merged["messages"].sort(key=lambda x: x.get("id", 0), reverse=True)
         tabs.append(merged)
 
-    # 獨立頻道：各自一個 tab
     for ch in standalone:
         tabs.append({...})  # 原有邏輯
 
     return tabs
 ```
 
-### 4.2 訊息卡片來源標註
+### 5.2 訊息卡片來源標註
 
-每張訊息卡片顯示來源頻道標籤：
+卡片 header 左右對齊：左側頻道來源（紅點 + username），右側日期。
 
 ```html
 <div class="card">
-  <div class="card-date">2025-07-01T14:30:22</div>
-  <div class="card-source">AIguoman18</div>   ← 新增
+  <div class="card-header">
+    <span class="card-source">AIguoman18</span>
+    <span class="card-date">2026-06-28 14:30</span>
+  </div>
   <div class="card-text">訊息內文...</div>
   <div class="card-media">...</div>
 </div>
 ```
 
-來源標籤從 `messages.jsonl` 的 `channel` 欄位取得，再透過 `channels.json` 對應到 `username` 顯示。
-
----
-
-## 5. UI 元件設計
-
-### 5.1 燈箱 (Lightbox)
-
-```
-┌─────────────────────────────────────────────┐
-│                                       [✕]   │  ← 關閉按鈕（固定右上）
-│                                             │
-│              ┌──────────────┐               │
-│   [‹]        │              │        [›]    │  ← 左右導航箭頭
-│              │   圖片/影片   │               │
-│              │              │               │
-│              └──────────────┘               │
-│                                             │
-│                  2 / 15                      │  ← 計數器（固定底部）
-└─────────────────────────────────────────────┘
-```
-
-**HTML 結構：**
-```html
-<div id="lightbox" class="lightbox">
-  <span id="lb-close" class="lb-close">&times;</span>
-  <span id="lb-prev" class="lb-prev">&lsaquo;</span>
-  <span id="lb-next" class="lb-next">&rsaquo;</span>
-  <span class="lb-counter"></span>
-  <div class="lb-content">
-    <img id="lb-img" src="" alt="">
-    <video id="lb-video" src="" controls></video>
-  </div>
-</div>
-```
-
-**互動行為：**
-| 操作 | 行為 |
-|------|------|
-| 點擊圖片/影片 | 開啟燈箱，定位到該項目 |
-| 點擊 ‹ / › | 前後切換 |
-| 按 ← / → 鍵 | 前後切換 |
-| 按 ESC | 關閉 |
-| 點擊遮罩背景 | 關閉 |
-| 點擊 ✕ | 關閉 |
-
-**JS 實作要點：**
-- 全頁事件委派：監聽 `a[data-lightbox]` 點擊
-- `data-lightbox` 值 = 頁籤 ID，同一頁籤的所有媒體共用同一個燈箱導航群組
-- 影片不自動播放，使用者手動點擊播放
-
-### 5.2 搜尋與日期篩選
-
-```
-┌──────────────────────────────────────────────────────┐
-│  [🔍 搜尋訊息...              ] [📅 起始] [📅 結束]  │
-│  3 筆結果                                            │
-├──────────────────────────────────────────────────────┤
-│  (訊息卡片列表 — 僅顯示符合條件的卡片)                  │
-└──────────────────────────────────────────────────────┘
-```
-
-**元件規格：**
-| 元件 | 型別 | 行為 |
-|------|------|------|
-| 搜尋輸入框 | `<input type="text">` | `input` 事件即時觸發篩選 |
-| 起始日期 | `<input type="date">` | `change` 事件觸發篩選 |
-| 結束日期 | `<input type="date">` | `change` 事件觸發篩選 |
-| 結果計數 | `<div>` | 顯示 "N 筆結果" |
-
-**篩選邏輯：**
-- 關鍵字：比對 `.card-text` 的文字內容（不分大小寫）
-- 日期範圍：比對 `.card-date` 的前 10 字元（yyyy-mm-dd）
-- 兩個條件同時成立才顯示
-- 篩選時隱藏分頁「載入更多」按鈕，顯示所有符合結果
-- 清空搜尋條件時還原分頁狀態
-
-**顯示位置：** 僅在文字模式（`mode: "text"`）的頁籤顯示搜尋列。
-
-### 5.3 分頁載入 (Load More)
-
-```
-┌──────────────────────────────┐
-│  (前 50 筆內容)              │
-│                              │
-├──────────────────────────────┤
-│     載入更多 (120)           │  ← 點擊展開次頁
-└──────────────────────────────┘
-         │ 點擊後
-         ▼
-┌──────────────────────────────┐
-│  (展開後 100 筆內容)         │
-│                              │
-├──────────────────────────────┤
-│     載入更多 (70)            │
-└──────────────────────────────┘
-         │ ...重複直到全部載入
-         ▼
-┌──────────────────────────────┤
-│     已全部載入               │  ← disabled 狀態
-└──────────────────────────────┘
-```
-
-**規格：**
-
-| 參數 | 值 |
-|------|-----|
-| 每頁筆數 | 50 |
-| 初始顯示 | 前 50 筆 |
-| 載入按鈕文字 | 「載入更多 (N)」→「已全部載入」 |
-| 適用範圍 | `.gallery` 和 `.cards-container` 的直接子元素 |
-
-**JS 實作：**
-- DOM 載入後，掃描所有 `.gallery` 和 `.cards-container`
-- 隱藏超過 50 筆的子元素（添加 `.hidden` class）
-- 動態插入 `<div class="load-more">` 按鈕
-- 點擊後移除下一批 `.hidden` class
-- 全部展開後按鈕變為 `.done` 狀態
-
-### 5.4 媒體效能優化
-
-| 媒體 | 屬性 | 效果 |
-|------|------|------|
-| `<img>` | `loading="lazy"` | 瀏覽器僅載入可視範圍圖片 |
-| `<video>` | `preload="none"` | 不預載影片，點擊播放才載入 |
-
-`loading="lazy"` 為 HTML 原生屬性，無需 JS。在 `_build_media_gallery()` 和 `_build_messages()` 中直接輸出。
-
----
-
-## 6. 文字回溯擷取設計 (F19)
-
-### 6.1 問題
-
-AIguoman18 在 v2 是 `mode: "media"`，只下載媒體不擷取文字。切換到 `mode: "text"` 後需回溯擷取歷史訊息文字，但不應重複下載已存在的媒體。
-
-### 6.2 方案：檔案存在檢查
-
-```python
-async def process_channel(channel, client):
-    # ... existing setup ...
-    async for message in client.iter_messages(entity, limit=fetch_limit):
-        # 不再提前 break，因為需要回溯處理已下載的訊息
-        if channel_mode == "text" and message.id in downloaded:
-            # 已處理過但需要文字：檢查是否已有文字記錄
-            # 若無 → 擷取文字但不重複下載媒體
-            ...
-```
-
-**簡化策略：**
-- 為 AIguoman18 新增 `backfill: true` 設定
-- 當 `backfill: true` 時：重新遍歷歷史訊息，已存在的媒體跳過不重複下載，僅補充文字記錄
-- 下載狀態檔不變，避免重複爬取
-
-**實作方式：**
-- 在 `download_tg_channel.py` 中增加 `backfill` 模式的判斷
-- 判斷媒體檔案是否已存在於磁碟：`filepath.exists()` → 跳過下載
-- 仍寫入 `messages.jsonl`
-
-### 6.3 設定
-
-```json
-{
-  "id": "ai_guoman",
-  "username": "AIguoman18",
-  "name": "男人的幻想",
-  "mode": "text",
-  "group": "mens_fantasy",
-  "fetch_limit": 50,
-  "backfill": true
+**來源標記樣式：**
+```css
+.card-source::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
 }
 ```
 
-`backfill: true` 值僅在首次回溯時需要，完成後可移除或設為 `false`。
-
 ---
 
-## 7. TOC 結構設計
+## 6. HTML 生成架構
 
-### 7.1 HTML 生成架構 v3
+### 6.1 渲染策略
+
+依原型採用 **JS 端動態渲染**，而非 v2 的伺服器端 HTML 生成：
 
 ```
 generate_html.py
   │
-  ├─ _scan_media_files(channel_id, subdir)
-  ├─ _build_channel_data()           ← 新增合併邏輯
-  │    ├─ 讀取 channels.json
-  │    ├─ 依 group 分組
-  │    ├─ 合併同組頻道的 messages + media
-  │    └─ 回傳 tabs 陣列
-  │
-  ├─ _build_media_gallery()          ← 新增 data-lightbox 屬性
-  ├─ _build_split_gallery()
-  ├─ _build_messages()               ← 新增 channel 標籤 + data-lightbox
-  │
-  └─ generate()
-       ├─ 生成頁籤 HTML
-       ├─ 生成內容 HTML（含搜尋列 + 燈箱骨架）
-       ├─ 輸出 CSS（既有 + 燈箱 + 搜尋 + 分頁樣式）
-       └─ 輸出 JS（燈箱 + 搜尋 + 分頁）
+  ├─ 產生頁面骨架（header / tabs / 空白 tab-content）
+  ├─ 內嵌 JSON 資料：messages + media 陣列
+  ├─ 內嵌 CSS（依原型色系與字體）
+  └─ 內嵌 JS（renderCards / 燈箱 / 搜尋 / 分頁）
 ```
 
-### 7.2 網頁結構 v3
+**伺服器端僅輸出：**
+- `<!DOCTYPE html>` 結構
+- `<style>` 完整 CSS
+- 頁籤按鈕 + 空白內容容器
+- 搜尋列 HTML（每個文字頁籤）
+- 燈箱骨架
+- `<script>window.__DATA__ = {...}</script>`
+- `<script>` 完整 JS
+
+### 6.2 網頁結構
 
 ```
 index.html
-  ├─ header (標題: Adult Dream + 更新時間)
-  ├─ nav (頻道頁籤)
-  │   ├─ [男人的幻想]    ← 合併 ai_guoman + ciyuanb + llcosfc
-  │   └─ [東南亞大事件]  ← dashijian 獨立
-  ├─ content
-  │   ├─ 男人的幻想頁籤
-  │   │   ├─ 搜尋列（文字+日期）
-  │   │   ├─ 訊息卡片列表（按時間降冪，標註來源頻道）
-  │   │   └─ 媒體合併圖庫
-  │   └─ 東南亞大事件頁籤
-  │       ├─ 搜尋列（文字+日期）
-  │       └─ 訊息卡片列表
-  └─ 燈箱骨架 (display:none)
+  ├─ header (Adult Dream + 更新時間)
+  ├─ nav.tab-nav (sticky)
+  │   ├─ [男人的幻想 65]    ← badge 顯示訊息總數
+  │   └─ [東南亞大事件 35]
+  ├─ main
+  │   ├─ #tab-mens_fantasy
+  │   │   ├─ .search-bar (搜尋輸入 + 日期範圍 + 結果計數)
+  │   │   ├─ .cards-container (JS 渲染)
+  │   │   └─ .load-more-wrap (載入按鈕)
+  │   └─ #tab-dashijian
+  │       ├─ .search-bar
+  │       ├─ .cards-container (JS 渲染)
+  │       └─ .load-more-wrap
+  └─ #lightbox (燈箱骨架)
+```
+
+### 6.3 內嵌資料格式
+
+```javascript
+window.__DATA__ = {
+  tabs: {
+    mens_fantasy: {
+      name: "男人的幻想",
+      messages: [ /* 合併後依時間排序 */ ],
+      total: 65
+    },
+    dashijian: {
+      name: "東南亞大事件",
+      messages: [ /* 獨立頻道訊息 */ ],
+      total: 35
+    }
+  },
+  channels: { /* username → name 對照 */ },
+  updated: "2026-07-02 14:30"
+};
 ```
 
 ---
 
-## 8. 關鍵設計取捨 v3
+## 7. UI 元件設計
+
+### 7.1 頁籤 (Tab)
+
+```html
+<nav class="tab-nav" role="tablist">
+  <button class="tab-btn active" data-tab="mens_fantasy">
+    男人的幻想 <span class="badge">65</span>
+  </button>
+  <button class="tab-btn" data-tab="dashijian">
+    東南亞大事件 <span class="badge">35</span>
+  </button>
+</nav>
+```
+
+| 特性 | 規格 |
+|------|------|
+| 定位 | `position: sticky; top: 0` |
+| 寬度 | `flex: 1` 均分 |
+| 作用中指示 | `::after` 偽元素 2px 紅線 |
+| badge | 灰底圓角，顯示該頁籤訊息總數 |
+
+### 7.2 搜尋列 (Search Bar)
+
+```html
+<div class="search-bar">
+  <input type="text" placeholder="搜尋訊息…">
+  <div class="date-group">
+    <label>從</label> <input type="date">
+    <label>至</label> <input type="date">
+  </div>
+  <span class="result-count">12 筆結果</span>
+</div>
+```
+
+| 特性 | 規格 |
+|------|------|
+| 佈局 | flexbox，`gap: 0.5rem` |
+| 背景 | `--surface` + border |
+| 搜尋框 | `flex: 1`，聚焦時邊框變 `--accent` |
+| 日期群組 | 水平排列，手機版標籤隱藏 |
+| 結果計數 | `margin-left: auto` 靠右對齊 |
+| 搜尋時 | 結果計數顯示「N 筆結果」，隱藏載入按鈕 |
+
+### 7.3 訊息卡片 (Card)
+
+```html
+<div class="card">
+  <div class="card-header">
+    <span class="card-source">AIguoman18</span>
+    <span class="card-date">2026-06-28 14:30</span>
+  </div>
+  <div class="card-text">訊息內文...</div>
+  <div class="card-media">
+    <img src="" alt="" loading="lazy">
+    <!-- 或影片 -->
+    <video preload="none" src="" muted playsinline>
+    <div class="vid-overlay"></div>
+  </div>
+</div>
+```
+
+| 特性 | 規格 |
+|------|------|
+| 背景 | `--surface` + border |
+| hover | 邊框變亮 |
+| card-header | `display: flex; justify-content: space-between` |
+| card-source | `::before` 紅點 + 灰底圓角標籤 |
+| card-date | 襯線字體 `--font-display` |
+| 影片覆蓋層 | `.vid-overlay` — 半透明圓形 + CSS 三角形播放圖示 |
+
+### 7.4 燈箱 (Lightbox)
+
+```html
+<div class="lightbox" id="lightbox" role="dialog">
+  <span class="lb-close">&times;</span>
+  <span class="lb-prev">&lsaquo;</span>
+  <span class="lb-next">&rsaquo;</span>
+  <div class="lb-content"></div>
+  <span class="lb-counter">2 / 15</span>
+</div>
+```
+
+| 特性 | 規格 |
+|------|------|
+| 開啟 | `.open` class → `display: flex` |
+| 關閉 | 點擊 ✕ / 背景 / ESC |
+| 導航 | ‹ › 箭頭 / ← → 鍵 |
+| 按鈕樣式 | 半透明白底圓形，hover 加深 |
+| 計數器 | `--font-display`，底部置中 |
+| JS 資料 | `lbState = { tabId, items[], current }` |
+| 內容生成 | `showLightboxItem()` 動態插入 `<img>` 或 `<video>` |
+
+### 7.5 分頁載入 (Load More)
+
+```html
+<div class="load-more-wrap">
+  <button class="load-more-btn">載入更多 (15)</button>
+</div>
+```
+
+| 特性 | 規格 |
+|------|------|
+| 每頁筆數 | `PAGE_SIZE = 50` |
+| 初始 | `renderCards(tabId, PAGE_SIZE)` |
+| 展開 | 重新呼叫 `renderCards(tabId, rendered + PAGE_SIZE)` |
+| 完成 | `.done` class → 文字變「已全部載入」 |
+| 搜尋時 | 隱藏整個 `.load-more-wrap` |
+
+### 7.6 媒體效能
+
+| 媒體 | 屬性 | 效果 |
+|------|------|------|
+| `<img>` | `loading="lazy"` | 瀏覽器僅載入可視範圍 |
+| `<video>` | `preload="none"` | 不預載 |
+
+---
+
+## 8. 文字回溯擷取設計 (F19)
+
+AIguoman18 從 v2 `mode: "media"` 切換為 `mode: "text"`。回溯擷取文字但不下載已存在媒體。
+
+**方案：`backfill` 設定 + 檔案存在檢查**
+
+```json
+{
+  "id": "ai_guoman",
+  "backfill": true
+}
+```
+
+- `backfill: true` 時：重新遍歷歷史訊息，`filepath.exists()` → 跳過下載，僅寫入 `messages.jsonl`
+- 下載狀態檔不變
+- 回溯完成後可將 `backfill` 改為 `false` 或移除
+
+---
+
+## 9. 關鍵設計取捨
 
 | 決策 | 理由 |
 |------|------|
-| group 欄位而非巢狀結構 | 向後相容 v2 設定檔，無 group 即為獨立頻道 |
-| 合併時訊息交錯排列 | 讓使用者看到按時間排序的統一時間線 |
-| 卡片標註來源頻道 | 合併後仍能追溯原始出處 |
-| ES5 JS（無箭頭函式/const/let） | 確保舊瀏覽器相容，靜態 HTML 無法控管使用者環境 |
-| 燈箱共用 data-lightbox 群組 | 同一頁籤內所有媒體可連續瀏覽，不需切換群組 |
-| 搜尋時隱藏分頁按鈕 | 使用者搜尋時期看到所有符合結果，不分頁干擾 |
-| 分頁 50 筆 | 平衡初始載入速度與每次展開的內容量 |
-| backfill 而非重置狀態 | 不重複下載已存在媒體，僅補充文字 |
-| 檔案存在檢查跳過重複下載 | 避免浪費頻寬和儲存空間 |
-| 純 HTML/CSS/JS 無外部依賴 | 保持靜態網站零依賴原則 |
+| JS 端動態渲染卡片（非 Python 端 HTML） | 分頁、搜尋、合併邏輯在 JS 端更靈活，renderCards 可直接操控 DOM |
+| 內嵌 JSON 資料（非 fetch） | `file://` 協定不支援 fetch，靜態 HTML 必須內嵌 |
+| 紅色主調 `#d14334` | 用戶原型設計選擇，更強烈的視覺識別 |
+| 襯線展示體 + 無襯線內文體 | 編輯感排版，區分標題性與功能性文字 |
+| sticky 頁籤 | 長頁面捲動時頁籤不消失，切換更方便 |
+| badge 訊息計數 | 頁籤上直接可見各頻道內容量 |
+| group 欄位 | 向後相容 v2 設定檔 |
+| backfill 而非重置狀態 | 不重複下載已有媒體，只補文字 |
+| 純 HTML/CSS/JS 無外部依賴 | 雙擊即開，零安裝 |
