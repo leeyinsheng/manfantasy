@@ -169,10 +169,12 @@ CSS = r"""
   .card-expand{text-align:center;font-size:0.8rem;color:var(--muted);margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--border);cursor:pointer;user-select:none}
   .card-expand:hover{color:var(--fg-secondary)}
   .load-more-wrap{padding:1rem 0;text-align:center}
-  .load-more-btn{display:inline-block;padding:0.65rem 2rem;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);font-size:0.85rem;color:var(--fg-secondary);transition:background .2s}
-  .load-more-btn:hover{background:var(--surface);color:var(--fg)}
-  .load-more-btn.done{color:var(--muted);cursor:default;background:var(--surface)}
-  .load-more-btn.done:hover{background:var(--surface);color:var(--muted)}
+  .pagination{display:flex;justify-content:center;align-items:center;gap:4px;padding:1rem 0;flex-wrap:wrap}
+  .page-btn{min-width:36px;height:36px;display:flex;align-items:center;justify-content:center;padding:0 8px;font-size:0.82rem;color:var(--muted);background:var(--surface-2);border:1px solid var(--border);border-radius:4px;cursor:pointer;transition:all .15s;user-select:none}
+  .page-btn:hover{color:var(--fg);border-color:var(--muted)}
+  .page-btn.active{color:var(--fg);background:var(--accent-bg);border-color:var(--accent)}
+  .page-btn.disabled{color:var(--muted);opacity:0.4;cursor:default;pointer-events:none}
+  .page-info{font-size:0.8rem;color:var(--muted);padding:0 12px}
   .lightbox{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.92)}
   .lightbox.open{display:flex;align-items:center;justify-content:center}
   .lb-close{position:absolute;top:1rem;right:1rem;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:#fff;cursor:pointer;z-index:2;border-radius:50%;background:rgba(255,255,255,0.1)}
@@ -246,16 +248,18 @@ function mediaHtml(media){
   return html;
 }
 
-function renderCards(tabId, maxCount){
+function renderCards(tabId, pageNum){
   var data = tabsData[tabId];
   if(!data) return;
   var container = document.getElementById('cards-' + tabId);
   if(!container) return;
   var msgs = data.messages;
-  var count = maxCount || msgs.length;
-  var showCount = Math.min(count, msgs.length);
+  var totalPages = Math.ceil(msgs.length / PAGE_SIZE) || 1;
+  var p = Math.max(1, Math.min(pageNum, totalPages));
+  var start = (p - 1) * PAGE_SIZE;
+  var end = Math.min(start + PAGE_SIZE, msgs.length);
   var html = '';
-  for(var i=0;i<showCount;i++){
+  for(var i=start;i<end;i++){
     var m = msgs[i];
     html += '<div class="card" data-idx="' + i + '">';
     html += '<div class="card-header">';
@@ -268,41 +272,33 @@ function renderCards(tabId, maxCount){
     html += '</div>';
   }
   container.innerHTML = html;
-  data.rendered = showCount;
-  updateLoadMore(tabId);
+  data.page = p;
+  data.totalPages = totalPages;
+  renderPagination(tabId);
 }
 
-function toggleCard(card){
-  var txt = card.querySelector('.card-text');
-  var thumbs = card.querySelector('.card-thumbs');
-  var exp = card.querySelector('.card-expand');
-  if(card.hasAttribute('data-expanded')){
-    card.removeAttribute('data-expanded');
-    txt.classList.remove('full');
-    if(thumbs) thumbs.classList.remove('expanded');
-    if(exp) exp.innerHTML = '展開詳情 ▾';
-  } else {
-    card.setAttribute('data-expanded','');
-    txt.classList.add('full');
-    if(thumbs) thumbs.classList.add('expanded');
-    if(exp) exp.innerHTML = '收合 ▴';
-  }
-}
-
-function updateLoadMore(tabId){
+function renderPagination(tabId){
   var data = tabsData[tabId];
-  var wrap = document.getElementById('loadmore-' + tabId);
+  var wrap = document.getElementById('pagination-' + tabId);
   if(!wrap || !data) return;
-  var remaining = data.messages.length - (data.rendered||0);
-  if(remaining <= 0){
-    if(data.messages.length > 0){
-      wrap.innerHTML = '<button class="load-more-btn done">已全部載入</button>';
-    } else {
-      wrap.innerHTML = '';
-    }
+  var total = data.totalPages || 1;
+  var cur = data.page || 1;
+  if(total <= 1){
+    wrap.innerHTML = '<span class="page-info">共 ' + data.messages.length + ' 筆</span>';
     return;
   }
-  wrap.innerHTML = '<button class="load-more-btn" data-tab="'+tabId+'">載入更多 ('+remaining+')</button>';
+  var html = '';
+  html += '<button class="page-btn' + (cur===1?' disabled':'') + '" data-page="' + (cur-1) + '" data-tab="'+tabId+'">← 上一頁</button>';
+  for(var i=1;i<=total;i++){
+    if(total>7 && i>2 && i<total-1 && Math.abs(i-cur)>1){
+      if(i===3 || i===total-2) html += '<span class="page-info">…</span>';
+      continue;
+    }
+    html += '<button class="page-btn' + (i===cur?' active':'') + '" data-page="'+i+'" data-tab="'+tabId+'">'+i+'</button>';
+  }
+  html += '<button class="page-btn' + (cur===total?' disabled':'') + '" data-page="' + (cur+1) + '" data-tab="'+tabId+'">下一頁 →</button>';
+  html += '<span class="page-info">共 ' + data.messages.length + ' 筆</span>';
+  wrap.innerHTML = html;
 }
 
 function switchTab(tabId){
@@ -319,8 +315,8 @@ function switchTab(tabId){
   if(panel) panel.classList.add('active');
   currentTab = tabId;
   var data = tabsData[tabId];
-  if(data && !data.rendered){
-    renderCards(tabId, PAGE_SIZE);
+  if(data && !data.page){
+    renderCards(tabId, 1);
   }
   applySearch(tabId);
 }
@@ -363,11 +359,11 @@ function applySearch(tabId){
 
   if(isSearching){
     resultEl.textContent = matched + ' 筆結果';
-    var loadWrap = document.getElementById('loadmore-' + tabId);
-    if(loadWrap) loadWrap.innerHTML = '';
+    var pagWrap = document.getElementById('pagination-' + tabId);
+    if(pagWrap) pagWrap.innerHTML = '';
   } else {
     resultEl.textContent = '';
-    updateLoadMore(tabId);
+    renderPagination(tabId);
   }
 }
 
@@ -434,18 +430,16 @@ function init(){
   });
 
   if(tabIds.length > 0){
-    tabIds.forEach(function(id){ renderCards(id, PAGE_SIZE); });
+    tabIds.forEach(function(id){ renderCards(id, 1); });
     currentTab = tabIds[0];
   }
 
   document.addEventListener('click', function(e){
-    var loadBtn = e.target.closest('.load-more-btn:not(.done)');
+    var loadBtn = e.target.closest('.page-btn:not(.disabled)');
     if(loadBtn){
       var tabId = loadBtn.getAttribute('data-tab');
-      if(tabId && tabsData[tabId]){
-        var next = (tabsData[tabId].rendered||0) + PAGE_SIZE;
-        renderCards(tabId, next);
-      }
+      var page = parseInt(loadBtn.getAttribute('data-page'));
+      if(tabId && page) renderCards(tabId, page);
       return;
     }
 
@@ -543,7 +537,7 @@ def generate():
       <span class="result-count" id="result-count-{tab_id}"></span>
     </div>
     <div class="cards-container" id="cards-{tab_id}"></div>
-    <div class="load-more-wrap" id="loadmore-{tab_id}"></div>
+    <div class="pagination" id="pagination-{tab_id}"></div>
   </div>'''
 
     tabs_json = _json.dumps(tabs, ensure_ascii=False, default=str)

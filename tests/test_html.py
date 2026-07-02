@@ -137,11 +137,11 @@ class TestGenerateHtml(unittest.TestCase):
         self.assertIn("preset-btn", html)
         self.assertIn("result-count", html)
 
-    def test_load_more_present(self):
+    def test_pagination_present(self):
         generate_html.generate()
         html = self._read_html()
-        self.assertIn("load-more-wrap", html)
-        self.assertIn("load-more-btn", html)
+        self.assertIn("pagination", html)
+        self.assertIn("page-btn", html)
 
     def test_channel_group_produces_merged_tab(self):
         generate_html.generate()
