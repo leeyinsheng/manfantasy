@@ -44,7 +44,7 @@ async def download_media_message(message, channel_id, client):
             await client.download_media(message, file=str(filepath))
             kb = os.path.getsize(filepath) / 1024
             print(f"  [OK] 圖片: {filename} ({kb:.0f}KB)")
-            media_files.append({"type": "photo", "path": f"photo/{filename}", "size_kb": round(kb)})
+            media_files.append({"type": "photo", "path": f"{channel_id}/photo/{filename}", "size_kb": round(kb)})
         except Exception as e:
             print(f"  [ERR] 下載失敗 msg#{message.id}: {e}")
 
@@ -66,7 +66,7 @@ async def download_media_message(message, channel_id, client):
             label = "影片" if is_video else "圖片" if mime_type.startswith("image/") else "檔案"
             subdir = "video" if is_video else "photo"
             print(f"  [OK] {label}: {filename} ({size_mb:.1f}MB)")
-            media_files.append({"type": "video" if is_video else "photo", "path": f"{subdir}/{filename}", "size_mb": round(size_mb, 1)})
+            media_files.append({"type": "video" if is_video else "photo", "path": f"{channel_id}/{subdir}/{filename}", "size_mb": round(size_mb, 1)})
         except Exception as e:
             print(f"  [ERR] 下載失敗 msg#{message.id}: {e}")
 
@@ -92,7 +92,7 @@ def _get_existing_media_records(message, channel_id):
         filepath = photo_dir / filename
         if filepath.exists():
             kb = os.path.getsize(filepath) / 1024
-            return [{"type": "photo", "path": f"photo/{filename}", "size_kb": round(kb)}]
+            return [{"type": "photo", "path": f"{channel_id}/photo/{filename}", "size_kb": round(kb)}]
 
     elif media_type == "document":
         original_name = get_original_filename(message.media.document.attributes)
@@ -111,7 +111,7 @@ def _get_existing_media_records(message, channel_id):
             subdir = "video" if is_vid else "photo"
             return [{
                 "type": "video" if is_vid else "photo",
-                "path": f"{subdir}/{filename}",
+                "path": f"{channel_id}/{subdir}/{filename}",
                 "size_mb": round(size_mb, 1)
             }]
 

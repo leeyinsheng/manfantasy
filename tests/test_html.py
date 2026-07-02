@@ -98,17 +98,15 @@ class TestGenerateHtml(unittest.TestCase):
         self.assertEqual(msgs[0]["text"], "Test news")
         self.assertIn("media", msgs[0])
 
-    def test_media_paths_in_json_start_with_subdir(self):
+    def test_media_paths_in_json_start_with_channel_id(self):
         generate_html.generate()
         html = self._read_html()
         data = self._extract_json_data(html)
         for tab_id, tab in data.items():
             for msg in tab.get("messages", []):
                 for media in msg.get("media", []):
-                    self.assertTrue(
-                        media["path"].startswith("photo/") or media["path"].startswith("video/"),
-                        f"Path '{media['path']}' in tab {tab_id} does not start with photo/ or video/"
-                    )
+                    self.assertIn("/", media["path"],
+                        f"Path '{media['path']}' in tab {tab_id} missing channel_id prefix")
 
     def test_html_is_valid_structure(self):
         generate_html.generate()

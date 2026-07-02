@@ -31,7 +31,7 @@
       "name": "東南亞大事件",
       "mode": "text",
       "group": "news",
-      "fetch_limit": 50
+      "fetch_limit": 200
     },
     {
       "id": "ll111",
@@ -39,7 +39,7 @@
       "name": "東南亞大事件",
       "mode": "text",
       "group": "news",
-      "fetch_limit": 50
+      "fetch_limit": 200
     }
   ]
 }
