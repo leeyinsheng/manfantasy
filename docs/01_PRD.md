@@ -13,8 +13,9 @@ v2 → v3 核心變動：新增3個頻道並合併顯示、平行下載加速、
 | 1 | ai_guoman | AIguoman18 | text | 男人的幻想 | mens_fantasy | 既有 |
 | 2 | ciyuanb | ciyuanb | text | 男人的幻想 | mens_fantasy | 既有 |
 | 3 | llcosfc | llcosfc | text | 男人的幻想 | mens_fantasy | 既有 |
-| 4 | guoman18 | guoman18 | text | 男人的幻想 | mens_fantasy | **新增** |
-| 5 | dashijian | dashijian | text | 東南亞大事件 | news | 既有 |
+| 4 | guoman18 | guoman18 | text | 男人的幻想 | mens_fantasy | 既有 |
+| 5 | OnlyfansChannels | OnlyfansChannels | text | 男人的幻想 | mens_fantasy | **新增** |
+| 6 | dashijian | dashijian | text | 東南亞大事件 | news | 既有 |
 | 6 | ll111 | ll111 | text | 東南亞大事件 | news | 既有 |
 | 7 | yuanqubot | yuanqubot | text | 東南亞大事件 | news | **新增** |
 

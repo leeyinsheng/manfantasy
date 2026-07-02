@@ -33,6 +33,14 @@
       "fetch_limit": 50
     },
     {
+      "id": "onlyfanschannels",
+      "username": "OnlyfansChannels",
+      "name": "男人的幻想",
+      "mode": "text",
+      "group": "mens_fantasy",
+      "fetch_limit": 50
+    },
+    {
       "id": "dashijian",
       "username": "dashijian",
       "name": "東南亞大事件",
