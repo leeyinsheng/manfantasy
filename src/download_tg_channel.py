@@ -76,11 +76,54 @@ async def download_media_message(message, channel_id, client):
     return media_files
 
 
+def _get_existing_media_records(message, channel_id):
+    media = message.media
+    if not media:
+        return []
+    is_photo = isinstance(media, MessageMediaPhoto)
+    is_document = isinstance(media, MessageMediaDocument)
+    mime_type = media.document.mime_type if is_document else ""
+    media_type, _ = classify_media(is_photo, is_document, mime_type)
+    photo_dir = get_photo_dir(channel_id)
+    video_dir = get_video_dir(channel_id)
+
+    if media_type == "photo":
+        filename = generate_photo_filename(message.date, message.id)
+        filepath = photo_dir / filename
+        if filepath.exists():
+            kb = os.path.getsize(filepath) / 1024
+            return [{"type": "photo", "path": f"photo/{filename}", "size_kb": round(kb)}]
+
+    elif media_type == "document":
+        original_name = get_original_filename(message.media.document.attributes)
+        filename = generate_document_filename(message.date, message.id, original_name, mime_type)
+        target_dir = video_dir if is_video_mime(mime_type) else photo_dir
+        filepath = target_dir / filename
+        if not filepath.exists():
+            alt_name = append_id_to_filename(filename, message.id)
+            alt_path = target_dir / alt_name
+            if alt_path.exists():
+                filepath = alt_path
+                filename = alt_name
+        if filepath.exists():
+            size_mb = os.path.getsize(filepath) / (1024 * 1024)
+            is_vid = is_video_mime(mime_type)
+            subdir = "video" if is_vid else "photo"
+            return [{
+                "type": "video" if is_vid else "photo",
+                "path": f"{subdir}/{filename}",
+                "size_mb": round(size_mb, 1)
+            }]
+
+    return []
+
+
 async def process_channel(channel, client):
     channel_id = channel["id"]
     channel_username = channel["username"]
     channel_mode = channel.get("mode", "media")
     fetch_limit = channel.get("fetch_limit", 50)
+    backfill = channel.get("backfill", False)
 
     print(f"\n=== {channel['name']} (@{channel_username}) ===")
 
@@ -95,33 +138,45 @@ async def process_channel(channel, client):
     downloaded = load_state(channel_id)
     max_downloaded = max(downloaded) if downloaded else 0
     new_count = 0
+    backfill_count = 0
 
     async for message in client.iter_messages(entity, limit=fetch_limit):
-        if message.id <= max_downloaded:
+        if not backfill and message.id <= max_downloaded:
             break
-        if message.id in downloaded:
+        if not backfill and message.id in downloaded:
             continue
 
+        is_backfill_msg = backfill and message.id in downloaded
         media_files = []
-        if message.media:
+
+        if is_backfill_msg:
+            media_files = _get_existing_media_records(message, channel_id)
+        elif message.media:
             media_files = await download_media_message(message, channel_id, client)
         elif channel_mode == "text" and not message.text and not message.caption:
             continue
 
-        downloaded.add(message.id)
-        save_state(channel_id, downloaded)
-        new_count += 1
+        if not is_backfill_msg:
+            downloaded.add(message.id)
+            save_state(channel_id, downloaded)
+            new_count += 1
 
         if channel_mode == "text":
             record = message_to_record(message, channel_id, media_files)
             append_message_record(channel_id, record)
+            if is_backfill_msg:
+                backfill_count += 1
             text_preview = message.text or message.caption or ""
             if text_preview:
                 preview = text_preview[:50].replace("\n", " ")
-                print(f"  [OK] 訊息: {preview}...")
+                label = "[BACKFILL] " if is_backfill_msg else ""
+                print(f"  {label}[OK] 訊息: {preview}...")
             else:
-                print(f"  [OK] 媒體訊息 msg#{message.id}")
+                label = "[BACKFILL] " if is_backfill_msg else ""
+                print(f"  {label}[OK] 媒體訊息 msg#{message.id}")
 
+    if backfill_count:
+        print(f"文字回溯完成: {backfill_count} 筆")
     print(f"完成！新增: {new_count} 個，總計: {len(downloaded)} 個")
 
 
@@ -142,8 +197,12 @@ async def main():
         print("無頻道設定，請檢查 src/channels.json")
         return
 
-    for channel in channels:
-        await process_channel(channel, client)
+    tasks = [process_channel(channel, client) for channel in channels]
+    if tasks:
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        for channel, result in zip(channels, results):
+            if isinstance(result, Exception):
+                print(f"頻道 {channel['name']} 錯誤: {result}")
 
     await client.disconnect()
 

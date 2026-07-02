@@ -4,7 +4,25 @@
       "id": "ai_guoman",
       "username": "AIguoman18",
       "name": "男人的幻想",
-      "mode": "media",
+      "mode": "text",
+      "group": "mens_fantasy",
+      "fetch_limit": 50,
+      "backfill": true
+    },
+    {
+      "id": "ciyuanb",
+      "username": "ciyuanb",
+      "name": "男人的幻想",
+      "mode": "text",
+      "group": "mens_fantasy",
+      "fetch_limit": 50
+    },
+    {
+      "id": "llcosfc",
+      "username": "llcosfc",
+      "name": "男人的幻想",
+      "mode": "text",
+      "group": "mens_fantasy",
       "fetch_limit": 50
     },
     {
