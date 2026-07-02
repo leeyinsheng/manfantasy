@@ -65,7 +65,7 @@ def save_state(channel_id, state):
 
 
 def extract_message_text(message):
-    text = message.text or message.caption or ""
+    text = getattr(message, "text", None) or getattr(message, "caption", None) or ""
     return text.strip()
 
 

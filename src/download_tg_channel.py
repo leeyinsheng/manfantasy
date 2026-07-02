@@ -153,7 +153,7 @@ async def process_channel(channel, client):
             media_files = _get_existing_media_records(message, channel_id)
         elif message.media:
             media_files = await download_media_message(message, channel_id, client)
-        elif channel_mode == "text" and not message.text and not message.caption:
+        elif channel_mode == "text" and not message.text and not getattr(message, "caption", None):
             continue
 
         if not is_backfill_msg:
@@ -166,7 +166,7 @@ async def process_channel(channel, client):
             append_message_record(channel_id, record)
             if is_backfill_msg:
                 backfill_count += 1
-            text_preview = message.text or message.caption or ""
+            text_preview = message.text or getattr(message, "caption", None) or ""
             if text_preview:
                 preview = text_preview[:50].replace("\n", " ")
                 label = "[BACKFILL] " if is_backfill_msg else ""
@@ -187,7 +187,8 @@ async def main():
     phone = config.get("phone")
 
     client = TelegramClient(str(Path.home() / ".tg_downloader_session"), api_id, api_hash)
-    await client.start(phone=phone)
+    password = config.get("password", "")
+    await client.start(phone=phone, password=password)
 
     me = await client.get_me()
     print(f"已登入: {me.first_name}")
