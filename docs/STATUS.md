@@ -18,7 +18,11 @@
 |-------|------|--------|
 | 1 | Product Ideation | ✅ |
 | 2 | Product Design | ✅ (v3.1: card expand, time presets, Man's Fantasy) |
-| 3 | Feature Dev + Unit Tests | ⏳ (debug: backfill cleanup, verify paths) |
+| 3 | Feature Dev + Unit Tests | ✅ (backfill removed, 64 tests) |
+| 4 | Code Review | ✅ |
+| 5 | Regression Testing | ✅ |
+| 6 | Feature Verification | ✅ |
+| 7 | User Acceptance | ⏳ |
 | 4 | Code Review | ✅ |
 | 5 | Regression Testing | ✅ |
 | 6 | Feature Verification | ✅ |
