@@ -18,8 +18,9 @@ v2 → v3 核心變動：新增3個頻道並合併顯示、平行下載加速、
 | 6 | dashijian | dashijian | text | 東南亞大事件 | news | 既有 |
 | 7 | ll111 | ll111 | text | 東南亞大事件 | news | 既有 |
 | 8 | yuanqubot | yuanqubot | text | 東南亞大事件 | news | 既有 |
-| 9 | huangmangaix | huangmangaix | text | AI短劇 | ai_drama | **新增** |
-| 10 | mingxingtu5 | mingxingtu5 | text | AI短劇 | ai_drama | **新增** |
+| 9 | xinwen1 | xinwen1 | text | 東南亞大事件 | news | **新增** |
+| 10 | huangmangaix | huangmangaix | text | AI短劇 | ai_drama | **新增** |
+| 11 | mingxingtu5 | mingxingtu5 | text | AI短劇 | ai_drama | **新增** |
 
 ---
 
