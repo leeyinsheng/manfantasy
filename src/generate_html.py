@@ -36,6 +36,9 @@ def _normalize_media_paths(messages, channel_id):
             p = media.get("path", "")
             if not p.startswith(f"{channel_id}/"):
                 media["path"] = f"{channel_id}/{p}"
+            thumb = media.get("thumb", "")
+            if thumb and not thumb.startswith(f"{channel_id}/"):
+                media["thumb"] = f"{channel_id}/{thumb}"
 
 
 def _build_tab_data():
@@ -207,9 +210,10 @@ function mediaHtml(media, basePath){
     var m = media[i];
     var src = m.path;
     if(m.type === 'video'){
+      var poster = m.thumb ? ' poster="' + m.thumb + '"' : '';
       html += '<div class="card-media" style="background:var(--surface-2);min-height:150px;display:flex;align-items:center;justify-content:center">';
       html += '<div class="vid-overlay"></div>';
-      html += '<video preload="metadata" src="' + src + '" muted playsinline style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover"></video>';
+      html += '<video preload="metadata" src="' + src + '"' + poster + ' muted playsinline style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover"></video>';
       html += '</div>';
     } else {
       html += '<div class="card-media">';

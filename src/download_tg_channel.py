@@ -1,4 +1,5 @@
 import os
+import subprocess
 import asyncio
 from pathlib import Path
 
@@ -65,8 +66,19 @@ async def download_media_message(message, channel_id, client):
             is_video = is_video_mime(mime_type)
             label = "影片" if is_video else "圖片" if mime_type.startswith("image/") else "檔案"
             subdir = "video" if is_video else "photo"
+            thumb = ""
+            if is_video:
+                thumb_dir = video_dir / ".thumb"
+                raw_name = Path(filename).stem
+                thumb_name = f".thumb_{raw_name}.jpg"
+                thumb_path = _generate_thumbnail(filepath, thumb_dir, thumb_name)
+                if thumb_path:
+                    thumb = f"{channel_id}/video/.thumb/{thumb_name}"
             print(f"  [OK] {label}: {filename} ({size_mb:.1f}MB)")
-            media_files.append({"type": "video" if is_video else "photo", "path": f"{channel_id}/{subdir}/{filename}", "size_mb": round(size_mb, 1)})
+            record = {"type": "video" if is_video else "photo", "path": f"{channel_id}/{subdir}/{filename}", "size_mb": round(size_mb, 1)}
+            if thumb:
+                record["thumb"] = thumb
+            media_files.append(record)
         except Exception as e:
             print(f"  [ERR] 下載失敗 msg#{message.id}: {e}")
 
@@ -74,6 +86,25 @@ async def download_media_message(message, channel_id, client):
         print(f"  [SKIP] 未知媒體類型 msg#{message.id}")
 
     return media_files
+
+
+def _generate_thumbnail(video_path, thumb_dir, thumb_name):
+    thumb_path = thumb_dir / thumb_name
+    if thumb_path.exists():
+        return str(thumb_path)
+    thumb_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        subprocess.run([
+            "ffmpeg", "-y", "-loglevel", "error",
+            "-ss", "1", "-i", str(video_path),
+            "-vf", "thumbnail=15", "-vframes", "1",
+            str(thumb_path)
+        ], check=True, timeout=30)
+        if thumb_path.exists():
+            return str(thumb_path)
+    except Exception:
+        pass
+    return None
 
 
 def _get_existing_media_records(message, channel_id):
@@ -109,11 +140,19 @@ def _get_existing_media_records(message, channel_id):
             size_mb = os.path.getsize(filepath) / (1024 * 1024)
             is_vid = is_video_mime(mime_type)
             subdir = "video" if is_vid else "photo"
-            return [{
+            record = {
                 "type": "video" if is_vid else "photo",
                 "path": f"{channel_id}/{subdir}/{filename}",
                 "size_mb": round(size_mb, 1)
-            }]
+            }
+            if is_vid:
+                thumb_dir = video_dir / ".thumb"
+                raw_name = Path(filename).stem
+                thumb_name = f".thumb_{raw_name}.jpg"
+                thumb_path = _generate_thumbnail(filepath, thumb_dir, thumb_name)
+                if thumb_path:
+                    record["thumb"] = f"{channel_id}/video/.thumb/{thumb_name}"
+            return [record]
 
     return []
 
