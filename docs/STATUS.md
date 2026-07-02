@@ -17,8 +17,8 @@
 | Phase | Name | Status |
 |-------|------|--------|
 | 1 | Product Ideation | ✅ |
-| 2 | Product Design | ✅ |
-| 3 | Feature Dev + Unit Tests | ✅ (rework: media path, thumbnails, fetch_limit) |
+| 2 | Product Design | ✅ (v3.1: card expand, time presets, Man's Fantasy) |
+| 3 | Feature Dev + Unit Tests | ✅ (v3.1: card/thumbs/presets/title) |
 | 4 | Code Review | ✅ |
 | 5 | Regression Testing | ✅ |
 | 6 | Feature Verification | ✅ |
