@@ -1,15 +1,15 @@
-# 02 - 設計文件 v3
+# 02 - 設計文件 v3.1
 
 ## 版本變更摘要
 
-v2 → v3 核心變動：平行下載、頻道合併顯示、四個新 UI 元件。
+v3 → v3.1 設計調整：卡片化展示、時間快捷篩選、品牌更名。
 
 | 模組 | 狀態 | 說明 |
 |------|------|------|
 | `tg_core.py` | 不變 | 無需修改 |
-| `download_tg_channel.py` | 重構 | 多頻道 `asyncio.gather()` 平行處理 |
-| `generate_html.py` | 重構 | 新增燈箱/搜尋/分頁/合併邏輯，依 `design_20260702.html` 原型 |
-| `channels.json` | 擴充 | 新增 `group` 欄位，擴充至 4 頻道 |
+| `download_tg_channel.py` | 不變 | 無需修改 |
+| `generate_html.py` | 重構 | 卡片展開、快捷時間篩選、標題更名 |
+| `channels.json` | 不變 | 無需修改 |
 
 **原型參考：** `docs/prototype/design_20260702.html`
 
@@ -279,7 +279,7 @@ generate_html.py
 
 ```
 index.html
-  ├─ header (Adult Dream + 更新時間)
+  ├─ header (Man's Fantasy + 更新時間)
   ├─ nav.tab-nav (sticky)
   │   ├─ [男人的幻想 65]    ← badge 顯示訊息總數
   │   └─ [東南亞大事件 35]
@@ -340,14 +340,18 @@ window.__DATA__ = {
 | 作用中指示 | `::after` 偽元素 2px 紅線 |
 | badge | 灰底圓角，顯示該頁籤訊息總數 |
 
-### 7.2 搜尋列 (Search Bar)
+### 7.2 搜尋列 (Search Bar) v3.1
 
 ```html
 <div class="search-bar">
   <input type="text" placeholder="搜尋訊息…">
-  <div class="date-group">
-    <label>從</label> <input type="date">
-    <label>至</label> <input type="date">
+  <div class="time-presets">
+    <button class="preset-btn active">全部</button>
+    <button class="preset-btn">今日</button>
+    <button class="preset-btn">近3日</button>
+    <button class="preset-btn">近7日</button>
+    <button class="preset-btn">本月</button>
+    <button class="preset-btn">近半年</button>
   </div>
   <span class="result-count">12 筆結果</span>
 </div>
@@ -355,42 +359,56 @@ window.__DATA__ = {
 
 | 特性 | 規格 |
 |------|------|
-| 佈局 | flexbox，`gap: 0.5rem` |
-| 背景 | `--surface` + border |
+| 佈局 | flexbox，`gap: 0.5rem`，手機直排 |
 | 搜尋框 | `flex: 1`，聚焦時邊框變 `--accent` |
-| 日期群組 | 水平排列，手機版標籤隱藏 |
+| 時間快捷 | 6 個預設按鈕：全部/今日/近3日/近7日/本月/近半年 |
+| 作用中 | 已選取按鈕高亮 |
 | 結果計數 | `margin-left: auto` 靠右對齊 |
-| 搜尋時 | 結果計數顯示「N 筆結果」，隱藏載入按鈕 |
+| 搜尋時 | 計數顯示「N 筆結果」，隱藏載入按鈕 |
 
-### 7.3 訊息卡片 (Card)
+### 7.3 訊息卡片 (Card) v3.1
+
+每張卡片代表一條 TG 貼文。文字超過 3 行截斷，媒體以縮圖網格顯示。點擊卡片展開完整內容。
 
 ```html
-<div class="card">
+<div class="card" data-expanded="false">
   <div class="card-header">
     <span class="card-source">AIguoman18</span>
     <span class="card-date">2026-06-28 14:30</span>
   </div>
-  <div class="card-text">訊息內文...</div>
-  <div class="card-media">
-    <img src="" alt="" loading="lazy">
-    <!-- 或影片 -->
-    <video preload="none" src="" muted playsinline>
-    <div class="vid-overlay"></div>
+  <div class="card-text">訊息內文截斷至3行，超過則顯示「...」</div>
+  <div class="card-thumbs">
+    <div class="thumb"><img src="..." loading="lazy"></div>
+    <div class="thumb"><img src="..." loading="lazy"></div>
+    <div class="thumb video"><img src="thumb.jpg"><div class="vid-icon"></div></div>
   </div>
+  <div class="card-expand">展開詳情 ▾</div>
+</div>
+```
+
+**展開後（點擊卡片）：**
+```html
+<div class="card" data-expanded="true">
+  <div class="card-header">...</div>
+  <div class="card-text full">完整訊息內文，不限行數</div>
+  <div class="card-thumbs expanded">
+    <!-- 所有媒體以較大縮圖顯示 -->
+  </div>
+  <div class="card-expand">收合 ▴</div>
 </div>
 ```
 
 | 特性 | 規格 |
 |------|------|
-| 背景 | `--surface` + border |
-| hover | 邊框變亮 |
-| card-header | `display: flex; justify-content: space-between` |
-| card-source | `::before` 紅點 + 灰底圓角標籤 |
-| card-date | 襯線字體 `--font-display` |
-| 影片覆蓋層 | `.vid-overlay` — 半透明圓形 + CSS 三角形播放圖示 |
+| 文字截斷 | 未展開時 `line-clamp: 3`（3行），超出顯示省略 |
+| 縮圖網格 | `.card-thumbs` 以 grid 排列，每張 80×80px |
+| 影片標記 | 影片縮圖上覆蓋 ▶ 播放圖示 |
+| 點擊展開 | 點擊卡片（非媒體區域）切換展開/收合 |
+| 展開後 | 文字不限行，縮圖尺寸變大（120px），全覽 |
+| 媒體點擊 | 點擊縮圖 → 開啟燈箱 |
+| 卡片間距 | `margin-bottom: 0.75rem` |
 
 ### 7.4 燈箱 (Lightbox)
-
 ```html
 <div class="lightbox" id="lightbox" role="dialog">
   <span class="lb-close">&times;</span>

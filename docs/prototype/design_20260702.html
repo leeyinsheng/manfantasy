@@ -1,687 +1,242 @@
 <!doctype html>
 <html lang="zh-Hant">
-<head><script data-od-sandbox-shim>(function(){
-  function makeStore(){
-    var data = {};
-    var api = {
-      getItem: function(k){ return Object.prototype.hasOwnProperty.call(data, k) ? data[k] : null; },
-      setItem: function(k, v){ data[k] = String(v); },
-      removeItem: function(k){ delete data[k]; },
-      clear: function(){ data = {}; },
-      key: function(i){ return Object.keys(data)[i] || null; }
-    };
-    Object.defineProperty(api, 'length', { get: function(){ return Object.keys(data).length; } });
-    return api;
-  }
-  function tryShim(name){
-    var works = false;
-    try { works = !!window[name] && typeof window[name].getItem === 'function'; void window[name].length; }
-    catch (_) { works = false; }
-    if (works) return;
-    try { Object.defineProperty(window, name, { configurable: true, value: makeStore() }); }
-    catch (_) { try { window[name] = makeStore(); } catch (__) {} }
-  }
-  tryShim('localStorage');
-  tryShim('sessionStorage');
-  document.addEventListener('click', (e) => {
-    if (!e.target || !(e.target instanceof Element)) return;
-    var link = e.target.closest('a[href]');
-    if (!link) return;
-    var href = link.getAttribute('href');
-    if (href === null) return;
-    var isAnchor = href.startsWith('#') || href === '';
-    if (isAnchor) {
-      e.preventDefault();
-      if (href === '' || href === '#') {
-        window.scrollTo({ top: 0 });
-        history.replaceState(null, '', ' ');
-      } else {
-        var targetId = href.slice(1);
-        var target = targetId ? document.getElementById(targetId) : null;
-        if (target) {
-          target.scrollIntoView();
-          location.hash === href && history.replaceState(null, '', ' ');
-          location.hash = href;
-        }
-      }
-    } else if (link.getAttribute('target') === '_blank') {
-      e.preventDefault();
-      let safe = false;
-      try {
-        var url = new URL(href, location.href);
-        safe =
-          url.protocol === 'http:' ||
-          url.protocol === 'https:' ||
-          url.protocol === 'mailto:';
-      } catch (_) {}
-      safe && window.open(href, '_blank', 'noopener,noreferrer');
-    }
-  });
-})();</script>
+<head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Adult Dream</title>
+<title>Man's Fantasy</title>
 <style>
 :root {
-  --bg: #0a0a0a;
-  --surface: #161616;
-  --surface-2: #1e1e1e;
-  --fg: #e5e5e5;
-  --fg-secondary: #a0a0a0;
-  --muted: #6a6a6a;
-  --border: #2a2a2a;
-  --accent: #d14334;
-  --accent-hover: #e05545;
-  --accent-bg: rgba(209,67,52,0.08);
-  --radius: 8px;
+  --bg: #0a0a0a; --surface: #161616; --surface-2: #1e1e1e;
+  --fg: #e5e5e5; --fg-secondary: #a0a0a0; --muted: #6a6a6a;
+  --border: #2a2a2a; --accent: #d14334; --accent-hover: #e05545;
+  --accent-bg: rgba(209,67,52,0.08); --radius: 8px;
   --font-display: 'Iowan Old Style','Charter',Georgia,serif;
   --font-body: -apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
   --max-w: 840px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{font-size:clamp(14px,1vw + 10px,17px)}
-body{font-family:var(--font-body);background:var(--bg);color:var(--fg);line-height:1.6;min-height:100dvh;overflow-x:hidden}
-a{color:var(--accent);text-decoration:none}
-a:hover{color:var(--accent-hover)}
+html{font-size:clamp(14px,1vw+10px,17px)}
+body{font-family:var(--font-body);background:var(--bg);color:var(--fg);line-height:1.6;min-height:100dvh}
 img{max-width:100%;height:auto;display:block}
 button{cursor:pointer;font:inherit;border:none;background:none;color:inherit}
 input{font:inherit;color:inherit}
 
-/* header */
 .header{padding:2rem 1rem 1rem;border-bottom:1px solid var(--border);text-align:center}
 .header h1{font-family:var(--font-display);font-size:clamp(1.6rem,3.5vw,2.4rem);font-weight:400;letter-spacing:0.04em}
 .header .time{font-size:0.8rem;color:var(--muted);margin-top:0.4rem}
 .header .time span{color:var(--fg-secondary)}
 
-/* tabs */
 .tab-nav{display:flex;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;background:var(--bg)}
 .tab-btn{flex:1;padding:0.8rem 1rem;text-align:center;font-size:0.9rem;font-weight:500;color:var(--muted);transition:color .2s,background .2s;position:relative}
 .tab-btn:hover{color:var(--fg-secondary);background:var(--surface)}
 .tab-btn.active{color:var(--fg)}
 .tab-btn.active::after{content:'';position:absolute;bottom:0;left:10%;width:80%;height:2px;background:var(--accent);border-radius:1px 1px 0 0}
 .tab-btn .badge{display:inline-block;font-size:0.7rem;background:var(--surface-2);color:var(--muted);padding:1px 6px;border-radius:8px;margin-left:4px;vertical-align:middle}
-.tab-btn.active .badge{color:var(--fg-secondary)}
 
-/* content */
 main{padding:0 1rem;max-width:var(--max-w);margin:0 auto}
 .tab-content{display:none;padding:1rem 0}
 .tab-content.active{display:block}
 
-/* search */
+/* Search + Time presets */
 .search-bar{display:flex;flex-wrap:wrap;gap:0.5rem;padding:0.75rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:1.5rem;align-items:center}
-.search-bar input[type="text"]{flex:1;min-width:160px;padding:0.5rem 0.75rem;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;font-size:0.85rem;color:var(--fg)}
+.search-bar input[type="text"]{flex:1;min-width:120px;padding:0.5rem 0.75rem;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;font-size:0.85rem;color:var(--fg)}
 .search-bar input[type="text"]::placeholder{color:var(--muted)}
 .search-bar input[type="text"]:focus{border-color:var(--accent);outline:none}
-.search-bar .date-group{display:flex;gap:0.4rem;align-items:center}
-.search-bar .date-group label{font-size:0.8rem;color:var(--muted)}
-.search-bar input[type="date"]{padding:0.4rem 0.5rem;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;font-size:0.8rem;color:var(--fg)}
-.search-bar input[type="date"]:focus{border-color:var(--accent);outline:none}
-.search-bar .result-count{font-size:0.8rem;color:var(--muted);margin-left:auto}
+.time-presets{display:flex;gap:4px;flex-wrap:wrap}
+.preset-btn{padding:0.35rem 0.6rem;font-size:0.75rem;color:var(--muted);background:var(--surface-2);border:1px solid var(--border);border-radius:4px;transition:all .15s}
+.preset-btn:hover{color:var(--fg-secondary);border-color:var(--muted)}
+.preset-btn.active{color:var(--fg);background:var(--accent-bg);border-color:var(--accent)}
+.result-count{font-size:0.8rem;color:var(--muted);margin-left:auto;white-space:nowrap}
 
-/* message cards */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:0.75rem;transition:border-color .2s}
+/* Card v3.1 */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:0.75rem;transition:border-color .2s;cursor:pointer}
 .card:hover{border-color:var(--muted)}
 .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;font-size:0.78rem;color:var(--muted)}
 .card-source{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:var(--surface-2);border-radius:4px;color:var(--fg-secondary);font-size:0.75rem}
 .card-source::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent)}
 .card-date{font-family:var(--font-display);font-size:0.75rem;color:var(--muted)}
-.card-text{font-size:0.9rem;line-height:1.65;margin-bottom:0.5rem;word-wrap:break-word;white-space:pre-wrap}
-.card-text:empty{display:none}
-.card-media{margin-top:0.5rem;border-radius:6px;overflow:hidden;background:var(--surface-2);position:relative}
-.card-media img,.card-media video{width:100%;display:block;cursor:pointer;transition:opacity .2s}
-.card-media img:hover,.card-media video:hover{opacity:0.95}
-.card-media .vid-overlay{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:48px;height:48px;background:rgba(0,0,0,0.6);border-radius:50%;display:flex;align-items:center;justify-content:center;pointer-events:none}
-.card-media .vid-overlay::after{content:'';border-left:14px solid #fff;border-top:8px solid transparent;border-bottom:8px solid transparent;margin-left:3px}
+.card-text{font-size:0.9rem;line-height:1.65;margin-bottom:0.5rem;word-wrap:break-word;white-space:pre-wrap;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+.card-text.full{-webkit-line-clamp:unset;display:block}
+.card-thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:4px;margin-top:0.5rem}
+.card-thumbs.expanded{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}
+.thumb{position:relative;aspect-ratio:1;overflow:hidden;border-radius:4px;background:var(--surface-2)}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.thumb.video .vid-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:24px;height:24px;background:rgba(0,0,0,0.6);border-radius:50%;display:flex;align-items:center;justify-content:center}
+.thumb.video .vid-icon::after{content:'';border-left:8px solid #fff;border-top:5px solid transparent;border-bottom:5px solid transparent;margin-left:2px}
+.card-expand{text-align:center;font-size:0.8rem;color:var(--muted);margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--border);cursor:pointer;user-select:none}
+.card-expand:hover{color:var(--fg-secondary)}
 
-/* load more */
+/* Load More */
 .load-more-wrap{padding:1rem 0;text-align:center}
 .load-more-btn{display:inline-block;padding:0.65rem 2rem;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);font-size:0.85rem;color:var(--fg-secondary);transition:background .2s}
 .load-more-btn:hover{background:var(--surface);color:var(--fg)}
 .load-more-btn.done{color:var(--muted);cursor:default;background:var(--surface)}
-.load-more-btn.done:hover{background:var(--surface);color:var(--muted)}
 
-/* lightbox */
+/* Lightbox */
 .lightbox{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.92)}
 .lightbox.open{display:flex;align-items:center;justify-content:center}
 .lb-close{position:absolute;top:1rem;right:1rem;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:#fff;cursor:pointer;z-index:2;border-radius:50%;background:rgba(255,255,255,0.1)}
 .lb-close:hover{background:rgba(255,255,255,0.2)}
 .lb-prev,.lb-next{position:absolute;top:50%;transform:translateY(-50%);width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-size:2.2rem;color:#fff;cursor:pointer;z-index:2;border-radius:50%;background:rgba(255,255,255,0.06)}
 .lb-prev:hover,.lb-next:hover{background:rgba(255,255,255,0.15)}
-.lb-prev{left:1rem}
-.lb-next{right:1rem}
+.lb-prev{left:1rem}.lb-next{right:1rem}
 .lb-counter{position:absolute;bottom:1.5rem;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.6);font-size:0.85rem;z-index:2;font-family:var(--font-display)}
 .lb-content{max-width:90vw;max-height:85vh;display:flex;align-items:center;justify-content:center}
 .lb-content img,.lb-content video{max-width:100%;max-height:85vh;object-fit:contain;border-radius:4px}
-.lb-content video{width:auto;height:auto}
-/* hidden helper */
 .hidden{display:none!important}
 
-/* responsive */
 @media(max-width:600px){
-  .header{padding:1.2rem 0.8rem 0.8rem}
-  main{padding:0 0.6rem}
-  .card{padding:0.8rem}
-  .search-bar{flex-direction:column;align-items:stretch}
-  .search-bar .date-group{justify-content:space-between}
-  .search-bar .result-count{margin-left:0;text-align:right}
-  .tab-btn{font-size:0.82rem;padding:0.7rem 0.5rem}
+  .header{padding:1.2rem 0.8rem 0.8rem}main{padding:0 0.6rem}
+  .card{padding:0.8rem}.search-bar{flex-direction:column;align-items:stretch}
+  .result-count{margin-left:0;text-align:right}.tab-btn{font-size:0.82rem;padding:0.7rem 0.5rem}
+  .card-thumbs{grid-template-columns:repeat(auto-fill,minmax(64px,1fr))}
+  .card-thumbs.expanded{grid-template-columns:repeat(auto-fill,minmax(90px,1fr))}
   .lb-prev{left:0.5rem;width:36px;height:36px;font-size:1.6rem}
   .lb-next{right:0.5rem;width:36px;height:36px;font-size:1.6rem}
-  .lb-content{max-width:96vw}
-}
-@media(min-width:601px)and (max-width:1023px){
-  .search-bar .date-group label{display:none}
 }
 </style>
 </head>
 <body>
-
 <header class="header">
-  <h1>Adult Dream</h1>
-  <div class="time">最後更新：<span id="update-time">2026-06-28 14:30</span></div>
+  <h1>Man's Fantasy</h1>
+  <div class="time">最後更新：<span>2026-07-02 14:30</span></div>
 </header>
 
-<nav class="tab-nav" role="tablist">
-  <button class="tab-btn active" role="tab" aria-selected="true" data-tab="mens_fantasy">男人的幻想 <span class="badge" id="count-mens">0</span></button>
-  <button class="tab-btn" role="tab" aria-selected="false" data-tab="dashijian">東南亞大事件 <span class="badge" id="count-dashijian">0</span></button>
+<nav class="tab-nav">
+  <button class="tab-btn active" data-tab="mens_fantasy">男人的幻想 <span class="badge">120</span></button>
+  <button class="tab-btn" data-tab="news">東南亞大事件 <span class="badge"></span></button>
 </nav>
 
-<main id="main-content">
-  <!-- 男人的幻想 -->
-  <div class="tab-content active" id="tab-mens_fantasy" role="tabpanel">
-    <div class="search-bar">
-      <input type="text" class="search-input" placeholder="搜尋訊息…" aria-label="搜尋關鍵字">
-      <div class="date-group">
-        <label>從</label>
-        <input type="date" class="search-date-start">
-        <label>至</label>
-        <input type="date" class="search-date-end">
-      </div>
-      <span class="result-count" id="result-count-mens"></span>
+<main>
+<div class="tab-content active" id="tab-mens_fantasy">
+  <div class="search-bar">
+    <input type="text" class="search-input" placeholder="搜尋訊息…">
+    <div class="time-presets">
+      <button class="preset-btn active" data-range="all">全部</button>
+      <button class="preset-btn" data-range="today">今日</button>
+      <button class="preset-btn" data-range="3d">近3日</button>
+      <button class="preset-btn" data-range="7d">近7日</button>
+      <button class="preset-btn" data-range="month">本月</button>
+      <button class="preset-btn" data-range="halfyear">近半年</button>
     </div>
-    <div class="cards-container" id="cards-mens_fantasy"></div>
-    <div class="load-more-wrap" id="loadmore-mens_fantasy"></div>
+    <span class="result-count"></span>
   </div>
-
-  <!-- 東南亞大事件 -->
-  <div class="tab-content" id="tab-dashijian" role="tabpanel">
-    <div class="search-bar">
-      <input type="text" class="search-input" placeholder="搜尋訊息…" aria-label="搜尋關鍵字">
-      <div class="date-group">
-        <label>從</label>
-        <input type="date" class="search-date-start">
-        <label>至</label>
-        <input type="date" class="search-date-end">
-      </div>
-      <span class="result-count" id="result-count-dashijian"></span>
+  <div class="cards-container" id="cards-mens_fantasy"></div>
+  <div class="load-more-wrap"><button class="load-more-btn done">已全部載入</button></div>
+</div>
+<div class="tab-content" id="tab-news">
+  <div class="search-bar">
+    <input type="text" class="search-input" placeholder="搜尋訊息…">
+    <div class="time-presets">
+      <button class="preset-btn active" data-range="all">全部</button>
+      <button class="preset-btn" data-range="today">今日</button>
+      <button class="preset-btn" data-range="3d">近3日</button>
+      <button class="preset-btn" data-range="7d">近7日</button>
+      <button class="preset-btn" data-range="month">本月</button>
+      <button class="preset-btn" data-range="halfyear">近半年</button>
     </div>
-    <div class="cards-container" id="cards-dashijian"></div>
-    <div class="load-more-wrap" id="loadmore-dashijian"></div>
+    <span class="result-count"></span>
   </div>
+  <div class="cards-container" id="cards-news"></div>
+  <div class="load-more-wrap"><button class="load-more-btn">載入更多 (60)</button></div>
+</div>
 </main>
 
-<!-- lightbox -->
-<div class="lightbox" id="lightbox" role="dialog" aria-label="圖片檢視">
-  <span class="lb-close" id="lb-close">&times;</span>
-  <span class="lb-prev" id="lb-prev">&lsaquo;</span>
-  <span class="lb-next" id="lb-next">&rsaquo;</span>
-  <div class="lb-content" id="lb-content"></div>
-  <span class="lb-counter" id="lb-counter"></span>
+<div class="lightbox" id="lightbox">
+  <span class="lb-close">&times;</span><span class="lb-prev">&lsaquo;</span><span class="lb-next">&rsaquo;</span>
+  <div class="lb-content"></div><span class="lb-counter"></span>
 </div>
 
 <script>
 (function(){
-'use strict';
-
-/* ── data ── */
-var CHANNELS = {
-  ai_guoman: { id:'ai_guoman', username:'AIguoman18', name:'男人的幻想', group:'mens_fantasy' },
-  ciyuanb:   { id:'ciyuanb',   username:'ciyuanb',    name:'男人的幻想', group:'mens_fantasy' },
-  llcosfc:   { id:'llcosfc',   username:'llcosfc',    name:'男人的幻想', group:'mens_fantasy' },
-  dashijian: { id:'dashijian', username:'dashijian',  name:'東南亞大事件' }
-};
+var demoTexts = [
+  "深夜福利，懂的都懂。新系列上線，這次的尺度有點大，精選多張高畫質寫真，點擊放大欣賞。",
+  "新合作Coser登場，歡迎大家支持。這組照片拍攝於上週的工作室，使用了最新的燈光設備。",
+  "粉絲投稿精選，今天的質量很高。感謝 @user123 的分享，這組照片太美了，忍不住馬上發出來。",
+  "AI 生成系列 vol.16 — 機械姬主題。這次嘗試了新的 prompt 組合，效果出乎意料的好。",
+  "今日閒聊：你們都看過哪些好看的電影？本週推薦一部韓國新片，劇情反轉再反轉，結局絕對猜不到。",
+  "高畫質原圖已上傳雲端，連結在頻道簡介。本期精選 50 張，包含多個主題風格，歡迎下載收藏。",
+  "情人節特別內容，限時 24 小時。錯過了就要等明年了，趕快點進來看看吧！",
+  "這組照片拍攝於上週的工作室，使用了全新的佈景和道具。大家覺得這次的風格怎麼樣？留言告訴我。",
+  "週末特別企劃：讀者來信環節。挑選了幾封有意思的來信，跟大家分享一下背後的故事。",
+  "新造型解鎖，你們給打幾分？這次嘗試了完全不同的風格，不知道大家喜不喜歡。"
+];
+var sources = ['AIguoman18','ciyuanb','llcosfc'];
 
 function r(n){return Math.floor(Math.random()*n)}
 function pick(a){return a[r(a.length)]}
-var texts_mens = [
-  "深夜福利，懂的都懂 🔞",
-  "新系列上線，這次的尺度有點大…",
-  "粉絲投稿精選，今天的質量很高",
-  "COS精選：暗黑系風格，完整套圖在評論區",
-  "每日一圖，今天的這個太絕了",
-  "會員專屬內容已更新，記得查看",
-  "AI 生成系列 vol.16 — 機械姬主題",
-  "直播回放已上傳，錯過的快補",
-  "週末特別企劃：讀者來信環節",
-  "新合作Coser登場，歡迎大家支持",
-  "今晚 10 點有驚喜，記得準時收看",
-  "這組照片拍攝於上週的工作室",
-  "今日份的可愛，請查收",
-  "熱門帖子回顧：上週最受歡迎的 5 個帖子",
-  "粉絲問答：關於我們使用的 AI 工具介紹",
-  "VIP 群專享內容預告，明天上線",
-  "新造型解鎖，你們給打幾分？",
-  "來自投稿信箱，感謝 @user123 的分享",
-  "今晚直播連麥嘉賓揭曉",
-  "幕後花絮：拍攝現場的歡樂時刻",
-  "公告：伺服器維護時間 7/2 凌晨 2-4 點",
-  "週年慶活動預告，敬請期待",
-  "本周人氣榜單出爐！",
-  "新視頻已上傳，連結在個人主頁",
-  "情人節特別內容，限時 24 小時",
-  "推薦關注：@sister_channel 姊妹頻道",
-  "今天的 Cos 主題是賽博龐克風",
-  "下雨天的拍攝日記",
-  "你喜歡哪種風格？來投票決定下期主題",
-  "後台數據大公開：上個月流量破百萬",
-  "新系列「午夜電台」今晚首播",
-  "高畫質原圖已上傳雲端，連結在頻道簡介",
-  "粉絲自製桌布分享，太有才了",
-  "活動預告：本週六線上粉絲見面會",
-  "更新日誌：修復了已知問題，體驗更流暢",
-  "深夜話題：你覺得什麼是性感？",
-  "本週影片進度報告：拍攝完成，後期進行中",
-  "精選攝影作品集 vol.3",
-  "平台政策更新說明（重要）",
-  "來自日本的特別合作企劃",
-  "今日閒聊：你們都看過哪些好看的電影？",
-  "抽獎活動開跑，詳情請看置頂",
-  "AI 繪圖參數分享：用這個 prompt 可以生成類似風格",
-  "緊急通知：頻道可能被限制，請備份聯絡方式",
-  "每週投票：你最喜歡的系列是哪一個？",
-  "新功能上線：支援更高畫質上傳",
-  "今日份桌面：4K 桌布下載",
-  "與 @beauty_photo 的合作企劃即將公開",
-  "答謝粉絲，送出 10 份簽名周邊",
-];
-var texts_events = [
-  "緬甸軍政府宣布延長緊急狀態六個月",
-  "泰國總理賽塔今日主持內閣會議，討論經濟刺激方案",
-  "越南上半年 GDP 成長 6.4%，超出預期",
-  "印尼新首都努山塔拉建設進度已達 80%",
-  "柬埔寨德崇扶南運河工程正式啟動",
-  "馬來西亞與新加坡簽署經濟特區協議",
-  "菲律賓南部地震，規模 6.2，暫無重大傷亡",
-  "寮國雨季來臨，氣象局發布洪水預警",
-  "緬甸內戰持續，難民人數突破 200 萬",
-  "泰國同性婚姻法正式生效",
-  "越南電動車廠 VinFast 進軍印度市場",
-  "印尼總統佐科威視察雅萬高鐵營運狀況",
-  "柬埔寨首相洪馬內訪問中國，簽署 15 項合作協議",
-  "新加坡組屋轉售價格連續第 12 季上升",
-  "菲律賓與美國舉行聯合軍事演習",
-  "緬甸詐騙園區問題持續，多國呼籲加強合作",
-  "泰國旅遊業復甦，上半年遊客突破 1500 萬",
-  "越南咖啡出口創新高，價格上漲 30%",
-  "印尼盾兌美元匯率創四年新低",
-  "馬來西亞宣布補貼改革，油價將逐步市場化",
-  "寮國—中國鐵路貨運量同比增長 40%",
-  "柬埔寨吳哥窟上半年接待遊客 50 萬人次",
-  "泰國反對黨提出不信任動議",
-  "越南房地產市場回溫，Q2 交易量增長 25%",
-  "菲律賓總統小馬可仕民調持續下滑",
-  "新加坡 F1 大獎賽門票已售罄",
-  "印尼計劃遷都至東加里曼丹省",
-  "緬甸批准中資煉油廠項目",
-  "泰國數位錢包計劃正式實施",
-];
 
-function generateMediaItems(channelId, count) {
-  var items = [];
-  var mediaTypes = ['image','image','image','video'];
-  for(var i=0;i<count;i++){
-    var isVideo = pick(mediaTypes) === 'video';
-    var hue = r(360);
-    items.push({
-      type: isVideo ? 'video' : 'image',
-      url: '',  // placeholder — rendered as gradient box
-      placeholder: 'hsl(' + hue + ',40%,35%)',
-      width: isVideo ? 640 : 800,
-      height: isVideo ? 360 : 600,
-      alt: 'media ' + i
+function buildCards(n){
+  var msgs=[], day=new Date().getTime();
+  for(var i=0;i<n;i++){
+    var d=new Date(day - r(30)*86400000 - r(24)*3600000);
+    var mc = Math.random()<0.5 ? r(4)+1 : 0;
+    var media=[];
+    for(var j=0;j<mc;j++){
+      var hue=r(360);
+      media.push({isVideo:Math.random()<0.3, bg:'hsl('+hue+',40%,35%)', w:300, h:300});
+    }
+    msgs.push({
+      source:pick(sources), text:pick(demoTexts),
+      date:d.toISOString(), media:media
     });
   }
-  return items;
+  return msgs.sort(function(a,b){return a.date<b.date?1:-1});
 }
 
-function buildMessages(channelIds, textPool, count, hasMedia, mediaChance) {
-  var msgs = [];
-  var dayBase = new Date('2026-06-01').getTime();
-  var daySpan = 30 * 86400000;
-  for(var i=0;i<count;i++){
-    var chId = pick(channelIds);
-    var ch = CHANNELS[chId];
-    var ts = new Date(dayBase + Math.random() * daySpan);
-    var msg = {
-      id: 'msg_' + (i + 1000),
-      channel: ch.username,
-      channelId: chId,
-      text: pick(textPool),
-      date: ts.toISOString(),
-      media: (hasMedia && Math.random() < mediaChance) ? generateMediaItems(chId, Math.ceil(Math.random()*3)) : []
-    };
-    msgs.push(msg);
-  }
-  msgs.sort(function(a,b){ return a.date < b.date ? 1 : -1 });
-  return msgs;
-}
+var msgs=buildCards(15);
+var expanded={};
 
-// 男人的幻想 ~65 messages, mixed from 3 channels, ~40% have media
-var mensMessages = buildMessages(
-  ['ai_guoman','ciyuanb','llcosfc'],
-  texts_mens, 65, true, 0.4
-);
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function fmt(d){var dt=new Date(d);return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0')+' '+String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0')}
 
-// 東南亞大事件 ~35 messages, single channel, ~15% have media
-var dashijianMessages = buildMessages(
-  ['dashijian'], texts_events, 35, true, 0.15
-);
-
-var PAGE_SIZE = 50;
-var currentTab = 'mens_fantasy';
-
-var tabsData = {
-  mens_fantasy: { messages: mensMessages, rendered: 0 },
-  dashijian:    { messages: dashijianMessages, rendered: 0 }
-};
-
-/* ── render helpers ── */
-function escHtml(s){
-  if(!s) return '';
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
-
-function formatDate(iso){
-  var d = new Date(iso);
-  var y = d.getFullYear();
-  var m = String(d.getMonth()+1).padStart(2,'0');
-  var day = String(d.getDate()).padStart(2,'0');
-  var h = String(d.getHours()).padStart(2,'0');
-  var min = String(d.getMinutes()).padStart(2,'0');
-  return y + '-' + m + '-' + day + ' ' + h + ':' + min;
-}
-
-function mediaHtml(items, tabId){
-  if(!items || items.length===0) return '';
-  var html = '';
-  for(var i=0;i<items.length;i++){
-    var m = items[i];
-    var hue = m.placeholder;
-    var isVid = m.type === 'video';
-    var attrs = 'data-lb-tab="'+escHtml(tabId)+'" data-lb-index="' + i + '"';
-    var gradient = 'background:' + hue;
-    if(isVid){
-      html += '<div class="card-media" style="' + gradient + ';aspect-ratio:' + m.width + '/' + m.height + '">';
-      html += '<div class="vid-overlay"></div>';
-      html += '<video preload="none" src="" poster="" muted playsinline style="aspect-ratio:'+m.width+'/'+m.height+'" '+attrs+'></video>';
-      html += '</div>';
-    } else {
-      html += '<div class="card-media">';
-      html += '<div style="' + gradient + ';aspect-ratio:' + m.width + '/' + m.height + ';min-height:120px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.4);font-size:0.75rem">';
-      html += escHtml(m.width)+'×'+escHtml(m.height);
-      html += '</div>';
-      html += '<img src="" alt="'+escHtml(m.alt)+'" loading="lazy" style="display:none" '+attrs+'>';
-      html += '</div>';
+function renderCards(container,data){
+  var h='';
+  for(var i=0;i<data.length;i++){
+    var m=data[i], eid='c'+i;
+    h+='<div class="card" data-idx="'+i+'"><div class="card-header">';
+    h+='<span class="card-source">'+esc(m.source)+'</span>';
+    h+='<span class="card-date">'+fmt(m.date)+'</span></div>';
+    h+='<div class="card-text">'+esc(m.text)+'</div>';
+    if(m.media.length){
+      h+='<div class="card-thumbs">';
+      for(var j=0;j<m.media.length;j++){
+        var med=m.media[j];
+        h+='<div class="thumb'+(med.isVideo?' video':'')+'" style="background:'+med.bg+'">';
+        h+='<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.2);font-size:0.65rem">'+(med.isVideo?'▶':'🖼')+'</div>';
+        if(med.isVideo) h+='<div class="vid-icon"></div>';
+        h+='</div>';
+      }
+      h+='</div>';
     }
+    h+='<div class="card-expand">展開詳情 ▾</div></div>';
   }
-  return html;
+  container.innerHTML=h;
 }
 
-function renderCards(tabId, maxCount){
-  var data = tabsData[tabId];
-  if(!data) return;
-  var container = document.getElementById('cards-' + tabId);
-  if(!container) return;
-  var msgs = data.messages;
-  var count = maxCount || msgs.length;
-  var html = '';
-  var showCount = Math.min(count, msgs.length);
-  for(var i=0;i<showCount;i++){
-    var m = msgs[i];
-    html += '<div class="card">';
-    html += '<div class="card-header">';
-    html += '<span class="card-source">' + escHtml(m.channel) + '</span>';
-    html += '<span class="card-date">' + formatDate(m.date) + '</span>';
-    html += '</div>';
-    html += '<div class="card-text">' + escHtml(m.text) + '</div>';
-    html += mediaHtml(m.media, tabId);
-    html += '</div>';
-  }
-  container.innerHTML = html;
-  data.rendered = showCount;
-  updateLoadMore(tabId);
-  updateCount(tabId);
+function toggleCard(card){
+  var txt=card.querySelector('.card-text');
+  var thumbs=card.querySelector('.card-thumbs');
+  var exp=card.querySelector('.card-expand');
+  var isExp=card.hasAttribute('data-expanded');
+  if(isExp){ card.removeAttribute('data-expanded'); txt.classList.remove('full'); if(thumbs)thumbs.classList.remove('expanded'); exp.innerHTML='展開詳情 ▾'; }
+  else{ card.setAttribute('data-expanded',''); txt.classList.add('full'); if(thumbs)thumbs.classList.add('expanded'); exp.innerHTML='收合 ▴'; }
 }
 
-function updateLoadMore(tabId){
-  var data = tabsData[tabId];
-  var wrap = document.getElementById('loadmore-' + tabId);
-  if(!wrap || !data) return;
-  var remaining = data.messages.length - data.rendered;
-  if(remaining <= 0){
-    if(data.messages.length > 0){
-      wrap.innerHTML = '<button class="load-more-btn done">已全部載入</button>';
-    } else {
-      wrap.innerHTML = '';
-    }
-    return;
-  }
-  wrap.innerHTML = '<button class="load-more-btn" data-tab="'+tabId+'">載入更多 ('+remaining+')</button>';
-}
+document.addEventListener('click',function(e){
+  var card=e.target.closest('.card'); if(!card)return;
+  var thumb=e.target.closest('.thumb'); if(thumb)return;
+  toggleCard(card);
+});
 
-function updateCount(tabId){
-  var el = document.getElementById('count-' + tabId);
-  if(el && tabsData[tabId]){
-    el.textContent = tabsData[tabId].messages.length;
-  }
-}
-
-/* ── tabs ── */
-function switchTab(tabId){
-  if(tabId === currentTab) return;
-  document.querySelectorAll('.tab-btn').forEach(function(b){
-    b.classList.remove('active');
-    b.setAttribute('aria-selected','false');
+document.querySelectorAll('.preset-btn').forEach(function(b){
+  b.addEventListener('click',function(){
+    b.parentElement.querySelectorAll('.preset-btn').forEach(function(x){x.classList.remove('active')});
+    b.classList.add('active');
   });
-  document.querySelectorAll('.tab-content').forEach(function(c){
-    c.classList.remove('active');
-  });
-  var btn = document.querySelector('.tab-btn[data-tab="'+tabId+'"]');
-  if(btn) { btn.classList.add('active'); btn.setAttribute('aria-selected','true'); }
-  var panel = document.getElementById('tab-' + tabId);
-  if(panel) panel.classList.add('active');
-  currentTab = tabId;
-  var data = tabsData[tabId];
-  if(data && data.rendered === 0){
-    renderCards(tabId, PAGE_SIZE);
-  }
-  // reset search display
-  applySearch(tabId);
-}
+});
 
-/* ── search ── */
-function applySearch(tabId){
-  var container = document.getElementById('cards-' + tabId);
-  var searchInput = document.querySelector('#tab-' + tabId + ' .search-input');
-  var dateStart = document.querySelector('#tab-' + tabId + ' .search-date-start');
-  var dateEnd = document.querySelector('#tab-' + tabId + ' .search-date-end');
-  var resultEl = document.getElementById('result-count-' + tabId);
-  if(!container || !searchInput) return;
-
-  var kw = searchInput.value.trim().toLowerCase();
-  var ds = dateStart ? dateStart.value : '';
-  var de = dateEnd ? dateEnd.value : '';
-  var isSearching = kw !== '' || ds !== '' || de !== '';
-
-  var data = tabsData[tabId];
-  if(!data) return;
-  var msgs = data.messages;
-  var cards = container.querySelectorAll('.card');
-  var matched = 0;
-
-  for(var i=0;i<cards.length;i++){
-    var card = cards[i];
-    var textEl = card.querySelector('.card-text');
-    var dateEl = card.querySelector('.card-date');
-    var text = textEl ? textEl.textContent.toLowerCase() : '';
-    var date = dateEl ? dateEl.textContent.trim().slice(0,10) : '';
-    var show = true;
-    if(kw && text.indexOf(kw) === -1) show = false;
-    if(ds && date < ds) show = false;
-    if(de && date > de) show = false;
-    if(show) matched++;
-    card.classList.toggle('hidden', !show);
-  }
-
-  if(isSearching){
-    resultEl.textContent = matched + ' 筆結果';
-    var loadWrap = document.getElementById('loadmore-' + tabId);
-    if(loadWrap) loadWrap.innerHTML = '';
-  } else {
-    resultEl.textContent = '';
-    updateLoadMore(tabId);
-  }
-}
-
-/* ── lightbox ── */
-var lbState = { tabId:'', items:[], current:0 };
-
-function openLightbox(tabId, startIndex, clickedWrap){
-  var container = document.getElementById('cards-' + tabId);
-  if(!container) return;
-  var wraps = container.querySelectorAll('.card-media');
-  var items = [];
-  wraps.forEach(function(w,i){
-    var bg = w.style.background || '#333';
-    var isVid = !!w.querySelector('video');
-    items.push({ index:i, isVideo:isVid, bg:bg });
-  });
-  if(items.length===0) return;
-  lbState.tabId = tabId;
-  lbState.items = items;
-  lbState.current = startIndex;
-  showLightboxItem();
-  document.getElementById('lightbox').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-
-function showLightboxItem(){
-  var content = document.getElementById('lb-content');
-  var counter = document.getElementById('lb-counter');
-  var items = lbState.items;
-  var idx = lbState.current;
-  if(!items || items.length===0) return;
-  var item = items[idx];
-  var total = items.length;
-  counter.textContent = (idx+1) + ' / ' + total;
-  if(item.isVideo){
-    content.innerHTML = '<div class="lb-media-wrap" style="width:640px;height:360px;background:'+item.bg+';border-radius:4px;display:flex;align-items:center;justify-content:center;position:relative"><div style="width:56px;height:56px;background:rgba(0,0,0,0.5);border-radius:50%;display:flex;align-items:center;justify-content:center"><div style="border-left:16px solid #fff;border-top:9px solid transparent;border-bottom:9px solid transparent;margin-left:4px"></div></div><div style="position:absolute;bottom:0.75rem;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.5);font-size:0.75rem">影片預覽</div></div>';
-  } else {
-    content.innerHTML = '<div style="max-width:80vw;max-height:80vh;width:800px;aspect-ratio:4/3;background:'+item.bg+';border-radius:4px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.3);font-size:0.85rem">圖片預覽</div>';
-  }
-}
-
-function lbPrev(){
-  if(lbState.items.length===0) return;
-  lbState.current = (lbState.current - 1 + lbState.items.length) % lbState.items.length;
-  showLightboxItem();
-}
-
-function lbNext(){
-  if(lbState.items.length===0) return;
-  lbState.current = (lbState.current + 1) % lbState.items.length;
-  showLightboxItem();
-}
-
-function closeLightbox(){
-  document.getElementById('lightbox').classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-/* ── init ── */
-function init(){
-  // render initial tab
-  renderCards('mens_fantasy', PAGE_SIZE);
-  renderCards('dashijian', PAGE_SIZE);
-
-  // count badges
-  updateCount('mens_fantasy');
-  updateCount('dashijian');
-
-  // tab clicks
-  document.querySelectorAll('.tab-btn').forEach(function(btn){
-    btn.addEventListener('click', function(e){
-      switchTab(this.getAttribute('data-tab'));
-    });
-  });
-
-  // load more
-  document.addEventListener('click', function(e){
-    var btn = e.target.closest('.load-more-btn:not(.done)');
-    if(!btn) return;
-    var tabId = btn.getAttribute('data-tab');
-    if(!tabId) return;
-    var data = tabsData[tabId];
-    if(!data) return;
-    var next = data.rendered + PAGE_SIZE;
-    renderCards(tabId, next);
-  });
-
-  // search
-  document.querySelectorAll('.tab-content').forEach(function(panel){
-    var input = panel.querySelector('.search-input');
-    var ds = panel.querySelector('.search-date-start');
-    var de = panel.querySelector('.search-date-end');
-    function onSearchChange(){
-      var tabId = panel.id.replace('tab-','');
-      applySearch(tabId);
-    }
-    if(input) input.addEventListener('input', onSearchChange);
-    if(ds) ds.addEventListener('change', onSearchChange);
-    if(de) de.addEventListener('change', onSearchChange);
-  });
-
-  // lightbox — click on card-media area
-  document.addEventListener('click', function(e){
-    var mediaWrap = e.target.closest('.card-media');
-    if(!mediaWrap) return;
-    var card = mediaWrap.closest('.card');
-    if(!card) return;
-    var container = card.closest('.cards-container');
-    if(!container) return;
-    var tabId = container.id.replace('cards-','');
-    var allMedia = container.querySelectorAll('.card-media');
-    var idx = -1;
-    allMedia.forEach(function(el,i){
-      if(el === mediaWrap) idx = i;
-    });
-    if(idx >= 0) openLightbox(tabId, idx, mediaWrap);
-  });
-
-  // lightbox controls
-  document.getElementById('lb-close').addEventListener('click', closeLightbox);
-  document.getElementById('lb-prev').addEventListener('click', lbPrev);
-  document.getElementById('lb-next').addEventListener('click', lbNext);
-  document.getElementById('lightbox').addEventListener('click', function(e){
-    if(e.target === this) closeLightbox();
-  });
-
-  // keyboard
-  document.addEventListener('keydown', function(e){
-    if(!document.getElementById('lightbox').classList.contains('open')) return;
-    if(e.key === 'Escape') { closeLightbox(); e.preventDefault(); }
-    if(e.key === 'ArrowLeft') { lbPrev(); e.preventDefault(); }
-    if(e.key === 'ArrowRight') { lbNext(); e.preventDefault(); }
-  });
-}
-
-if(document.readyState === 'loading'){
-  document.addEventListener('DOMContentLoaded', init);
-} else {
-  init();
-}
-
+renderCards(document.getElementById('cards-mens_fantasy'),msgs);
 })();
 </script>
 </body>
