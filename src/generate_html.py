@@ -30,6 +30,14 @@ def _scan_media_files(channel_id, subdir):
     return files
 
 
+def _normalize_media_paths(messages, channel_id):
+    for msg in messages:
+        for media in msg.get("media", []):
+            p = media.get("path", "")
+            if not p.startswith(f"{channel_id}/"):
+                media["path"] = f"{channel_id}/{p}"
+
+
 def _build_tab_data():
     _build_channel_map()
     channels = tg_core.load_channels()
@@ -52,6 +60,7 @@ def _build_tab_data():
             for msg in msgs:
                 if "channel" not in msg or not msg["channel"]:
                     msg["channel"] = _username_for(m["id"])
+            _normalize_media_paths(msgs, m["id"])
             messages.extend(msgs)
         messages.sort(key=lambda x: x.get("id", 0), reverse=True)
 
@@ -66,6 +75,7 @@ def _build_tab_data():
         for msg in msgs:
             if "channel" not in msg or not msg["channel"]:
                 msg["channel"] = _username_for(ch["id"])
+        _normalize_media_paths(msgs, ch["id"])
         msgs.sort(key=lambda x: x.get("id", 0), reverse=True)
         tabs[ch["id"]] = {
             "name": ch["name"],
@@ -195,7 +205,7 @@ function mediaHtml(media, basePath){
   var html = '';
   for(var i=0;i<media.length;i++){
     var m = media[i];
-    var src = basePath + '/' + m.path;
+    var src = m.path;
     if(m.type === 'video'){
       html += '<div class="card-media" style="background:var(--surface-2);min-height:150px;display:flex;align-items:center;justify-content:center">';
       html += '<div class="vid-overlay"></div>';
