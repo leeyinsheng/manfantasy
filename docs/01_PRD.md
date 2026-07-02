@@ -1,97 +1,185 @@
-# 01 - PRD v2：多頻道支援 + 網頁展示
+# 01 - PRD v3：多頻道合併 + 平行下載 + UI 強化
 
 ## 版本變更
 
-v1 → v2 核心變動：從單一頻道媒體下載器，擴充為多頻道內容歸檔系統，支援文字訊息擷取與靜態網頁展示。
+v2 → v3 核心變動：新增2個頻道並合併顯示、平行下載加速、靜態網頁互動強化（燈箱/搜尋/分頁）。
 
 ---
 
-## 新增功能需求
+## 頻道清單（v3）
 
-### F10 多頻道支援
-
-- 支援同時管理多個 Telegram 頻道
-- 每個頻道獨立的下載目錄與狀態檔，互不干擾
-- 透過設定檔定義頻道清單（名稱、識別碼、擷取模式）
-
-**頻道清單：**
-
-| 頻道 | 識別碼 | 類型 | 擷取模式 |
-|------|--------|------|----------|
-| AIguoman18 | `AIguoman18` | 媒體頻道 | 僅媒體（圖片/影片） |
-| 華人大事件 | `dashijian` | 新聞頻道 | 文字 + 媒體 |
-
-### F11 文字訊息擷取
-
-- 針對啟用文字模式的頻道，一併擷取訊息文字內文
-- 將每條訊息儲存為結構化 JSON：`{id, date, text, media: [...]}`
-- 媒體檔案路徑記錄在 JSON 中，與文字內容關聯
-- 支援增量：新訊息追加到 `messages.json` 尾端
-
-### F12 靜態網頁展示
-
-- 每次下載完成後自動生成 `download/index.html`
-- 功能：
-  - 雙頻道頁籤切換（AIguoman18 / 華人大事件）
-  - 媒體頻道：瀑布流圖片/影片展示
-  - 新聞頻道：訊息卡片（日期 + 文字內文 + 附圖）
-  - 響應式版面，手機 / 桌面皆可瀏覽
-- 純靜態：無需網頁伺服器，雙擊 `.html` 即可開啟
-- 資料透過 JS 檔案內嵌或 fetch 本地 JSON，不依賴網路
-
-### F13 排程整合
-
-- 下載腳本執行完後自動觸發網頁重新生成
-- 確保 `index.html` 始終反映最新下載內容
+| # | id | username | 模式 | 顯示名稱 | group | 備註 |
+|---|-----|----------|------|----------|-------|------|
+| 1 | ai_guoman | AIguoman18 | text+media | 男人的幻想 | mens_fantasy | 既有，從 media 改為 text |
+| 2 | ciyuanb | ciyuanb | text+media | 男人的幻想 | mens_fantasy | **新增** |
+| 3 | llcosfc | llcosfc | text+media | 男人的幻想 | mens_fantasy | **新增** |
+| 4 | dashijian | dashijian | text | 東南亞大事件 | - | 不變 |
 
 ---
 
-## 目錄結構（v2）
+## 功能需求
+
+### F14 平行頻道下載
+
+- 使用 `asyncio.gather()` 同時對多個頻道進行下載
+- 單一頻道失敗不影響其他頻道（`return_exceptions=True`）
+- 各頻道擁有獨立目錄與狀態檔，無競爭條件
+
+### F15 圖片燈箱檢視
+
+- 點擊圖片/影片 → 全螢幕深色遮罩檢視（純 CSS/JS，無外部依賴）
+- 支援左右箭頭切換前後張、ESC 關閉、點擊遮罩關閉
+- 顯示當前位置計數（N / M）
+- 影片在燈箱內使用 HTML5 `<video>` 播放
+- 同一頁籤內所有媒體共用一個燈箱群組
+
+### F16 訊息搜尋與日期篩選
+
+- 文字模式頻道頁籤上方出現搜尋列 + 日期範圍選擇器
+- 關鍵字即時比對訊息卡片內文
+- 支援起迄日期範圍過濾
+- 顯示符合結果筆數
+
+### F17 分頁載入
+
+- 每頁 50 筆（圖片/影片/訊息卡片）
+- 初始僅顯示第一頁，底部顯示「載入更多 (N)」
+- 點擊展開下一頁，直到全部載入後顯示「已全部載入」
+- 搜尋模式下暫停分頁，顯示所有符合結果
+
+### F18 媒體載入效能優化
+
+- 所有 `<img>` 加入 `loading="lazy"`（瀏覽器原生懶加載）
+- 所有 `<video>` 使用 `preload="none"`（不預載影片節省頻寬）
+
+### F19 文字回溯擷取
+
+- AIguoman18 從 v2 的 media 模式切換為 text+media 模式
+- 首次執行時回溯拉取歷史訊息，擷取文字內容寫入 `messages.jsonl`
+- 已存在於磁碟的媒體檔案不重複下載
+- 透過檢查檔案是否已存在來跳過重複下載
+
+---
+
+## 頻道設定檔設計（v3 `channels.json`）
+
+新增 `group` 欄位：相同 `group` 值的頻道在網頁合併為一個頁籤。
+
+```json
+{
+  "channels": [
+    {
+      "id": "ai_guoman",
+      "username": "AIguoman18",
+      "name": "男人的幻想",
+      "mode": "text",
+      "group": "mens_fantasy",
+      "fetch_limit": 50
+    },
+    {
+      "id": "ciyuanb",
+      "username": "ciyuanb",
+      "name": "男人的幻想",
+      "mode": "text",
+      "group": "mens_fantasy",
+      "fetch_limit": 50
+    },
+    {
+      "id": "llcosfc",
+      "username": "llcosfc",
+      "name": "男人的幻想",
+      "mode": "text",
+      "group": "mens_fantasy",
+      "fetch_limit": 50
+    },
+    {
+      "id": "dashijian",
+      "username": "dashijian",
+      "name": "東南亞大事件",
+      "mode": "text",
+      "fetch_limit": 50
+    }
+  ]
+}
+```
+
+| 欄位 | 用途 |
+|------|------|
+| `group` | 可選。相同 group 的頻道合併為單一頁籤；無 group 則獨立頁籤 |
+
+---
+
+## 網頁合併邏輯
 
 ```
-download/
-├── ai_guoman/                      ← 頻道1：媒體為主
-│   ├── photo/
-│   ├── video/
-│   └── .downloaded_state.json
-├── dashijian/                      ← 頻道2：新聞+媒體
-│   ├── photo/
-│   ├── video/
-│   ├── messages.json               ← 訊息文字+媒體關聯
-│   └── .downloaded_state.json
-├── index.html                      ← 靜態展示網頁
-└── messages_data.js                ← JS 內嵌資料
+頁籤: [男人的幻想]  [東南亞大事件]
+         │               │
+         │               └─ dashijian 獨立顯示
+         │
+         └─ 合併 ai_guoman + ciyuanb + llcosfc
+              ├─ 所有訊息按時間降冪交錯排列
+              ├─ 每張訊息卡片標註來源頻道
+              └─ 媒體圖庫合併顯示
 ```
 
 ---
 
-## 使用者流程
+## 使用者流程（v3）
 
 ```
 排程觸發
   │
-  ├─ 1. 對每個頻道：連接 Telegram、拉取新訊息
-  ├─ 2. 依頻道模式處理
-  │     ├─ 媒體模式：下載圖片/影片
-  │     └─ 文字模式：擷取文字 + 下載媒體 → 寫入 messages.json
+  ├─ 1. 平行連接三個頻道 (asyncio.gather)
+  │     ├─ AIguoman18: 回溯擷取文字 + 新媒體
+  │     ├─ ciyuanb: 擷取文字 + 下載媒體
+  │     └─ llcosfc: 擷取文字 + 下載媒體
+  │
+  ├─ 2. dashijian 獨立下載（與上列平行）
+  │
   ├─ 3. 更新各頻道狀態檔
-  └─ 4. 觸發 generate_html.py → 產出 index.html
+  │
+  └─ 4. 觸發 generate_html.py
+        ├─ 合併 mens_fantasy group 頻道
+        ├─ 獨立 dashijian 頻道
+        └─ 產出 index.html（燈箱 / 搜尋 / 分頁）
 ```
 
 ---
 
-## 與 v1 的相容性
+## 目錄結構（v3）
 
-- AIguoman18 頻道的媒體下載邏輯不變
-- 現有 `download/photo/` `download/video/` 可遷移至 `download/ai_guoman/` 下
-- v1 狀態檔格式不變，無需資料遷移
+```
+download/
+├── ai_guoman/                  ← AIguoman18（既有）
+│   ├── photo/
+│   ├── video/
+│   ├── messages.jsonl          ← 新增：文字記錄
+│   └── .downloaded_state.json
+├── ciyuanb/                    ← 新增
+│   ├── photo/
+│   ├── video/
+│   ├── messages.jsonl
+│   └── .downloaded_state.json
+├── llcosfc/                    ← 新增
+│   ├── photo/
+│   ├── video/
+│   ├── messages.jsonl
+│   └── .downloaded_state.json
+├── dashijian/                  ← 不變
+│   ├── photo/
+│   ├── video/
+│   ├── messages.jsonl
+│   └── .downloaded_state.json
+└── index.html                  ← 靜態展示網頁（兩頁籤）
+```
 
 ---
 
-## Out of Scope (v2)
+## Out of Scope（v3）
 
 - 不支援 Telegram Bot 模式
-- 不做全文搜尋（留待 v3）
-- 不做資料庫儲存（JSON 檔案為基礎）
+- 不做全文搜尋引擎（留待 v4）
+- 不做資料庫儲存
 - 不做動態網站或後端服務
 - 不做自動翻譯或內容過濾
+- 不做使用者認證 / 多用戶
