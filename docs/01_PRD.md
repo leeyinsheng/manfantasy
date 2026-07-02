@@ -20,8 +20,9 @@ v2 → v3 核心變動：新增3個頻道並合併顯示、平行下載加速、
 | 8 | yuanqubot | yuanqubot | text | 東南亞大事件 | news | 既有 |
 | 9 | xinwen1 | xinwen1 | text | 東南亞大事件 | news | **新增** |
 | 10 | huangmangaix | huangmangaix | text | AI短劇 | ai_drama | **新增** |
-| 11 | mingxingtu5 | mingxingtu5 | text | AI短劇 | ai_drama | **新增** |
-| 12 | dyvv9 | dyvv9 | text | 吃瓜爆料 | guaba_bl | **新增** |
+| 11 | mingxingtu5 | mingxingtu5 | text | AI短劇 | ai_drama | 既有 |
+| 12 | aiduanjuji | aiduanjuji | text | AI短劇 | ai_drama | **新增** |
+| 13 | dyvv9 | dyvv9 | text | 吃瓜爆料 | guaba_bl | 既有 |
 
 ---
 

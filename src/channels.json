@@ -89,6 +89,14 @@
       "fetch_limit": 50
     },
     {
+      "id": "aiduanjuji",
+      "username": "aiduanjuji",
+      "name": "AI短劇",
+      "mode": "text",
+      "group": "ai_drama",
+      "fetch_limit": 500
+    },
+    {
       "id": "dyvv9",
       "username": "dyvv9",
       "name": "吃瓜爆料",
