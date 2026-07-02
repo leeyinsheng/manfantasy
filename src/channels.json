@@ -47,6 +47,14 @@
       "mode": "text",
       "group": "news",
       "fetch_limit": 200
+    },
+    {
+      "id": "yuanqubot",
+      "username": "yuanqubot",
+      "name": "東南亞大事件",
+      "mode": "text",
+      "group": "news",
+      "fetch_limit": 200
     }
   ]
 }
