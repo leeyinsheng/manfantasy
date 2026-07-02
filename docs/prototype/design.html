@@ -3,98 +3,80 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Adult Dream</title>
+<title>Adult Dream v3 — 設計原型</title>
 <style>
   :root {
-    --bg: #0f0f14;
-    --surface: #1a1a24;
-    --surface2: #22223a;
-    --accent: #f0a050;
-    --accent2: #50b0e0;
-    --text: #e4e4ec;
-    --text-dim: #8888a0;
-    --border: #2a2a3a;
-    --radius: 10px;
+    --bg: #0f0f14; --surface: #1a1a24; --surface2: #22223a;
+    --accent: #f0a050; --accent2: #50b0e0; --text: #e4e4ec;
+    --text-dim: #8888a0; --border: #2a2a3a; --radius: 10px;
+    --tag: #6a4fc0;
   }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  * { margin:0; padding:0; box-sizing:border-box; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
-    background: var(--bg); color: var(--text); min-height: 100vh;
+    background:var(--bg); color:var(--text); min-height:100vh;
   }
-  .container { max-width: 960px; margin: 0 auto; padding: 20px 16px; }
-  header {
-    text-align: center; padding: 32px 0 20px;
-    border-bottom: 1px solid var(--border); margin-bottom: 20px;
-  }
-  header h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
-  header p { color: var(--text-dim); font-size: 13px; margin-top: 4px; }
+  .container { max-width:960px; margin:0 auto; padding:20px 16px; }
 
-  .tabs { display: flex; gap: 0; margin-bottom: 24px; border-bottom: 2px solid var(--border); }
-  .tab {
-    padding: 10px 24px; font-size: 14px; font-weight: 500; cursor: pointer;
-    color: var(--text-dim); border-bottom: 2px solid transparent;
-    margin-bottom: -2px; transition: all 0.15s;
-  }
-  .tab:hover { color: var(--text); }
-  .tab.active { color: var(--accent2); border-bottom-color: var(--accent2); }
+  /* Header */
+  header { text-align:center; padding:32px 0 20px; border-bottom:1px solid var(--border); margin-bottom:20px; }
+  header h1 { font-size:22px; font-weight:700; }
+  header p { color:var(--text-dim); font-size:13px; margin-top:4px; }
 
-  .tab-content { display: none; }
-  .tab-content.active { display: block; }
+  /* Tabs */
+  .tabs { display:flex; margin-bottom:24px; border-bottom:2px solid var(--border); }
+  .tab { padding:10px 24px; font-size:14px; font-weight:500; cursor:pointer; color:var(--text-dim); border-bottom:2px solid transparent; margin-bottom:-2px; transition:all .15s; user-select:none; }
+  .tab:hover { color:var(--text); }
+  .tab.active { color:var(--accent2); border-bottom-color:var(--accent2); }
+  .tab-content { display:none; }
+  .tab-content.active { display:block; }
 
-  .section-label {
-    font-size: 12px; font-weight: 600; text-transform: uppercase;
-    color: var(--text-dim); padding: 8px 4px 10px; letter-spacing: 0.5px;
-    border-bottom: 1px solid var(--border); margin-bottom: 10px;
-  }
+  /* Search Bar */
+  .search-bar { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+  .search-bar input { padding:8px 12px; background:var(--surface); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:13px; outline:none; }
+  .search-bar input:focus { border-color:var(--accent2); }
+  .search-bar input[type="text"] { flex:1; min-width:160px; }
+  .search-bar input[type="date"] { color-scheme:dark; }
+  .search-count { font-size:12px; color:var(--text-dim); margin-bottom:8px; min-height:18px; }
 
-  .card {
-    background: var(--surface); border-radius: var(--radius);
-    border: 1px solid var(--border); margin-bottom: 16px; overflow: hidden;
-  }
-  .card-date {
-    font-size: 12px; color: var(--accent); padding: 14px 16px 0;
-    font-weight: 500;
-  }
-  .card-text {
-    padding: 8px 16px 14px; font-size: 14px; line-height: 1.7;
-    color: var(--text);
-  }
-  .card-media {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 2px; padding: 0;
-  }
-  .card-media img, .card-media video {
-    width: 100%; height: 150px; object-fit: cover; cursor: pointer;
-  }
+  /* Card */
+  .card { background:var(--surface); border-radius:var(--radius); border:1px solid var(--border); margin-bottom:16px; overflow:hidden; }
+  .card-date { font-size:12px; color:var(--accent); padding:14px 16px 0; font-weight:500; }
+  .card-source { display:inline-block; font-size:11px; color:var(--text); background:var(--tag); padding:2px 8px; border-radius:4px; margin:6px 16px 0; }
+  .card-text { padding:8px 16px 14px; font-size:14px; line-height:1.7; color:var(--text); white-space:pre-wrap; }
+  .card-media { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:2px; padding:0; }
+  .card-media img { width:100%; height:150px; object-fit:cover; cursor:pointer; display:block; }
 
-  .gallery {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 4px;
-  }
-  .gallery img, .gallery video {
-    width: 100%; height: 200px; object-fit: cover; border-radius: 4px;
-    cursor: pointer; transition: opacity 0.15s;
-  }
-  .gallery img:hover, .gallery video:hover { opacity: 0.8; }
+  /* Gallery */
+  .gallery { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:4px; }
+  .gallery img { width:100%; height:200px; object-fit:cover; border-radius:4px; cursor:pointer; transition:opacity .15s; }
+  .gallery img:hover { opacity:.8; }
 
-  .media-split { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .media-col { min-width: 0; }
-  .media-col .gallery { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
-  .media-col .gallery img, .media-col .gallery video { height: 180px; }
+  /* Load More */
+  .load-more { text-align:center; padding:14px; cursor:pointer; color:var(--accent2); font-size:13px; font-weight:500; border:1px dashed var(--border); border-radius:var(--radius); margin-top:8px; transition:all .15s; user-select:none; }
+  .load-more:hover { background:var(--surface2); border-color:var(--accent2); }
+  .load-more.done { color:var(--text-dim); cursor:default; border-color:var(--border); opacity:.6; }
 
-  @media (max-width: 768px) {
-    .media-split { grid-template-columns: 1fr; }
-    .media-col .gallery { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
-    .media-col .gallery img, .media-col .gallery video { height: 140px; }
-  }
-  @media (max-width: 640px) {
-    .gallery { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
-    .gallery img, .gallery video { height: 140px; }
-    .card-media { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
-    .card-media img, .card-media video { height: 120px; }
-    .media-col .gallery { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
-    .media-col .gallery img, .media-col .gallery video { height: 120px; }
+  /* Lightbox */
+  .lightbox { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.94); z-index:9999; justify-content:center; align-items:center; }
+  .lightbox.active { display:flex; }
+  .lb-content { max-width:90vw; max-height:90vh; display:flex; align-items:center; justify-content:center; }
+  .lb-content img { max-width:90vw; max-height:85vh; object-fit:contain; border-radius:4px; box-shadow:0 0 40px rgba(0,0,0,0.5); }
+  .lb-close { position:fixed; top:16px; right:24px; font-size:36px; color:#aaa; cursor:pointer; z-index:10001; line-height:1; user-select:none; }
+  .lb-close:hover { color:#fff; }
+  .lb-prev,.lb-next { position:fixed; top:50%; transform:translateY(-50%); font-size:52px; color:#aaa; cursor:pointer; z-index:10001; padding:8px 12px; user-select:none; }
+  .lb-prev:hover,.lb-next:hover { color:#fff; }
+  .lb-prev { left:12px; }
+  .lb-next { right:12px; }
+  .lb-counter { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); color:#aaa; font-size:13px; z-index:10001; }
+
+  .hidden { display:none !important; }
+
+  @media (max-width:640px) {
+    .gallery { grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); }
+    .gallery img { height:140px; }
+    .lb-prev { left:4px; font-size:40px; padding:4px; }
+    .lb-next { right:4px; font-size:40px; padding:4px; }
   }
 </style>
 </head>
@@ -102,74 +84,210 @@
 <div class="container">
   <header>
     <h1>Adult Dream</h1>
-    <p>Telegram 頻道內容歸檔 · 本地瀏覽</p>
+    <p>更新時間: 2025-07-02 12:00:00</p>
+    <p style="margin-top:8px;font-size:11px;color:var(--accent);">v3 設計原型 — 合併頁籤 + 燈箱 + 搜尋 + 分頁</p>
   </header>
 
   <div class="tabs">
-    <div class="tab active" onclick="switchTab(this, 'tab-fantasy')">男人的幻想</div>
-    <div class="tab" onclick="switchTab(this, 'tab-news')">東南亞大事件</div>
+    <div class="tab active" onclick="switchTab('mens_fantasy')">男人的幻想</div>
+    <div class="tab" onclick="switchTab('dashijian')">東南亞大事件</div>
   </div>
 
-  <div id="tab-fantasy" class="tab-content active">
-    <div class="media-split">
-      <div class="media-col">
-        <div class="section-label">影片</div>
-        <div class="gallery">
-          <div style="background:var(--surface2);height:180px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:13px;border-radius:4px">demo_video_01.mp4</div>
-          <div style="background:var(--surface2);height:180px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:13px;border-radius:4px">20250701_160000_media_1238.mp4</div>
+  <!-- Tab: 男人的幻想 (合併三個頻道) -->
+  <div id="tab-mens_fantasy" class="tab-content active">
+    <div class="search-bar">
+      <input id="search-input" type="text" placeholder="搜尋訊息..." oninput="doSearch()">
+      <input id="date-from" type="date" title="起始日期" onchange="doSearch()">
+      <input id="date-to" type="date" title="結束日期" onchange="doSearch()">
+    </div>
+    <div id="search-count" class="search-count"></div>
+    <div class="cards-container">
+      <!-- Card 1 — from AIguoman18 -->
+      <div class="card">
+        <div class="card-date">2025-07-02T10:15:30</div>
+        <span class="card-source">AIguoman18</span>
+        <div class="card-text">今日最新夢幻美圖合集，精選多張高畫質寫真，點擊放大欣賞。</div>
+        <div class="card-media">
+          <a href="#" data-lightbox="mens_fantasy"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%232a2a3a' width='400' height='300'/%3E%3Ctext x='200' y='155' text-anchor='middle' fill='%2388a' font-size='16'%3E🖼 圖片 1%3C/text%3E%3C/svg%3E" alt=""></a>
+          <a href="#" data-lightbox="mens_fantasy"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%232a3a3a' width='400' height='300'/%3E%3Ctext x='200' y='155' text-anchor='middle' fill='%2388a' font-size='16'%3E🖼 圖片 2%3C/text%3E%3C/svg%3E" alt=""></a>
         </div>
       </div>
-      <div class="media-col">
-        <div class="section-label">圖片</div>
-        <div class="gallery">
-          <div style="background:var(--surface2);height:180px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:13px;border-radius:4px">20250701_143022_photo_1234.jpg</div>
-          <div style="background:var(--surface2);height:180px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:13px;border-radius:4px">20250701_143500_photo_1235.jpg</div>
-          <div style="background:var(--surface2);height:180px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:13px;border-radius:4px">20250701_144000_photo_1236.jpg</div>
-          <div style="background:var(--surface2);height:180px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:13px;border-radius:4px">20250701_150000_photo_1237.jpg</div>
-          <div style="background:var(--surface2);height:180px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:13px;border-radius:4px">20250702_080000_photo_1240.jpg</div>
+
+      <!-- Card 2 — from ciyuanb -->
+      <div class="card">
+        <div class="card-date">2025-07-02T09:45:00</div>
+        <span class="card-source">ciyuanb</span>
+        <div class="card-text">二次元精選插畫分享，今天的主題是夏日泳裝特輯，多位繪師作品一次收集。</div>
+        <div class="card-media">
+          <a href="#" data-lightbox="mens_fantasy"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%233a2a3a' width='400' height='300'/%3E%3Ctext x='200' y='155' text-anchor='middle' fill='%2388a' font-size='16'%3E🖼 圖片 3%3C/text%3E%3C/svg%3E" alt=""></a>
+          <a href="#" data-lightbox="mens_fantasy"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%233a3a2a' width='400' height='300'/%3E%3Ctext x='200' y='155' text-anchor='middle' fill='%2388a' font-size='16'%3E🖼 圖片 4%3C/text%3E%3C/svg%3E" alt=""></a>
+          <a href="#" data-lightbox="mens_fantasy"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%233a3a3a' width='400' height='300'/%3E%3Ctext x='200' y='155' text-anchor='middle' fill='%2388a' font-size='16'%3E🖼 圖片 5%3C/text%3E%3C/svg%3E" alt=""></a>
+        </div>
+      </div>
+
+      <!-- Card 3 — from llcosfc -->
+      <div class="card">
+        <div class="card-date">2025-07-01T22:30:00</div>
+        <span class="card-source">llcosfc</span>
+        <div class="card-text">深夜福利合集，內含多組寫真套圖與短影片，完整收藏。</div>
+        <div class="card-media">
+          <a href="#" data-lightbox="mens_fantasy"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%232a2a4a' width='400' height='300'/%3E%3Ctext x='200' y='155' text-anchor='middle' fill='%2388a' font-size='16'%3E🖼 圖片 6%3C/text%3E%3C/svg%3E" alt=""></a>
         </div>
       </div>
     </div>
+    <div class="load-more" onclick="loadMore(this)">載入更多 (3)</div>
   </div>
 
-  <div id="tab-news" class="tab-content">
-    <div class="card">
-      <div class="card-date">2025-07-01 14:30</div>
-      <div class="card-text">
-        今日柬埔寨政府宣布新的投資政策，將針對外資企業提供為期五年的稅務優惠。此舉預期將吸引更多中國與韓國企業進駐金邊經濟特區。當地商會表示樂觀其成，認為新政策有助於創造就業機會。
+  <!-- Tab: 東南亞大事件 -->
+  <div id="tab-dashijian" class="tab-content">
+    <div class="search-bar">
+      <input type="text" placeholder="搜尋訊息..." oninput="doSearch()">
+      <input type="date" title="起始日期" onchange="doSearch()">
+      <input type="date" title="結束日期" onchange="doSearch()">
+    </div>
+    <div class="search-count"></div>
+    <div class="cards-container">
+      <div class="card">
+        <div class="card-date">2025-07-02T08:00:00</div>
+        <div class="card-text">泰國曼谷發生大規模示威活動，抗議者要求政府改革選舉制度。警方已封鎖主要道路，呼籲民眾避開市中心區域。</div>
       </div>
-      <div class="card-media">
-        <div style="background:var(--surface2);height:150px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:12px">新聞圖片 1</div>
-        <div style="background:var(--surface2);height:150px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:12px">新聞圖片 2</div>
+      <div class="card">
+        <div class="card-date">2025-07-01T18:30:00</div>
+        <div class="card-text">越南胡志明市地鐵一號線正式通車，首日即湧入超過十萬人次試乘。全長19.7公里，共14個車站，為越南首條地鐵線路。</div>
+      </div>
+      <div class="card">
+        <div class="card-date">2025-07-01T14:20:00</div>
+        <div class="card-text">印尼雅加達空氣污染指數持續惡化，PM2.5濃度達到危險等級。政府宣布中小學停課兩天，並限制私家車上路。</div>
+        <div class="card-media">
+          <a href="#" data-lightbox="dashijian"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%234a2a2a' width='400' height='300'/%3E%3Ctext x='200' y='155' text-anchor='middle' fill='%2388a' font-size='16'%3E📰 新聞圖片%3C/text%3E%3C/svg%3E" alt=""></a>
+        </div>
+      </div>
+      <div class="card" style="display:none">
+        <div class="card-date">2025-07-01T10:00:00</div>
+        <div class="card-text">菲律賓馬尼拉灣發現大量油汙，疑似貨輪洩漏。環保團體呼籲政府立即啟動應變機制，避免生態浩劫擴大。</div>
+      </div>
+      <div class="card" style="display:none">
+        <div class="card-date">2025-06-30T16:00:00</div>
+        <div class="card-text">馬來西亞吉隆坡雙子星塔周邊發生火災，消防隊迅速控制火勢。所幸無人員傷亡，起火原因仍待調查。</div>
       </div>
     </div>
+    <div class="load-more" onclick="loadMore(this)">載入更多 (2)</div>
+  </div>
+</div>
 
-    <div class="card">
-      <div class="card-date">2025-07-01 10:15</div>
-      <div class="card-text">
-        泰國旅遊局公布最新數據，今年上半年入境旅客已突破1500萬人次，其中來自中國的旅客佔比最高。曼谷、清邁、普吉島仍是熱門目的地。當局預計全年旅客數可望突破3000萬。
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-date">2025-06-30 18:00</div>
-      <div class="card-text">
-        越南胡志明市地鐵一號線即將於下月通車，全長19.7公里，共設14個車站。這條由日本援建的捷運線歷經12年建設，被視為解決當地交通壅塞的關鍵基礎建設。
-      </div>
-      <div class="card-media">
-        <div style="background:var(--surface2);height:150px;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:12px">地鐵照片</div>
-      </div>
-    </div>
+<!-- Lightbox -->
+<div id="lightbox" class="lightbox">
+  <span id="lb-close" class="lb-close" onclick="closeLb()">&times;</span>
+  <span id="lb-prev" class="lb-prev" onclick="navLb(-1)">&lsaquo;</span>
+  <span id="lb-next" class="lb-next" onclick="navLb(1)">&rsaquo;</span>
+  <span class="lb-counter"></span>
+  <div class="lb-content">
+    <img id="lb-img" src="" alt="">
   </div>
 </div>
 
 <script>
-function switchTab(tab, contentId) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-  tab.classList.add('active');
-  document.getElementById(contentId).classList.add('active');
+var lbItems = [], lbIdx = 0;
+
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach(function(t){
+    t.classList.toggle('active', t.getAttribute('onclick').indexOf(id) !== -1);
+  });
+  document.querySelectorAll('.tab-content').forEach(function(c){
+    c.classList.toggle('active', c.id === 'tab-' + id);
+  });
+  doSearch();
 }
+
+function loadMore(btn) {
+  var container = btn.previousElementSibling;
+  var hidden = container.querySelectorAll('[style*="display:none"], [style*="display: none"]');
+  var batch = Math.min(2, hidden.length);
+  for (var i = 0; i < batch; i++) hidden[i].style.display = '';
+  var rem = hidden.length - batch;
+  if (rem > 0) {
+    btn.textContent = '載入更多 (' + rem + ')';
+  } else {
+    btn.textContent = '已全部載入';
+    btn.classList.add('done');
+  }
+}
+
+function doSearch() {
+  var active = document.querySelector('.tab-content.active');
+  if (!active) return;
+  var si = active.querySelector('input[type="text"]');
+  var df = active.querySelector('input[type="date"]');
+  var dt = active.querySelectorAll('input[type="date"]')[1];
+  var q = (si ? si.value : '').toLowerCase().trim();
+  var from = df ? df.value : '';
+  var to = dt ? dt.value : '';
+  var cards = active.querySelectorAll('.card');
+  var count = 0;
+  var hasFilter = q || from || to;
+  cards.forEach(function(card){
+    var show = true;
+    if (q) {
+      var te = card.querySelector('.card-text');
+      show = te && te.textContent.toLowerCase().indexOf(q) !== -1;
+    }
+    if (show && (from || to)) {
+      var de = card.querySelector('.card-date');
+      var d = de ? de.textContent.trim().substring(0, 10) : '';
+      if (from && d < from) show = false;
+      if (to && d > to) show = false;
+    }
+    card.style.display = hasFilter ? (show ? '' : 'none') : '';
+    if (show) count++;
+  });
+  var info = active.querySelector('.search-count');
+  if (info) info.textContent = hasFilter ? count + ' 筆結果' : '';
+  var btn = active.querySelector('.load-more');
+  if (btn) btn.style.display = hasFilter ? 'none' : '';
+}
+
+/* Lightbox */
+document.addEventListener('click', function(e){
+  var a = e.target.closest('a[data-lightbox]');
+  if (!a) return;
+  e.preventDefault();
+  var grp = a.getAttribute('data-lightbox');
+  var all = document.querySelectorAll('a[data-lightbox="' + grp + '"]');
+  lbItems = []; lbIdx = 0;
+  all.forEach(function(el, i){
+    var img = el.querySelector('img');
+    if (img) {
+      lbItems.push(img.getAttribute('src'));
+      if (el === a) lbIdx = lbItems.length - 1;
+    }
+  });
+  if (lbItems.length) openLb();
+});
+
+function openLb() {
+  document.getElementById('lb-img').src = lbItems[lbIdx];
+  document.getElementById('lightbox').classList.add('active');
+  document.querySelector('.lb-counter').textContent = (lbIdx + 1) + ' / ' + lbItems.length;
+}
+
+function closeLb() { document.getElementById('lightbox').classList.remove('active'); }
+
+function navLb(dir) {
+  lbIdx = ((lbIdx + dir) % lbItems.length + lbItems.length) % lbItems.length;
+  document.getElementById('lb-img').src = lbItems[lbIdx];
+  document.querySelector('.lb-counter').textContent = (lbIdx + 1) + ' / ' + lbItems.length;
+}
+
+document.getElementById('lightbox').addEventListener('click', function(e){
+  if (e.target === this) closeLb();
+});
+
+document.addEventListener('keydown', function(e){
+  if (!document.getElementById('lightbox').classList.contains('active')) return;
+  if (e.key === 'Escape') closeLb();
+  if (e.key === 'ArrowLeft') navLb(-1);
+  if (e.key === 'ArrowRight') navLb(1);
+});
 </script>
 </body>
 </html>
