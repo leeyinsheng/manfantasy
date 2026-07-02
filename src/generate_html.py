@@ -468,7 +468,7 @@ function init(){
     }
 
     var card = e.target.closest('.card');
-    if(card && !e.target.closest('.thumb') && !e.target.closest('.load-more-btn')){
+    if(card && !e.target.closest('.thumb') && !e.target.closest('.page-btn')){
       toggleCard(card);
     }
   });
