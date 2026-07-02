@@ -87,6 +87,14 @@
       "mode": "text",
       "group": "ai_drama",
       "fetch_limit": 50
+    },
+    {
+      "id": "dyvv9",
+      "username": "dyvv9",
+      "name": "吃瓜爆料",
+      "mode": "text",
+      "group": "guaba_bl",
+      "fetch_limit": 500
     }
   ]
 }
