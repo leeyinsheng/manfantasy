@@ -280,8 +280,8 @@ function renderCards(tabId, pageNum){
 function renderPagination(tabId){
   var data = tabsData[tabId];
   var wrap = document.getElementById('pagination-' + tabId);
-  if(!wrap || !data) return;
-  var total = data.totalPages || 1;
+  if(!wrap || !data || !data.messages) return;
+  var total = data.totalPages || Math.ceil(data.messages.length / PAGE_SIZE) || 1;
   var cur = data.page || 1;
   if(total <= 1){
     wrap.innerHTML = '<span class="page-info">共 ' + data.messages.length + ' 筆</span>';
@@ -299,6 +299,25 @@ function renderPagination(tabId){
   html += '<button class="page-btn' + (cur===total?' disabled':'') + '" data-page="' + (cur+1) + '" data-tab="'+tabId+'">下一頁 →</button>';
   html += '<span class="page-info">共 ' + data.messages.length + ' 筆</span>';
   wrap.innerHTML = html;
+}
+
+function toggleCard(card){
+  if(!card) return;
+  var txt = card.querySelector('.card-text');
+  var thumbs = card.querySelector('.card-thumbs');
+  var exp = card.querySelector('.card-expand');
+  if(!txt) return;
+  if(card.hasAttribute('data-expanded')){
+    card.removeAttribute('data-expanded');
+    txt.classList.remove('full');
+    if(thumbs) thumbs.classList.remove('expanded');
+    if(exp) exp.innerHTML = '展開詳情 ▾';
+  } else {
+    card.setAttribute('data-expanded','');
+    txt.classList.add('full');
+    if(thumbs) thumbs.classList.add('expanded');
+    if(exp) exp.innerHTML = '收合 ▴';
+  }
 }
 
 function switchTab(tabId){
@@ -435,6 +454,7 @@ function init(){
   }
 
   document.addEventListener('click', function(e){
+    try{
     var loadBtn = e.target.closest('.page-btn:not(.disabled)');
     if(loadBtn){
       var tabId = loadBtn.getAttribute('data-tab');
@@ -445,15 +465,17 @@ function init(){
 
     var thumb = e.target.closest('.thumb');
     if(thumb){
-      var card = thumb.closest('.card');
-      if(!card) return;
-      var container = card.closest('.cards-container');
-      if(!container) return;
-      var tabId = container.id.replace('cards-','');
-      var allThumbs = container.querySelectorAll('.thumb');
-      var idx = -1;
-      allThumbs.forEach(function(el,i){ if(el === thumb) idx = i; });
-      if(idx >= 0) openLightbox(tabId, idx);
+      var card2 = thumb.closest('.card');
+      if(card2){
+        var container2 = card2.closest('.cards-container');
+        if(container2){
+          var tabId2 = container2.id.replace('cards-','');
+          var allThumbs = container2.querySelectorAll('.thumb');
+          var idx2 = -1;
+          allThumbs.forEach(function(el,i){ if(el === thumb) idx2 = i; });
+          if(idx2 >= 0) openLightbox(tabId2, idx2);
+        }
+      }
       return;
     }
 
@@ -468,9 +490,14 @@ function init(){
     }
 
     var card = e.target.closest('.card');
-    if(card && !e.target.closest('.thumb') && !e.target.closest('.page-btn')){
-      toggleCard(card);
+    if(card){
+      var onThumb = e.target.closest('.thumb');
+      var onPageBtn = e.target.closest('.page-btn');
+      if(!onThumb && !onPageBtn){
+        toggleCard(card);
+      }
     }
+    }catch(ex){}
   });
 
   document.getElementById('lb-close').addEventListener('click', closeLightbox);
