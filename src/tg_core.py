@@ -76,6 +76,7 @@ def message_to_record(message, channel_id, media_files):
         "text": extract_message_text(message),
         "channel": channel_id,
         "media": media_files,
+        "grouped_id": getattr(message, "grouped_id", None),
     }
 
 

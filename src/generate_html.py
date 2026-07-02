@@ -41,6 +41,22 @@ def _normalize_media_paths(messages, channel_id):
                 media["thumb"] = f"{channel_id}/{thumb}"
 
 
+def _merge_grouped_messages(messages):
+    groups = {}
+    result = []
+    for msg in messages:
+        gid = msg.get("grouped_id")
+        if gid:
+            if gid not in groups:
+                groups[gid] = msg
+                result.append(msg)
+            else:
+                groups[gid]["media"].extend(msg.get("media", []))
+        else:
+            result.append(msg)
+    return result
+
+
 def _build_tab_data():
     _build_channel_map()
     channels = tg_core.load_channels()
@@ -65,6 +81,7 @@ def _build_tab_data():
                     msg["channel"] = _username_for(m["id"])
             _normalize_media_paths(msgs, m["id"])
             messages.extend(msgs)
+        messages = _merge_grouped_messages(messages)
         messages.sort(key=lambda x: x.get("date", ""), reverse=True)
 
         tabs[grp_name] = {
@@ -79,7 +96,8 @@ def _build_tab_data():
             if "channel" not in msg or not msg["channel"]:
                 msg["channel"] = _username_for(ch["id"])
         _normalize_media_paths(msgs, ch["id"])
-        msgs.sort(key=lambda x: x.get("id", 0), reverse=True)
+        msgs = _merge_grouped_messages(msgs)
+        msgs.sort(key=lambda x: x.get("date", ""), reverse=True)
         tabs[ch["id"]] = {
             "name": ch["name"],
             "messages": msgs,
