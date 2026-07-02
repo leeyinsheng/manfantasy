@@ -4,26 +4,21 @@
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | Product Ideation | ✅ (v2 PRD done) |
-| 2 | Product Design | ✅ |
-| 3 | Feature Dev + Unit Tests | ✅ |
-| 4 | Code Review | ✅ |
-| 5 | Regression Testing | ✅ |
-| 6 | Feature Verification | ✅ |
-| 7 | User Acceptance | ✅ |
+| 1-7 | All | ✅ |
 
 ## v3 Improvement Cycle
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | Product Ideation | ✅ |
-| 2 | Product Design | ✅ (v3.1: card expand, time presets, Man's Fantasy) |
-| 3 | Feature Dev + Unit Tests | ✅ (backfill removed, 64 tests) |
+| 1 | Product Ideation | ✅ (7 channels) |
+| 2 | Product Design | ✅ (config-only, no design change) |
+| 3 | Feature Dev + Unit Tests | ✅ (committed, 64 tests) |
 | 4 | Code Review | ✅ |
 | 5 | Regression Testing | ✅ |
 | 6 | Feature Verification | ✅ |
 | 7 | User Acceptance | ⏳ |
-| 4 | Code Review | ✅ |
-| 5 | Regression Testing | ✅ |
-| 6 | Feature Verification | ✅ |
-| 7 | User Acceptance | ⏳ |
+| 3 | Feature Dev + Unit Tests | ⬜ |
+| 4 | Code Review | ⬜ |
+| 5 | Regression Testing | ⬜ |
+| 6 | Feature Verification | ⬜ |
+| 7 | User Acceptance | ⬜ |
