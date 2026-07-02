@@ -209,7 +209,7 @@ function mediaHtml(media, basePath){
     if(m.type === 'video'){
       html += '<div class="card-media" style="background:var(--surface-2);min-height:150px;display:flex;align-items:center;justify-content:center">';
       html += '<div class="vid-overlay"></div>';
-      html += '<video preload="none" src="' + src + '" muted playsinline style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover"></video>';
+      html += '<video preload="metadata" src="' + src + '" muted playsinline style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover"></video>';
       html += '</div>';
     } else {
       html += '<div class="card-media">';
