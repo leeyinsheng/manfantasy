@@ -65,7 +65,7 @@ def _build_tab_data():
                     msg["channel"] = _username_for(m["id"])
             _normalize_media_paths(msgs, m["id"])
             messages.extend(msgs)
-        messages.sort(key=lambda x: x.get("id", 0), reverse=True)
+        messages.sort(key=lambda x: x.get("date", ""), reverse=True)
 
         tabs[grp_name] = {
             "name": members[0]["name"],
