@@ -1,6 +1,70 @@
 {
   "channels": [
     {
+      "id": "dashijian",
+      "username": "dashijian",
+      "name": "東南亞大事件",
+      "mode": "text",
+      "group": "news",
+      "fetch_limit": 200
+    },
+    {
+      "id": "ll111",
+      "username": "ll111",
+      "name": "東南亞大事件",
+      "mode": "text",
+      "group": "news",
+      "fetch_limit": 200
+    },
+    {
+      "id": "yuanqubot",
+      "username": "yuanqubot",
+      "name": "東南亞大事件",
+      "mode": "text",
+      "group": "news",
+      "fetch_limit": 200
+    },
+    {
+      "id": "xinwen1",
+      "username": "xinwen1",
+      "name": "東南亞大事件",
+      "mode": "text",
+      "group": "news",
+      "fetch_limit": 200
+    },
+    {
+      "id": "dyvv9",
+      "username": "dyvv9",
+      "name": "吃瓜爆料",
+      "mode": "text",
+      "group": "guaba_bl",
+      "fetch_limit": 200
+    },
+    {
+      "id": "huangmangaix",
+      "username": "huangmangaix",
+      "name": "AI短劇",
+      "mode": "text",
+      "group": "ai_drama",
+      "fetch_limit": 50
+    },
+    {
+      "id": "mingxingtu5",
+      "username": "mingxingtu5",
+      "name": "AI短劇",
+      "mode": "text",
+      "group": "ai_drama",
+      "fetch_limit": 50
+    },
+    {
+      "id": "aiduanjuji",
+      "username": "aiduanjuji",
+      "name": "AI短劇",
+      "mode": "text",
+      "group": "ai_drama",
+      "fetch_limit": 50
+    },
+    {
       "id": "ai_guoman",
       "username": "AIguoman18",
       "name": "男人的幻想",
@@ -39,70 +103,6 @@
       "mode": "text",
       "group": "mens_fantasy",
       "fetch_limit": 50
-    },
-    {
-      "id": "dashijian",
-      "username": "dashijian",
-      "name": "東南亞大事件",
-      "mode": "text",
-      "group": "news",
-      "fetch_limit": 200
-    },
-    {
-      "id": "ll111",
-      "username": "ll111",
-      "name": "東南亞大事件",
-      "mode": "text",
-      "group": "news",
-      "fetch_limit": 200
-    },
-    {
-      "id": "yuanqubot",
-      "username": "yuanqubot",
-      "name": "東南亞大事件",
-      "mode": "text",
-      "group": "news",
-      "fetch_limit": 200
-    },
-    {
-      "id": "xinwen1",
-      "username": "xinwen1",
-      "name": "東南亞大事件",
-      "mode": "text",
-      "group": "news",
-      "fetch_limit": 200
-    },
-    {
-      "id": "huangmangaix",
-      "username": "huangmangaix",
-      "name": "AI短劇",
-      "mode": "text",
-      "group": "ai_drama",
-      "fetch_limit": 50
-    },
-    {
-      "id": "mingxingtu5",
-      "username": "mingxingtu5",
-      "name": "AI短劇",
-      "mode": "text",
-      "group": "ai_drama",
-      "fetch_limit": 50
-    },
-    {
-      "id": "aiduanjuji",
-      "username": "aiduanjuji",
-      "name": "AI短劇",
-      "mode": "text",
-      "group": "ai_drama",
-      "fetch_limit": 50
-    },
-    {
-      "id": "dyvv9",
-      "username": "dyvv9",
-      "name": "吃瓜爆料",
-      "mode": "text",
-      "group": "guaba_bl",
-      "fetch_limit": 500
     }
   ]
 }
