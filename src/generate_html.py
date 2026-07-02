@@ -217,7 +217,9 @@ function mediaHtml(media){
   for(var i=0;i<media.length;i++){
     var m = media[i];
     var src = m.thumb || m.path;
-    html += '<div class="thumb' + (m.type==='video'?' video':'') + '">';
+    html += '<div class="thumb' + (m.type==='video'?' video':'') + '"';
+    if(m.type==='video') html += ' data-video="' + m.path + '"';
+    html += '>';
     html += '<img src="' + src + '" alt="" loading="lazy">';
     if(m.type==='video') html += '<div class="vid-icon"></div>';
     html += '</div>';
@@ -361,7 +363,9 @@ function openLightbox(tabId, startIndex){
   var items = [];
   wraps.forEach(function(w,i){
     var img = w.querySelector('img');
-    items.push({ index:i, isVideo:w.classList.contains('video'), src: img ? img.getAttribute('src') : '' });
+    var isVid = w.classList.contains('video');
+    var src = isVid ? (w.getAttribute('data-video') || '') : (img ? img.getAttribute('src') : '');
+    items.push({ index:i, isVideo:isVid, src: src });
   });
   if(items.length===0) return;
   lbState.tabId = tabId;
