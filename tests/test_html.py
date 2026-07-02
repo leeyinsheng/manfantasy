@@ -133,8 +133,8 @@ class TestGenerateHtml(unittest.TestCase):
         html = self._read_html()
         self.assertIn("search-bar", html)
         self.assertIn("search-input", html)
-        self.assertIn("search-date-start", html)
-        self.assertIn("search-date-end", html)
+        self.assertIn("time-presets", html)
+        self.assertIn("preset-btn", html)
         self.assertIn("result-count", html)
 
     def test_load_more_present(self):

@@ -129,6 +129,10 @@ CSS = r"""
   .search-bar .date-group label{font-size:0.8rem;color:var(--muted)}
   .search-bar input[type="date"]{padding:0.4rem 0.5rem;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;font-size:0.8rem;color:var(--fg)}
   .search-bar input[type="date"]:focus{border-color:var(--accent);outline:none}
+  .time-presets{display:flex;gap:4px;flex-wrap:wrap}
+  .preset-btn{padding:0.35rem 0.6rem;font-size:0.75rem;color:var(--muted);background:var(--surface-2);border:1px solid var(--border);border-radius:4px;transition:all .15s}
+  .preset-btn:hover{color:var(--fg-secondary);border-color:var(--muted)}
+  .preset-btn.active{color:var(--fg);background:var(--accent-bg);border-color:var(--accent)}
   .search-bar .result-count{font-size:0.8rem;color:var(--muted);margin-left:auto}
   .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:0.75rem;transition:border-color .2s}
   .card:hover{border-color:var(--muted)}
@@ -136,13 +140,16 @@ CSS = r"""
   .card-source{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:var(--surface-2);border-radius:4px;color:var(--fg-secondary);font-size:0.75rem}
   .card-source::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent)}
   .card-date{font-family:var(--font-display);font-size:0.75rem;color:var(--muted)}
-  .card-text{font-size:0.9rem;line-height:1.65;margin-bottom:0.5rem;word-wrap:break-word;white-space:pre-wrap}
-  .card-text:empty{display:none}
-  .card-media{margin-top:0.5rem;border-radius:6px;overflow:hidden;background:var(--surface-2);position:relative}
-  .card-media img,.card-media video{width:100%;display:block;cursor:pointer;transition:opacity .2s}
-  .card-media img:hover,.card-media video:hover{opacity:0.95}
-  .card-media .vid-overlay{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:48px;height:48px;background:rgba(0,0,0,0.6);border-radius:50%;display:flex;align-items:center;justify-content:center;pointer-events:none}
-  .card-media .vid-overlay::after{content:'';border-left:14px solid #fff;border-top:8px solid transparent;border-bottom:8px solid transparent;margin-left:3px}
+  .card-text{font-size:0.9rem;line-height:1.65;margin-bottom:0.5rem;word-wrap:break-word;white-space:pre-wrap;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+  .card-text.full{-webkit-line-clamp:unset;display:block}
+  .card-thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:4px;margin-top:0.5rem}
+  .card-thumbs.expanded{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}
+  .thumb{position:relative;aspect-ratio:1;overflow:hidden;border-radius:4px;background:var(--surface-2);cursor:pointer}
+  .thumb img{width:100%;height:100%;object-fit:cover}
+  .thumb .vid-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:24px;height:24px;background:rgba(0,0,0,0.6);border-radius:50%;display:flex;align-items:center;justify-content:center;pointer-events:none}
+  .thumb .vid-icon::after{content:'';border-left:8px solid #fff;border-top:5px solid transparent;border-bottom:5px solid transparent;margin-left:2px}
+  .card-expand{text-align:center;font-size:0.8rem;color:var(--muted);margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--border);cursor:pointer;user-select:none}
+  .card-expand:hover{color:var(--fg-secondary)}
   .load-more-wrap{padding:1rem 0;text-align:center}
   .load-more-btn{display:inline-block;padding:0.65rem 2rem;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);font-size:0.85rem;color:var(--fg-secondary);transition:background .2s}
   .load-more-btn:hover{background:var(--surface);color:var(--fg)}
@@ -166,9 +173,10 @@ CSS = r"""
     main{padding:0 0.6rem}
     .card{padding:0.8rem}
     .search-bar{flex-direction:column;align-items:stretch}
-    .search-bar .date-group{justify-content:space-between}
-    .search-bar .result-count{margin-left:0;text-align:right}
+    .result-count{margin-left:0;text-align:right}
     .tab-btn{font-size:0.82rem;padding:0.7rem 0.5rem}
+    .card-thumbs{grid-template-columns:repeat(auto-fill,minmax(64px,1fr))}
+    .card-thumbs.expanded{grid-template-columns:repeat(auto-fill,minmax(90px,1fr))}
     .lb-prev{left:0.5rem;width:36px;height:36px;font-size:1.6rem}
     .lb-next{right:0.5rem;width:36px;height:36px;font-size:1.6rem}
     .lb-content{max-width:96vw}
@@ -203,24 +211,18 @@ function formatDate(iso){
   return y + '-' + m + '-' + day + ' ' + h + ':' + min;
 }
 
-function mediaHtml(media, basePath){
+function mediaHtml(media){
   if(!media || media.length===0) return '';
-  var html = '';
+  var html = '<div class="card-thumbs">';
   for(var i=0;i<media.length;i++){
     var m = media[i];
-    var src = m.path;
-    if(m.type === 'video'){
-      var poster = m.thumb ? ' poster="' + m.thumb + '"' : '';
-      html += '<div class="card-media" style="background:var(--surface-2);min-height:150px;display:flex;align-items:center;justify-content:center">';
-      html += '<div class="vid-overlay"></div>';
-      html += '<video preload="metadata" src="' + src + '"' + poster + ' muted playsinline style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover"></video>';
-      html += '</div>';
-    } else {
-      html += '<div class="card-media">';
-      html += '<img src="' + src + '" alt="" loading="lazy">';
-      html += '</div>';
-    }
+    var src = m.thumb || m.path;
+    html += '<div class="thumb' + (m.type==='video'?' video':'') + '">';
+    html += '<img src="' + src + '" alt="" loading="lazy">';
+    if(m.type==='video') html += '<div class="vid-icon"></div>';
+    html += '</div>';
   }
+  html += '</div>';
   return html;
 }
 
@@ -235,18 +237,36 @@ function renderCards(tabId, maxCount){
   var html = '';
   for(var i=0;i<showCount;i++){
     var m = msgs[i];
-    html += '<div class="card">';
+    html += '<div class="card" data-idx="' + i + '">';
     html += '<div class="card-header">';
     html += '<span class="card-source">' + escHtml(m.channel||'') + '</span>';
     html += '<span class="card-date">' + formatDate(m.date) + '</span>';
     html += '</div>';
     html += '<div class="card-text">' + escHtml(m.text||'') + '</div>';
-    html += mediaHtml(m.media, tabId);
+    html += mediaHtml(m.media);
+    if(m.media && m.media.length) html += '<div class="card-expand">展開詳情 ▾</div>';
     html += '</div>';
   }
   container.innerHTML = html;
   data.rendered = showCount;
   updateLoadMore(tabId);
+}
+
+function toggleCard(card){
+  var txt = card.querySelector('.card-text');
+  var thumbs = card.querySelector('.card-thumbs');
+  var exp = card.querySelector('.card-expand');
+  if(card.hasAttribute('data-expanded')){
+    card.removeAttribute('data-expanded');
+    txt.classList.remove('full');
+    if(thumbs) thumbs.classList.remove('expanded');
+    if(exp) exp.innerHTML = '展開詳情 ▾';
+  } else {
+    card.setAttribute('data-expanded','');
+    txt.classList.add('full');
+    if(thumbs) thumbs.classList.add('expanded');
+    if(exp) exp.innerHTML = '收合 ▴';
+  }
 }
 
 function updateLoadMore(tabId){
@@ -288,29 +308,35 @@ function switchTab(tabId){
 function applySearch(tabId){
   var container = document.getElementById('cards-' + tabId);
   var searchInput = document.querySelector('#tab-' + tabId + ' .search-input');
-  var dateStart = document.querySelector('#tab-' + tabId + ' .search-date-start');
-  var dateEnd = document.querySelector('#tab-' + tabId + ' .search-date-end');
   var resultEl = document.getElementById('result-count-' + tabId);
   if(!container || !searchInput) return;
 
   var kw = searchInput.value.trim().toLowerCase();
-  var ds = dateStart ? dateStart.value : '';
-  var de = dateEnd ? dateEnd.value : '';
-  var isSearching = kw !== '' || ds !== '' || de !== '';
+  var activePreset = document.querySelector('#tab-' + tabId + ' .preset-btn.active');
+  var range = activePreset ? activePreset.getAttribute('data-range') : 'all';
+  var isSearching = kw !== '' || range !== 'all';
+
+  var now = new Date();
+  var cutoff = null;
+  if(range==='today'){ cutoff = new Date(now.getFullYear(),now.getMonth(),now.getDate()); }
+  else if(range==='3d'){ cutoff = new Date(now.getTime() - 3*86400000); }
+  else if(range==='7d'){ cutoff = new Date(now.getTime() - 7*86400000); }
+  else if(range==='month'){ cutoff = new Date(now.getFullYear(),now.getMonth(),1); }
+  else if(range==='halfyear'){ cutoff = new Date(now.getTime() - 180*86400000); }
 
   var cards = container.querySelectorAll('.card');
   var matched = 0;
-
   for(var i=0;i<cards.length;i++){
     var card = cards[i];
     var textEl = card.querySelector('.card-text');
     var dateEl = card.querySelector('.card-date');
     var text = textEl ? textEl.textContent.toLowerCase() : '';
-    var date = dateEl ? dateEl.textContent.trim().slice(0,10) : '';
     var show = true;
     if(kw && text.indexOf(kw) === -1) show = false;
-    if(ds && date < ds) show = false;
-    if(de && date > de) show = false;
+    if(cutoff){
+      var d = dateEl ? dateEl.textContent.trim().slice(0,10) : '';
+      if(d < cutoff.toISOString().slice(0,10)) show = false;
+    }
     if(show) matched++;
     card.classList.toggle('hidden', !show);
   }
@@ -331,12 +357,11 @@ var lbState = { tabId:'', items:[], current:0 };
 function openLightbox(tabId, startIndex){
   var container = document.getElementById('cards-' + tabId);
   if(!container) return;
-  var wraps = container.querySelectorAll('.card-media');
+  var wraps = container.querySelectorAll('.thumb');
   var items = [];
   wraps.forEach(function(w,i){
     var img = w.querySelector('img');
-    var vid = w.querySelector('video');
-    items.push({ index:i, isVideo:!!vid, src: vid ? vid.getAttribute('src') : (img ? img.getAttribute('src') : '') });
+    items.push({ index:i, isVideo:w.classList.contains('video'), src: img ? img.getAttribute('src') : '' });
   });
   if(items.length===0) return;
   lbState.tabId = tabId;
@@ -402,18 +427,33 @@ function init(){
       return;
     }
 
-    var mediaWrap = e.target.closest('.card-media');
-    if(mediaWrap){
-      var card = mediaWrap.closest('.card');
+    var thumb = e.target.closest('.thumb');
+    if(thumb){
+      var card = thumb.closest('.card');
       if(!card) return;
       var container = card.closest('.cards-container');
       if(!container) return;
       var tabId = container.id.replace('cards-','');
-      var allMedia = container.querySelectorAll('.card-media');
+      var allThumbs = container.querySelectorAll('.thumb');
       var idx = -1;
-      allMedia.forEach(function(el,i){ if(el === mediaWrap) idx = i; });
+      allThumbs.forEach(function(el,i){ if(el === thumb) idx = i; });
       if(idx >= 0) openLightbox(tabId, idx);
       return;
+    }
+
+    var preset = e.target.closest('.preset-btn');
+    if(preset){
+      var bar = preset.closest('.search-bar');
+      bar.querySelectorAll('.preset-btn').forEach(function(b){ b.classList.remove('active'); });
+      preset.classList.add('active');
+      var panel = preset.closest('.tab-content');
+      if(panel){ applySearch(panel.id.replace('tab-','')); }
+      return;
+    }
+
+    var card = e.target.closest('.card');
+    if(card && !e.target.closest('.thumb') && !e.target.closest('.load-more-btn')){
+      toggleCard(card);
     }
   });
 
@@ -433,15 +473,9 @@ function init(){
 
   document.querySelectorAll('.tab-content').forEach(function(panel){
     var si = panel.querySelector('.search-input');
-    var ds = panel.querySelector('.search-date-start');
-    var de = panel.querySelector('.search-date-end');
-    function onSearch(){
-      var tabId = panel.id.replace('tab-','');
-      applySearch(tabId);
-    }
-    if(si) si.addEventListener('input', onSearch);
-    if(ds) ds.addEventListener('change', onSearch);
-    if(de) de.addEventListener('change', onSearch);
+    if(si) si.addEventListener('input', function(){
+      applySearch(panel.id.replace('tab-',''));
+    });
   });
 }
 
@@ -476,11 +510,13 @@ def generate():
         tabs_content += f'''<div class="tab-content{active_cls}" id="tab-{tab_id}" role="tabpanel">
     <div class="search-bar">
       <input type="text" class="search-input" placeholder="搜尋訊息…" aria-label="搜尋關鍵字">
-      <div class="date-group">
-        <label>從</label>
-        <input type="date" class="search-date-start">
-        <label>至</label>
-        <input type="date" class="search-date-end">
+      <div class="time-presets">
+        <button class="preset-btn active" data-range="all">全部</button>
+        <button class="preset-btn" data-range="today">今日</button>
+        <button class="preset-btn" data-range="3d">近3日</button>
+        <button class="preset-btn" data-range="7d">近7日</button>
+        <button class="preset-btn" data-range="month">本月</button>
+        <button class="preset-btn" data-range="halfyear">近半年</button>
       </div>
       <span class="result-count" id="result-count-{tab_id}"></span>
     </div>
@@ -495,13 +531,13 @@ def generate():
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Adult Dream</title>
+<title>Man's Fantasy</title>
 <style>{CSS}</style>
 </head>
 <body>
 
 <header class="header">
-  <h1>Adult Dream</h1>
+  <h1>Man's Fantasy</h1>
   <div class="time">最後更新：<span id="update-time">{_now_str()}</span></div>
 </header>
 
