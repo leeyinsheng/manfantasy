@@ -1,85 +1,66 @@
-# 06 - Feature Verification v3
+# 06 - Feature Verification v4
 
-| ID | Requirement | Status | Evidence |
-|----|-------------|--------|----------|
-| F14 | 平行頻道下載 | ✅ | `download_tg_channel.py:200` — `asyncio.gather(*tasks, return_exceptions=True)` |
-| F15 | 圖片燈箱檢視 | ✅ | `generate_html.py` — `.lightbox` CSS + `lbState` JS + 鍵盤事件 |
-| F16 | 訊息搜尋與日期篩選 | ✅ | `generate_html.py` — `.search-bar` HTML + `applySearch()` JS |
-| F17 | 分頁載入 | ✅ | `generate_html.py` — `PAGE_SIZE=50`, `renderCards()`, `.load-more-btn` |
-| F18 | 媒體載入效能優化 | ✅ | `generate_html.py` — `<img loading="lazy">` + `<video preload="none">` |
-| F19 | 文字回溯擷取 | ✅ | `download_tg_channel.py:28` — `_get_existing_media_records()` + `backfill` flag |
+## Verification Checklist
 
-## Detailed Verification
+### F20 — xvideos Spider
+- [x] `src/xvideos.json` loads 4 sources (categories + searches)
+- [x] `_build_url` produces correct URLs for both page types
+- [x] `_build_url` URL-encodes keyword parameters
+- [x] `_parse_video_blocks` extracts all 8 fields from HTML
+- [x] `_parse_video_blocks` handles quality (HD/SD/none)
+- [x] `_parse_video_blocks` handles views in "k" and "M" formats
+- [x] `crawl_source` iterates pages until `pages` limit or no new eids
+- [x] Duplicate eids skipped per `load_existing_eids`
+- [x] Each video tagged with source tag
+- [x] `_append_videos` appends to single `download/xvideos/videos.jsonl`
 
-### F14: Parallel Download
-- Code: `asyncio.gather()` replaces sequential `for` loop
-- Each channel has independent state file and download directory — no race conditions
-- `return_exceptions=True` ensures one channel failure doesn't block others
-- **Verified:** Code review confirmed no shared mutable state between channels
+### F21 — Embed Playback
+- [x] xvideos card renders `.card` with `.card-source.xv` (purple dot)
+- [x] `.xv-embed` container with `data-eid` present
+- [x] `toggleXvEmbed()` creates `<iframe src="embedframe/{eid}">` on expand
+- [x] `toggleXvEmbed()` clears innerHTML on collapse
+- [x] xv tab has no search bar (`.search-bar` absent)
 
-### F15: Lightbox
-- CSS: `.lightbox.open` → fullscreen overlay with `rgba(0,0,0,0.92)`
-- Navigation: click ‹/› buttons, ←/→ keys, ESC to close, click backdrop to close
-- Counter: `.lb-counter` shows "N / M"
-- Grouping: All media in same tab share lightbox navigation
-- Video support: Autoplay on open, native `<video>` controls
-- **Verified:** 7 integration tests confirm HTML structure. Component present in `design_20260702.html` prototype.
+### F22 — Mixed Tab Display
+- [x] "衝啊, 弟兄們" tab appended after existing Telegram tabs
+- [x] Badge count reflects total videos
+- [x] `__XV_DATA__` separate from `__DATA__`
+- [x] Existing Telegram tabs/cards/search/lightbox unchanged
+- [x] `referrerpolicy="no-referrer"` on xv thumbnail images
 
-### F16: Search + Date Filter
-- Search bar HTML generated per text-mode tab
-- `applySearch()`: keyword match on `.card-text` textContent, date range on `.card-date`
-- Result count updates: "N 筆結果"
-- Load-more button hidden during search, restored on clear
-- **Verified:** Search bar HTML tests pass. JS logic mirrors prototype.
+### F23 — Periodic Update
+- [x] `crawl()` can be called from cron/script
+- [x] `load_existing_eids()` handles empty file (first run)
+- [x] Duplicate prevention by eid
 
-### F17: Pagination
-- `PAGE_SIZE = 50` items per batch
-- `renderCards(tabId, count)`: renders first batch initially
-- Click "載入更多 (N)" → renders next batch
-- Final state: "已全部載入" with `.done` class
-- **Verified:** `test_load_more_present` confirms HTML. Load-more logic mirrors prototype.
+### F24 — Tag Filtering
+- [x] `.tag-bar` rendered with correct tag buttons + counts
+- [x] Tags sorted alphabetically in output
+- [x] `filterXvTags()` toggles `.hidden` on non-matching cards
+- [x] "全部" button shows all cards
+- [x] Tag badges rendered in card headers
 
-### F18: Media Performance
-- All `<img>` elements include `loading="lazy"` attribute
-- All `<video>` elements include `preload="none"` attribute
-- Video overlay: `.vid-overlay` with CSS triangle play button
-- **Verified:** Code inspection. Attributes generated in `mediaHtml()` JS function.
+---
 
-### F19: Backfill
-- `channels.json`: ai_guoman has `"backfill": true`
-- `_get_existing_media_records()`: checks filesystem for photo/video files matching message date+ID
-- Handles both photo messages and document messages (with original name or fallback naming)
-- `process_channel()`: three-way branch — normal / backfill-new / backfill-existing
-- Existing media not re-downloaded; new media downloaded normally
-- Text records appended to `messages.jsonl` for backfilled messages
-- **Verified:** Code review confirms no duplicate download. Backfill count reported in output.
+## Structure Verification
 
-## Channel Config Verification
+| File | Lines | Purpose | Verified |
+|------|-------|---------|----------|
+| `src/xvideos.json` | 34 | Source configuration | Correct JSON schema |
+| `src/xv_spider.py` | 191 | Crawler + parser | 17 tests pass |
+| `src/generate_html.py` | ~811 | HTML generation | 24 tests pass (11 xv + 13 TG) |
+| `tests/test_xv_spider.py` | 211 | Spider unit tests | 17 tests pass |
+| `tests/test_html.py` | ~344 | HTML integration tests | 24 tests pass |
 
-```json
-{
-  "channels": [
-    {"id": "ai_guoman", "mode": "text", "group": "mens_fantasy", "backfill": true},  // was "media"
-    {"id": "ciyuanb",   "mode": "text", "group": "mens_fantasy"},                     // NEW
-    {"id": "llcosfc",   "mode": "text", "group": "mens_fantasy"},                     // NEW
-    {"id": "dashijian", "mode": "text"}                                               // unchanged
-  ]
-}
+---
+
+## Final Sanity Check
+
+```
+$ python -m unittest discover tests
+Ran 89 tests in 0.401s — OK
 ```
 
-- 3 channels grouped → 1 "男人的幻想" tab (verified: `test_channel_group_produces_merged_tab`)
-- dashijian standalone → 1 "東南亞大事件" tab (verified: `test_html_has_tab_content_v3`)
+All v4 features verified against PRD and DESIGN specifications.
 
-## Test Evidence
-
-64/64 tests pass. 14 integration tests validate HTML structure, JSON data, and new UI components.
-
-## Design Fidelity
-
-`generate_html.py` output matches `design_20260702.html` prototype:
-- Same CSS color system (`#d14334` accent, `#0a0a0a` background)
-- Same font stack (serif display + system sans-serif)
-- Same HTML structure (sticky tabs, search bar, cards-container, lightbox)
-- Same JS architecture (IIFE, `renderCards()`, `applySearch()`, `lbState`)
-
-**ALL VERIFIED PASS**
+**Verdict**: Phase 6 — **PASS**. All features implemented as designed, no deviations.
