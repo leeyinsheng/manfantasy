@@ -118,7 +118,7 @@
       "name": "異想空間",
       "mode": "video",
       "group": "mens_fantasy",
-      "fetch_limit": 500
+      "fetch_limit": 50
     }
   ]
 }
