@@ -26,7 +26,7 @@ from tg_core import (
 )
 
 
-async def download_media_message(message, channel_id, client):
+async def download_media_message(message, channel_id, client, video_only=False):
     media = message.media
     is_photo = isinstance(media, MessageMediaPhoto)
     is_document = isinstance(media, MessageMediaDocument)
@@ -38,6 +38,8 @@ async def download_media_message(message, channel_id, client):
     media_files = []
 
     if media_type == "photo":
+        if video_only:
+            return []
         filename = generate_photo_filename(message.date, message.id)
         filepath = photo_dir / filename
         try:
@@ -188,10 +190,17 @@ async def process_channel(channel, client):
         is_backfill_msg = backfill and message.id in downloaded
         media_files = []
 
+        if channel_mode == "video":
+            if not message.media:
+                continue
+            has_video = hasattr(message.media, 'document') and hasattr(message.media.document, 'mime_type') and message.media.document.mime_type and message.media.document.mime_type.startswith('video/')
+            if not has_video:
+                continue
+
         if is_backfill_msg:
             media_files = _get_existing_media_records(message, channel_id)
         elif message.media:
-            media_files = await download_media_message(message, channel_id, client)
+            media_files = await download_media_message(message, channel_id, client, video_only=(channel_mode == "video"))
         elif channel_mode == "text" and not message.text and not getattr(message, "caption", None):
             continue
 
