@@ -8,9 +8,9 @@
 |-------|------|-----------|--------|
 | 1 | Product Ideation | Me | `docs/01_PRD.md` |
 | 2 | Product Design | Me + AI | `docs/02_DESIGN.md` + `docs/prototype/design.html` |
-| 3 | Feature Dev + Unit Tests | AI | `src/` + `tests/` |
+| 3 | Feature Dev + Unit Tests | AI | `src/` + `tests/` (unit tests, all must pass) |
 | 4 | Code Review | AI | `docs/04_REVIEW.md` |
-| 5 | Regression Testing | AI | `docs/05_QA_REPORT.md` |
+| 5 | Regression Testing | AI | `docs/05_TEST_PLAN.md` + `docs/05_QA_REPORT.md` |
 | 6 | Feature Verification | AI | `docs/06_VERIFICATION.md` |
 | 7 | User Acceptance | Me | Sign-off / Rework |
 
@@ -42,15 +42,42 @@ When each phase completes, AI must:
 2. **Update** `docs/STATUS.md`: set current phase to ✅, next phase to ⏳
 3. **Notify** me that the phase is done and name the next phase
 
+## Phase 5 Test Gate
+
+Phase 5 is a hard gate — no feature gets to Phase 6 without a complete test cycle.
+
+### Step 1 — Design test plan
+
+AI reads `02_DESIGN.md` (design spec) and `src/` + `tests/` (implementation), then writes `docs/05_TEST_PLAN.md` covering:
+
+- Functional test cases derived from DESIGN.md
+- Edge cases, error paths, boundary conditions
+- Integration points between components
+- Regression test scope
+
+### Step 2 — Execute
+
+AI runs all tests:
+- Unit tests from Phase 3
+- Integration tests designed in Step 1
+- End-to-end flows
+
+### Gate
+
+- **All pass** → update STATUS.md, proceed to Phase 6
+- **Any fail** → AI updates STATUS.md marking Phase 3 as ⏳ with failed tests, blocks progression. I say "start phase 3" to fix, then re-run Phase 4 → 5.
+
 ## Rollback & Fix
 
-When Code Review / Regression Testing / Feature Verification finds issues:
+When any phase finds issues:
 
 1. AI updates STATUS.md: mark the affected phase as ⏳ with reason
 2. AI tells me which phases need re-execution
-3. I confirm by saying "start phase N". AI reads all preceding docs + review/report docs, then fixes
+3. I confirm by saying "start phase N". AI reads all preceding docs + review/report/test plan docs, then fixes
 4. Fix complete → commit → update STATUS.md ✅
 5. Re-run downstream phases (Phase 4 → 5 → 6)
+
+**Phase 5 test failures** always roll back to Phase 3 (implementation must be fixed). Phase 5 regression tests and the test plan gate re-run after the fix.
 
 ## Directory Structure
 
@@ -63,7 +90,8 @@ docs/
 │   └── design.html         ← Phase 2 HTML prototype
 ├── 03_IMPLEMENTATION.md    ← Phase 3 AI summary
 ├── 04_REVIEW.md            ← Phase 4 output
-├── 05_QA_REPORT.md         ← Phase 5 output
+├── 05_TEST_PLAN.md         ← Phase 5 test design
+├── 05_QA_REPORT.md         ← Phase 5 test results
 └── 06_VERIFICATION.md     ← Phase 6 output
 src/                        ← Phase 3 output
 tests/                      ← Phase 3 output
@@ -75,13 +103,20 @@ tests/                      ← Phase 3 output
 [Me] Phase 1 ──I say──→ [Me+AI] Phase 2 ──I say──→ [AI] Phase 3
                                                           │ auto
                                                           v
-[AI] Phase 6 ←──auto── [AI] Phase 5 ←──auto── [AI] Phase 4
-       │
-       │ AI notifies done
-       v
-[Me] Phase 7 ──sign-off──→ Ship
-       │
-       └──rework→ Rollback Phase N
+                                                  [AI] Phase 4
+                                                          │ auto
+                                                          v
+                                              ┌── [AI] Phase 5 ──┐
+                                              │ test design gate  │
+                                              └─── all pass? ─────┘
+                                               yes│        │no (→ P3)
+                                                  v
+                                          [AI] Phase 6
+                                                  │ AI notifies done
+                                                  v
+                                          [Me] Phase 7 ──sign-off──→ Ship
+                                                  │
+                                                  └──rework→ Rollback Phase N
 ```
 
 ## gstack Skill Mapping
@@ -92,7 +127,7 @@ tests/                      ← Phase 3 output
 | 2 | Product Design | Me + AI | `/design-consultation` → `/design-html` |
 | 3 | Feature Dev + UT | AI | `/spec` + TDD |
 | 4 | Code Review | AI | `/review` |
-| 5 | Regression Testing | AI | `/qa` + `/benchmark` |
+| 5 | Regression Testing | AI | `/qa` + `/benchmark` (test design → execution) |
 | 6 | Feature Verification | AI | `/browse` |
 | 7 | User Acceptance | Me | `/ship` (optional, deploy after sign-off) |
 

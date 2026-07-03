@@ -2,290 +2,368 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MAN'S FANTASY — v5 Casino Prototype</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>MAN'S FANTASY — v5 APP Prototype</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&display=swap');
 
 :root {
-  --bg: #06080d; --bg-2: #0c0f16;
-  --surface: rgba(20,24,34,0.85);
-  --surface-hover: rgba(26,30,42,0.92);
-  --gold: #c9a24e; --gold-light: #e8c96a;
-  --gold-glow: rgba(201,162,78,0.20);
-  --gold-dim: rgba(201,162,78,0.35);
-  --fg: #e6e3dd; --fg-secondary: #9a9790; --muted: #5a5752;
-  --border: rgba(201,162,78,0.10); --border-active: rgba(201,162,78,0.30);
-  --badge-bg: rgba(201,162,78,0.12);
-  --radius: 6px; --max-w: 880px;
+  --bg: #0a0c12;
+  --bg-card: rgba(16,18,26,0.85);
+  --gold: #c9a24e;
+  --gold-light: #e0c878;
+  --gold-glow: rgba(201,162,78,0.15);
+  --gold-dim: rgba(201,162,78,0.3);
+  --fg: #e4e1db; --fg-dim: #908d86; --muted: #524f4a;
+  --border: rgba(201,162,78,0.08);
+  --border-gold: rgba(201,162,78,0.18);
+  --nav-bg: rgba(8,10,16,0.96);
+  --radius: 8px; --app-w: 430px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{font-size:clamp(14px,1vw+10px,16px)}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--fg);line-height:1.6;min-height:100dvh;overflow-x:hidden}
-a{color:var(--gold);text-decoration:none}
+html{font-size:15px}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  background:#06070a;
+  display:flex;justify-content:center;
+  min-height:100dvh;color:var(--fg);line-height:1.6;
+  -webkit-tap-highlight-color:transparent;
+}
+
+/* App Shell */
+.app-shell{
+  width:100%;max-width:var(--app-w);min-height:100dvh;
+  display:flex;flex-direction:column;
+  background:var(--bg);position:relative;overflow-x:hidden;
+  border-left:1px solid rgba(255,255,255,0.02);
+  border-right:1px solid rgba(255,255,255,0.02);
+}
 
 /* Header */
-.header{padding:2.5rem 1rem 1.5rem;border-bottom:1px solid var(--border);text-align:center}
-.header h1{font-family:'Cinzel',Georgia,serif;font-size:clamp(1.5rem,4vw,2.2rem);font-weight:600;letter-spacing:0.12em;color:var(--gold);text-shadow:0 0 30px var(--gold-glow)}
-.header-deco{color:var(--gold-dim);font-size:0.6rem;margin:0.3rem 0;letter-spacing:0.4em}
-.header .time{font-size:0.78rem;color:var(--muted);margin-top:0.4rem}
-.header .time span{color:var(--fg-secondary)}
+.app-header{
+  padding:0.8rem 1rem;display:flex;justify-content:space-between;align-items:center;
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:10;
+  background:rgba(10,12,18,0.94);backdrop-filter:blur(8px);
+}
+.app-header .title{
+  font-family:'Cinzel',Georgia,serif;font-size:0.85rem;
+  font-weight:600;color:var(--gold);
+  letter-spacing:0.06em;text-shadow:0 0 12px var(--gold-glow);
+}
+.app-header .time{font-size:0.68rem;color:var(--muted)}
 
-/* Tab Nav */
-.tab-nav{display:flex;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;background:rgba(6,8,13,0.94);backdrop-filter:blur(8px)}
-.tab-btn{flex:1;padding:0.75rem 0.4rem;text-align:center;font-size:0.8rem;font-weight:500;color:var(--muted);position:relative;transition:color .2s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;border:none;background:none;font-family:inherit}
-.tab-btn:hover{color:var(--fg-secondary)}
-.tab-btn.active{color:var(--gold);text-shadow:0 0 12px var(--gold-glow)}
-.tab-btn.active::after{content:'';position:absolute;bottom:-1px;left:15%;width:70%;height:2px;background:linear-gradient(90deg,transparent,var(--gold),var(--gold-light),var(--gold),transparent);border-radius:1px}
-.tab-btn .badge{display:inline-block;font-size:0.65rem;background:var(--badge-bg);color:var(--gold-dim);padding:1px 7px;border-radius:10px;margin-left:4px;vertical-align:middle}
-.tab-btn.active .badge{background:var(--gold-dim);color:var(--bg)}
-
-/* Main */
-main{padding:0 1rem;max-width:var(--max-w);margin:0 auto}
-.tab-content{display:none;padding:1rem 0}
+/* Content */
+.app-content{
+  flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:0.75rem 0.75rem 5rem;
+}
+.tab-content{display:none}
 .tab-content.active{display:block}
 
-/* Search */
-.search-bar{display:flex;flex-wrap:wrap;gap:0.5rem;padding:0.75rem;background:var(--surface);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:1.5rem;align-items:center}
-.search-bar input[type="text"]{flex:1;min-width:160px;padding:0.5rem 0.75rem;background:var(--bg-2);border:1px solid var(--border);border-radius:4px;font-size:0.82rem;color:var(--fg);font-family:inherit;outline:none;transition:border-color .15s}
-.search-bar input[type="text"]::placeholder{color:var(--muted)}
-.search-bar input[type="text"]:focus{border-color:var(--gold-dim);box-shadow:0 0 0 2px rgba(201,162,78,0.08)}
-.time-presets{display:flex;gap:4px;flex-wrap:wrap}
-.preset-btn{padding:0.3rem 0.6rem;font-size:0.73rem;color:var(--muted);background:var(--bg-2);border:1px solid var(--border);border-radius:4px;cursor:pointer;transition:all .15s;font-family:inherit}
-.preset-btn:hover{color:var(--gold-dim);border-color:var(--gold-dim)}
-.preset-btn.active{color:var(--bg);background:linear-gradient(135deg,var(--gold),var(--gold-light));border-color:transparent;font-weight:600}
-.result-count{font-size:0.78rem;color:var(--muted);margin-left:auto}
-
-/* Cards */
-.card{background:var(--surface);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid var(--border);border-left:2px solid var(--gold-dim);border-radius:var(--radius);padding:1rem 1rem 0;margin-bottom:0.75rem;transition:transform .2s ease,box-shadow .2s ease,border-color .2s}
-.card:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,0.4),0 0 1px var(--gold-glow);border-color:var(--border-active)}
-.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;font-size:0.78rem}
-.card-source{display:inline-flex;align-items:center;gap:6px;padding:2px 8px;background:var(--badge-bg);border-radius:4px;color:var(--fg-secondary);font-size:0.73rem}
-.card-source::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--gold);box-shadow:0 0 6px var(--gold-glow)}
-.card-date{font-family:'Cinzel',Georgia,serif;font-size:0.7rem;color:var(--muted);letter-spacing:0.02em}
-.card-text{font-size:0.88rem;line-height:1.65;margin-bottom:0.5rem;color:var(--fg);overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+/* Card */
+.card{
+  background:var(--bg-card);backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  border:1px solid var(--border);border-radius:var(--radius);
+  padding:0.8rem 0.8rem 0;margin-bottom:0.5rem;
+  transition:border-color .15s;
+}
+.card:active{border-color:var(--border-gold)}
+.card-header{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:0.4rem;font-size:0.72rem;
+}
+.card-source{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:2px 6px;background:rgba(201,162,78,0.08);
+  border-radius:3px;color:var(--fg-dim);font-size:0.68rem;
+}
+.card-source::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--gold);box-shadow:0 0 4px var(--gold-glow)}
+.card-date{font-family:'Cinzel',Georgia,serif;font-size:0.66rem;color:var(--muted)}
+.card-text{
+  font-size:0.84rem;line-height:1.6;margin-bottom:0.4rem;
+  overflow:hidden;display:-webkit-box;
+  -webkit-line-clamp:3;-webkit-box-orient:vertical;
+}
 .card-text.full{-webkit-line-clamp:unset;display:block}
-.card-thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:4px;margin-top:0.5rem}
-.thumb{position:relative;aspect-ratio:1;overflow:hidden;border-radius:4px;background:var(--bg-2);cursor:pointer}
+.card-thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:3px;margin-top:0.4rem}
+.thumb{position:relative;aspect-ratio:1;overflow:hidden;border-radius:3px;background:var(--bg)}
 .thumb img{width:100%;height:100%;object-fit:cover}
-.thumb .vid-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:28px;height:28px;background:rgba(0,0,0,0.7);border-radius:50%;display:flex;align-items:center;justify-content:center;pointer-events:none;border:1px solid var(--gold-dim)}
-.thumb .vid-icon::after{content:'';border-left:9px solid var(--gold);border-top:5px solid transparent;border-bottom:5px solid transparent;margin-left:2px}
-.card-expand{text-align:center;font-size:0.78rem;color:var(--gold-dim);padding:0.6rem 0;margin:0 -1rem;margin-top:0.5rem;border-top:1px solid var(--border);cursor:pointer;transition:color .15s,background .15s;user-select:none}
-.card-expand:hover{color:var(--gold);background:rgba(201,162,78,0.04)}
+.thumb .vid-icon{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:24px;height:24px;background:rgba(0,0,0,0.65);
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+}
+.thumb .vid-icon::after{content:'';border-left:7px solid var(--gold);border-top:4px solid transparent;border-bottom:4px solid transparent;margin-left:1px}
+.card-expand{
+  text-align:center;font-size:0.72rem;color:var(--gold-dim);
+  padding:0.5rem 0;margin:0 -0.8rem;margin-top:0.4rem;
+  border-top:1px solid var(--border);cursor:pointer;user-select:none;
+  transition:color .15s;
+}
+.card-expand:active{color:var(--gold)}
 
 /* Tag Bar */
-.tag-bar{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap}
-.tag-btn{padding:0.35rem 0.8rem;font-size:0.76rem;color:var(--muted);background:var(--bg-2);border:1px solid var(--border);border-radius:20px;cursor:pointer;transition:all .15s;user-select:none;font-family:inherit}
-.tag-btn:hover{color:var(--gold-dim);border-color:var(--gold-dim)}
-.tag-btn.active{color:var(--bg);background:linear-gradient(135deg,var(--gold),var(--gold-light));border-color:transparent;font-weight:600;box-shadow:0 2px 8px var(--gold-glow)}
-.tag-count{font-size:0.68rem;opacity:0.75;margin-left:3px}
+.tag-bar{display:flex;gap:5px;margin-bottom:0.75rem;flex-wrap:wrap;padding:0 0.25rem}
+.tag-btn{
+  padding:0.3rem 0.7rem;font-size:0.72rem;
+  color:var(--muted);background:rgba(255,255,255,0.03);
+  border:1px solid var(--border);border-radius:16px;
+  cursor:pointer;user-select:none;transition:all .15s;
+}
+.tag-btn:active{color:var(--gold-dim);border-color:var(--gold-dim)}
+.tag-btn.active{color:var(--bg);background:linear-gradient(135deg,var(--gold),var(--gold-light));border-color:transparent;font-weight:600}
+.tag-count{font-size:0.65rem;opacity:0.7;margin-left:2px}
 
-/* Tag Badge in card */
-.tag-badge{display:inline-block;font-size:0.64rem;padding:1px 7px;border-radius:3px;background:var(--badge-bg);color:var(--gold-dim);margin-left:4px;vertical-align:middle}
-
-/* Embed */
-.xv-embed{margin:0.5rem -1rem 0;border-radius:0;overflow:hidden;background:#000;border-top:1px solid var(--border)}
-.xv-embed iframe{display:block;border:none;width:100%;min-height:420px}
+/* Tag Badge */
+.tag-badge{display:inline-block;font-size:0.6rem;padding:1px 5px;border-radius:2px;background:rgba(201,162,78,0.12);color:var(--gold-dim);margin-left:4px;vertical-align:middle}
 
 /* Pagination */
-.pagination{display:flex;justify-content:center;align-items:center;gap:4px;padding:1rem 0;flex-wrap:wrap}
-.page-btn{min-width:36px;height:36px;display:flex;align-items:center;justify-content:center;padding:0 8px;font-size:0.8rem;color:var(--muted);background:var(--bg-2);border:1px solid var(--border);border-radius:4px;cursor:pointer;transition:all .15s;user-select:none;font-family:inherit}
-.page-btn:hover{color:var(--gold-dim);border-color:var(--gold-dim)}
-.page-btn.active{color:var(--bg);background:linear-gradient(135deg,var(--gold),var(--gold-light));border-color:transparent;font-weight:600;box-shadow:0 2px 8px var(--gold-glow)}
-.page-btn.disabled{opacity:0.3;pointer-events:none}
-.page-info{font-size:0.78rem;color:var(--muted);padding:0 12px}
+.pagination{display:flex;justify-content:center;gap:4px;padding:0.75rem 0 0.5rem;flex-wrap:wrap;align-items:center}
+.page-btn{
+  min-width:32px;height:32px;display:flex;align-items:center;justify-content:center;
+  font-size:0.75rem;color:var(--muted);
+  background:rgba(255,255,255,0.03);border:1px solid var(--border);
+  border-radius:4px;cursor:pointer;transition:all .15s;user-select:none;
+}
+.page-btn:active{color:var(--gold-dim);border-color:var(--gold-dim)}
+.page-btn.active{color:var(--bg);background:linear-gradient(135deg,var(--gold),var(--gold-light));border-color:transparent;font-weight:600}
+.page-btn.disabled{opacity:0.25;pointer-events:none}
+.page-info{font-size:0.72rem;color:var(--muted);padding:0 8px}
+
+/* Embed */
+.xv-embed{margin:0.4rem -0.8rem 0;overflow:hidden;background:#000;border-top:1px solid var(--border)}
+.xv-embed iframe{display:block;border:none;width:100%;min-height:260px}
+
+/* Bottom Nav */
+.bottom-nav{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:var(--app-w);
+  display:flex;justify-content:space-around;
+  background:var(--nav-bg);backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  border-top:1px solid var(--border);
+  padding:0.3rem 0 max(0.3rem, env(safe-area-inset-bottom));
+  z-index:20;
+}
+.nav-item{
+  display:flex;flex-direction:column;align-items:center;gap:1px;
+  padding:0.35rem 0.3rem;min-width:52px;
+  font-size:0.58rem;color:var(--muted);
+  cursor:pointer;user-select:none;transition:color .15s;
+}
+.nav-item .icon{font-size:1.15rem;line-height:1}
+.nav-item.active{color:var(--gold)}
+.nav-item.active .icon{text-shadow:0 0 10px var(--gold-glow)}
 
 /* Lightbox */
-.lightbox{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.95);backdrop-filter:blur(4px)}
-.lightbox.open{display:flex;align-items:center;justify-content:center;animation:lbIn .25s ease}
-@keyframes lbIn{from{opacity:0}to{opacity:1}}
-.lb-close{position:absolute;top:1rem;right:1rem;width:42px;height:42px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;color:var(--gold-dim);cursor:pointer;z-index:2;border:1px solid var(--border-active);border-radius:50%;background:var(--bg-2);transition:all .15s}
-.lb-close:hover{color:var(--gold-light);border-color:var(--gold);box-shadow:0 0 12px var(--gold-glow)}
-.lb-prev,.lb-next{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:2rem;color:var(--gold-dim);cursor:pointer;z-index:2;border-radius:50%;background:rgba(12,15,22,0.7);transition:all .15s}
-.lb-prev:hover,.lb-next:hover{color:var(--gold);box-shadow:0 0 12px var(--gold-glow)}
-.lb-prev{left:1rem}
-.lb-next{right:1rem}
-.lb-counter{position:absolute;bottom:1.5rem;left:50%;transform:translateX(-50%);color:var(--fg-secondary);font-size:0.82rem;z-index:2;font-family:'Cinzel',Georgia,serif}
-.lb-content{max-width:90vw;max-height:85vh;display:flex;align-items:center;justify-content:center}
-.lb-content img,.lb-content video{max-width:100%;max-height:85vh;object-fit:contain;border-radius:4px}
-
+.lightbox{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.96)}
+.lightbox.open{display:flex;align-items:center;justify-content:center}
+.lb-close{position:absolute;top:1rem;right:1rem;width:38px;height:38px;border-radius:50%;font-size:1.3rem;color:var(--gold-dim);border:1px solid var(--border-gold);background:var(--bg-card);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2}
+.lb-prev,.lb-next{position:absolute;top:50%;transform:translateY(-50%);width:40px;height:40px;font-size:1.8rem;color:var(--gold-dim);cursor:pointer;z-index:2;display:flex;align-items:center;justify-content:center}
+.lb-prev{left:0.5rem}.lb-next{right:0.5rem}
+.lb-counter{position:absolute;bottom:1rem;left:50%;transform:translateX(-50%);color:var(--fg-dim);font-size:0.78rem;z-index:2}
+.lb-content{max-width:96vw;max-height:80vh;display:flex;align-items:center;justify-content:center}
+.lb-content img,.lb-content video{max-width:100%;max-height:80vh;object-fit:contain;border-radius:4px}
 .hidden{display:none!important}
-
-@media(max-width:600px){
-  .header{padding:1.5rem 0.8rem 1rem}
-  main{padding:0 0.6rem}
-  .card{padding:0.8rem 0.8rem 0}
-  .card-expand{margin:0.5rem -0.8rem 0}
-  .xv-embed{margin:0.5rem -0.8rem 0}
-  .search-bar{flex-direction:column;align-items:stretch}
-  .result-count{margin-left:0;text-align:right}
-  .tab-btn{font-size:0.72rem;padding:0.65rem 0.3rem}
-  .card-thumbs{grid-template-columns:repeat(auto-fill,minmax(64px,1fr))}
-  .lb-prev{left:0.5rem;width:36px;height:36px;font-size:1.4rem}
-  .lb-next{right:0.5rem;width:36px;height:36px;font-size:1.4rem}
-  .lb-content{max-width:96vw}
-  .xv-embed iframe{min-height:240px}
-  .page-btn{min-width:32px;height:32px;font-size:0.75rem}
-}
 </style>
 </head>
 <body>
 
-<header class="header">
-  <div class="header-deco">◆ ◆ ◆</div>
-  <h1>MAN'S FANTASY</h1>
-  <div class="header-deco">◆ ◆ ◆</div>
-  <div class="time">最後更新：<span>2026-07-03 23:34</span></div>
+<div class="app-shell">
+
+<header class="app-header">
+  <span class="title">MAN'S FANTASY</span>
+  <span class="time">更新 23:34</span>
 </header>
 
-<nav class="tab-nav" role="tablist">
-  <button class="tab-btn active" role="tab" data-tab="news">東南亞大事件 <span class="badge">1019</span></button>
-  <button class="tab-btn" role="tab" data-tab="guaba_bl">吃瓜爆料 <span class="badge">349</span></button>
-  <button class="tab-btn" role="tab" data-tab="ai_drama">AI短劇 <span class="badge">65</span></button>
-  <button class="tab-btn" role="tab" data-tab="mens_fantasy">異想空間 <span class="badge">518</span></button>
-  <button class="tab-btn" role="tab" data-tab="xvideos">衝啊, 弟兄們 <span class="badge">465</span></button>
-</nav>
-
-<main>
-  <!-- TG: news -->
-  <div class="tab-content active" id="tab-news" role="tabpanel">
-    <div class="search-bar">
-      <input type="text" placeholder="搜尋訊息…">
-      <div class="time-presets">
-        <button class="preset-btn active">全部</button>
-        <button class="preset-btn">今日</button>
-        <button class="preset-btn">近3日</button>
-        <button class="preset-btn">近7日</button>
-        <button class="preset-btn">本月</button>
-        <button class="preset-btn">近半年</button>
+<main class="app-content">
+  <!-- 🏠 異想空間 -->
+  <div class="tab-content active" id="content-mens_fantasy">
+    <div class="card">
+      <div class="card-header"><span class="card-source">AIguoman18</span><span class="card-date">07-03 10:15</span></div>
+      <div class="card-text">今日最新夢幻美圖合集，精選多張高畫質寫真，點擊放大欣賞。今日最新夢幻美圖合集，精選多張高畫質寫真。</div>
+      <div class="card-thumbs">
+        <div class="thumb"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%2310141c' width='200' height='200'/%3E%3Ctext x='100' y='105' text-anchor='middle' fill='%23524f4a' font-size='14'%3E🖼%3C/text%3E%3C/svg%3E" loading="lazy" alt=""></div>
+        <div class="thumb video"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%2314101c' width='200' height='200'/%3E%3Ctext x='100' y='105' text-anchor='middle' fill='%23524f4a' font-size='14'%3E🎬%3C/text%3E%3C/svg%3E" loading="lazy" alt=""><div class="vid-icon"></div></div>
+        <div class="thumb"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%231c1410' width='200' height='200'/%3E%3Ctext x='100' y='105' text-anchor='middle' fill='%23524f4a' font-size='14'%3E🖼%3C/text%3E%3C/svg%3E" loading="lazy" alt=""></div>
       </div>
-      <span class="result-count"></span>
+      <div class="card-expand">展開詳情 ▾</div>
     </div>
-    <div class="cards-container">
-      <div class="card">
-        <div class="card-header"><span class="card-source">dashijian</span><span class="card-date">2026-07-03 08:00</span></div>
-        <div class="card-text">泰國曼谷發生大規模示威活動，抗議者要求政府改革選舉制度。警方已封鎖主要道路，呼籲民眾避開市中心區域。泰國曼谷發生大規模示威活動，抗議者要求政府改革選舉制度。</div>
-      </div>
-      <div class="card">
-        <div class="card-header"><span class="card-source">ll111</span><span class="card-date">2026-07-02 18:30</span></div>
-        <div class="card-text">越南胡志明市地鐵一號線正式通車，首日即湧入超過十萬人次試乘。全長19.7公里，共14個車站。</div>
+    <div class="card">
+      <div class="card-header"><span class="card-source">ciyuanb</span><span class="card-date">07-03 09:45</span></div>
+      <div class="card-text">二次元精選插畫分享，今天的主題是夏日泳裝特輯，多位繪師作品一次收集。</div>
+      <div class="card-thumbs">
+        <div class="thumb"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%23101c14' width='200' height='200'/%3E%3Ctext x='100' y='105' text-anchor='middle' fill='%23524f4a' font-size='14'%3E🖼%3C/text%3E%3C/svg%3E" loading="lazy" alt=""></div>
       </div>
     </div>
     <div class="pagination">
-      <button class="page-btn disabled">← 上一頁</button>
+      <button class="page-btn disabled">←</button>
       <button class="page-btn active">1</button><button class="page-btn">2</button><button class="page-btn">3</button>
-      <span class="page-info">…</span><button class="page-btn">51</button>
-      <button class="page-btn">下一頁 →</button>
+      <button class="page-btn">→</button>
     </div>
   </div>
 
-  <!-- TG: guaba_bl -->
-  <div class="tab-content" id="tab-guaba_bl" role="tabpanel">
-    <div class="search-bar"><input type="text" placeholder="搜尋訊息…"><div class="time-presets"><button class="preset-btn active">全部</button><button class="preset-btn">今日</button><button class="preset-btn">近3日</button><button class="preset-btn">近7日</button><button class="preset-btn">本月</button><button class="preset-btn">近半年</button></div><span class="result-count"></span></div>
-    <div class="cards-container"><div class="card"><div class="card-header"><span class="card-source">dyvv9</span><span class="card-date">2026-07-03 15:20</span></div><div class="card-text">某頂流男星深夜密會神秘女子，全程手牽手漫步街頭，疑有新戀情曝光。</div></div></div>
-    <div class="pagination"><button class="page-btn disabled">←</button><button class="page-btn active">1</button><button class="page-btn">2</button><button class="page-btn">→</button></div>
-  </div>
-
-  <!-- TG: ai_drama -->
-  <div class="tab-content" id="tab-ai_drama" role="tabpanel">
-    <div class="search-bar"><input type="text" placeholder="搜尋訊息…"><div class="time-presets"><button class="preset-btn active">全部</button><button class="preset-btn">今日</button><button class="preset-btn">近3日</button><button class="preset-btn">近7日</button><button class="preset-btn">本月</button><button class="preset-btn">近半年</button></div><span class="result-count"></span></div>
-    <div class="cards-container"><div class="card"><div class="card-header"><span class="card-source">huangmangaix</span><span class="card-date">2026-07-03 12:00</span></div><div class="card-text">AI短劇第12集：修仙歸來，發現地球已是廢土世界，唯有殺伐果斷才能存活。</div></div></div>
-    <div class="pagination"><button class="page-btn disabled">←</button><button class="page-btn active">1</button><button class="page-btn">2</button><button class="page-btn">→</button></div>
-  </div>
-
-  <!-- TG: mens_fantasy -->
-  <div class="tab-content" id="tab-mens_fantasy" role="tabpanel">
-    <div class="search-bar"><input type="text" placeholder="搜尋訊息…"><div class="time-presets"><button class="preset-btn active">全部</button><button class="preset-btn">今日</button><button class="preset-btn">近3日</button><button class="preset-btn">近7日</button><button class="preset-btn">本月</button><button class="preset-btn">近半年</button></div><span class="result-count"></span></div>
-    <div class="cards-container">
-      <div class="card">
-        <div class="card-header"><span class="card-source">AIguoman18</span><span class="card-date">2026-07-03 10:15</span></div>
-        <div class="card-text">今日最新夢幻美圖合集，精選多張高畫質寫真，點擊放大欣賞。</div>
-        <div class="card-thumbs">
-          <div class="thumb"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%23141822' width='200' height='200'/%3E%3Ctext x='100' y='105' text-anchor='middle' fill='%235a5752' font-size='14'%3E🖼%3C/text%3E%3C/svg%3E" alt="" loading="lazy"></div>
-          <div class="thumb"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%23221418' width='200' height='200'/%3E%3Ctext x='100' y='105' text-anchor='middle' fill='%235a5752' font-size='14'%3E🖼%3C/text%3E%3C/svg%3E" alt="" loading="lazy"></div>
-          <div class="thumb video"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%23141a22' width='200' height='200'/%3E%3Ctext x='100' y='105' text-anchor='middle' fill='%235a5752' font-size='14'%3E🎬%3C/text%3E%3C/svg%3E" loading="lazy" alt=""><div class="vid-icon"></div></div>
-        </div>
-        <div class="card-expand">展開詳情 ▾</div>
-      </div>
+  <!-- 📰 大事件 -->
+  <div class="tab-content" id="content-news">
+    <div class="card">
+      <div class="card-header"><span class="card-source">dashijian</span><span class="card-date">07-03 08:00</span></div>
+      <div class="card-text">泰國曼谷發生大規模示威活動，抗議者要求政府改革選舉制度。警方已封鎖主要道路，呼籲民眾避開市中心區域。</div>
     </div>
-    <div class="pagination"><button class="page-btn disabled">←</button><button class="page-btn active">1</button><button class="page-btn">2</button><button class="page-btn">3</button><button class="page-btn">→</button></div>
+    <div class="card">
+      <div class="card-header"><span class="card-source">ll111</span><span class="card-date">07-02 18:30</span></div>
+      <div class="card-text">越南胡志明市地鐵一號線正式通車，首日即湧入超過十萬人次試乘。</div>
+    </div>
+    <div class="pagination"><button class="page-btn disabled">←</button><button class="page-btn active">1</button><button class="page-btn">2</button><button class="page-btn">→</button></div>
   </div>
 
-  <!-- xv: 衝啊, 弟兄們 -->
-  <div class="tab-content" id="tab-xvideos" role="tabpanel">
+  <!-- 🔥 吃瓜 -->
+  <div class="tab-content" id="content-guaba_bl">
+    <div class="card">
+      <div class="card-header"><span class="card-source">dyvv9</span><span class="card-date">07-03 15:20</span></div>
+      <div class="card-text">某頂流男星深夜密會神秘女子，全程手牽手漫步街頭，疑有新戀情曝光。</div>
+    </div>
+    <div class="pagination"><button class="page-btn disabled">←</button><button class="page-btn active">1</button><button class="page-btn">2</button><button class="page-btn">→</button></div>
+  </div>
+
+  <!-- 🎬 AI短劇 -->
+  <div class="tab-content" id="content-ai_drama">
+    <div class="card">
+      <div class="card-header"><span class="card-source">huangmangaix</span><span class="card-date">07-03 12:00</span></div>
+      <div class="card-text">AI短劇第12集：修仙歸來，發現地球已是廢土世界，唯有殺伐果斷才能存活。</div>
+    </div>
+    <div class="pagination"><button class="page-btn disabled">←</button><button class="page-btn active">1</button><button class="page-btn">2</button><button class="page-btn">→</button></div>
+  </div>
+
+  <!-- 👊 弟兄們 (xv) -->
+  <div class="tab-content" id="content-xvideos">
     <div class="tag-bar">
-      <button class="tag-btn active" data-tag="all">全部 <span class="tag-count">465</span></button>
-      <button class="tag-btn" data-tag="中國">中國 <span class="tag-count">60</span></button>
-      <button class="tag-btn" data-tag="內射">內射 <span class="tag-count">135</span></button>
-      <button class="tag-btn" data-tag="內衣絲襪">內衣絲襪 <span class="tag-count">135</span></button>
-      <button class="tag-btn" data-tag="日本">日本 <span class="tag-count">135</span></button>
+      <button class="tag-btn active">全部 <span class="tag-count">465</span></button>
+      <button class="tag-btn">中國 <span class="tag-count">60</span></button>
+      <button class="tag-btn">內射 <span class="tag-count">135</span></button>
+      <button class="tag-btn">內衣絲襪 <span class="tag-count">135</span></button>
+      <button class="tag-btn">日本 <span class="tag-count">135</span></button>
     </div>
-    <div class="cards-container">
-      <div class="card">
-        <div class="card-header">
-          <span class="card-source">xv · Amoulsolo <span class="tag-badge">內衣絲襪</span></span>
-          <span class="card-date">48 min · 1080p</span>
-        </div>
-        <div class="card-text full">Sexy O2, T&amp;A XRed 392 (01) - Dressed in Corset, Stockings, Garters, Hat and Accessories .. Ready for the fuck party !!</div>
-        <div class="card-thumbs">
-          <div class="thumb video"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='240'%3E%3Crect fill='%231a1622' width='320' height='240'/%3E%3Ctext x='160' y='125' text-anchor='middle' fill='%239a9790' font-size='14'%3E🎬%3C/text%3E%3C/svg%3E" loading="lazy" alt=""><div class="vid-icon"></div></div>
-        </div>
-        <div class="xv-embed" data-eid="kvchpdbe5f5"></div>
-        <div class="card-expand">▶ 播放影片</div>
-      </div>
-      <div class="card">
-        <div class="card-header">
-          <span class="card-source">xv · Adimartim <span class="tag-badge">日本</span></span>
-          <span class="card-date">11 min · 720p</span>
-        </div>
-        <div class="card-text full">japanese step mom and daughter - 1</div>
-        <div class="card-thumbs">
-          <div class="thumb video"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='240'%3E%3Crect fill='%231a2216' width='320' height='240'/%3E%3Ctext x='160' y='125' text-anchor='middle' fill='%239a9790' font-size='14'%3E🎬%3C/text%3E%3C/svg%3E" loading="lazy" alt=""><div class="vid-icon"></div></div>
-        </div>
-        <div class="xv-embed" data-eid="otbvabo3eb5"></div>
-        <div class="card-expand">▶ 播放影片</div>
-      </div>
-      <div class="card">
-        <div class="card-header">
-          <span class="card-source">xv · Mitaozhi <span class="tag-badge">中國</span></span>
-          <span class="card-date">5 min · 480p</span>
-        </div>
-        <div class="card-text full">日本家庭乱斗综艺乱斗</div>
-        <div class="card-thumbs">
-          <div class="thumb video"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='240'%3E%3Crect fill='%2322161a' width='320' height='240'/%3E%3Ctext x='160' y='125' text-anchor='middle' fill='%239a9790' font-size='14'%3E🎬%3C/text%3E%3C/svg%3E" loading="lazy" alt=""><div class="vid-icon"></div></div>
-        </div>
-        <div class="xv-embed" data-eid="klfffcma487"></div>
-        <div class="card-expand">▶ 播放影片</div>
-      </div>
-      <div class="card">
-        <div class="card-header">
-          <span class="card-source">xv · Javhub <span class="tag-badge">內射</span></span>
-          <span class="card-date">68 min · 1080p</span>
-        </div>
-        <div class="card-text full">JAVHUB Big tit Japanese girl Asuka fucked in lingerie</div>
-        <div class="card-thumbs">
-          <div class="thumb video"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='240'%3E%3Crect fill='%23221622' width='320' height='240'/%3E%3Ctext x='160' y='125' text-anchor='middle' fill='%239a9790' font-size='14'%3E🎬%3C/text%3E%3C/svg%3E" loading="lazy" alt=""><div class="vid-icon"></div></div>
-        </div>
-        <div class="xv-embed" data-eid="upvvhhk07da"></div>
-        <div class="card-expand">▶ 播放影片</div>
-      </div>
+    <div class="card">
+      <div class="card-header"><span class="card-source">xv · Amoulsolo <span class="tag-badge">內衣絲襪</span></span><span class="card-date">48min · 1080p</span></div>
+      <div class="card-text full">Sexy O2, T&amp;A XRed 392 (01) - Dressed in Corset, Stockings, Garters, Hat and Accessories .. Ready for the fuck party !!</div>
+      <div class="card-thumbs"><div class="thumb video"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='240'%3E%3Crect fill='%2316141c' width='320' height='240'/%3E%3Ctext x='160' y='125' text-anchor='middle' fill='%23908d86' font-size='14'%3E🎬%3C/text%3E%3C/svg%3E" loading="lazy" alt=""><div class="vid-icon"></div></div></div>
+      <div class="xv-embed" data-eid="kvchpdbe5f5"></div>
+      <div class="card-expand">▶ 播放影片</div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-source">xv · Adimartim <span class="tag-badge">日本</span></span><span class="card-date">11min · 720p</span></div>
+      <div class="card-text full">japanese step mom and daughter - 1</div>
+      <div class="card-thumbs"><div class="thumb video"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='240'%3E%3Crect fill='%231c1614' width='320' height='240'/%3E%3Ctext x='160' y='125' text-anchor='middle' fill='%23908d86' font-size='14'%3E🎬%3C/text%3E%3C/svg%3E" loading="lazy" alt=""><div class="vid-icon"></div></div></div>
+      <div class="xv-embed" data-eid="otbvabo3eb5"></div>
+      <div class="card-expand">▶ 播放影片</div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-source">xv · Mitaozhi <span class="tag-badge">中國</span></span><span class="card-date">5min · 480p</span></div>
+      <div class="card-text full">日本家庭乱斗综艺乱斗</div>
+      <div class="card-thumbs"><div class="thumb video"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='240'%3E%3Crect fill='%231c1416' width='320' height='240'/%3E%3Ctext x='160' y='125' text-anchor='middle' fill='%23908d86' font-size='14'%3E🎬%3C/text%3E%3C/svg%3E" loading="lazy" alt=""><div class="vid-icon"></div></div></div>
+      <div class="xv-embed" data-eid="klfffcma487"></div>
+      <div class="card-expand">▶ 播放影片</div>
     </div>
     <div class="pagination">
-      <button class="page-btn disabled">← 上一頁</button>
+      <button class="page-btn disabled">←</button>
       <button class="page-btn active">1</button><button class="page-btn">2</button><button class="page-btn">3</button>
-      <span class="page-info">…</span><button class="page-btn">10</button>
-      <button class="page-btn">下一頁 →</button>
+      <button class="page-btn">→</button>
       <span class="page-info">共 465 部</span>
     </div>
   </div>
 </main>
 
-<div class="lightbox" id="lightbox" role="dialog">
+<nav class="bottom-nav">
+  <div class="nav-item active" data-tab="mens_fantasy">
+    <span class="icon">🏠</span><span>異想空間</span>
+  </div>
+  <div class="nav-item" data-tab="news">
+    <span class="icon">📰</span><span>大事件</span>
+  </div>
+  <div class="nav-item" data-tab="guaba_bl">
+    <span class="icon">🔥</span><span>吃瓜</span>
+  </div>
+  <div class="nav-item" data-tab="ai_drama">
+    <span class="icon">🎬</span><span>AI短劇</span>
+  </div>
+  <div class="nav-item" data-tab="xvideos">
+    <span class="icon">👊</span><span>弟兄們</span>
+  </div>
+</nav>
+
+</div><!-- .app-shell -->
+
+<div class="lightbox" id="lightbox">
   <span class="lb-close">&times;</span>
   <span class="lb-prev">&lsaquo;</span>
   <span class="lb-next">&rsaquo;</span>
   <div class="lb-content"></div>
   <span class="lb-counter"></span>
 </div>
+
+<script>
+/* bottom nav */
+document.querySelectorAll('.nav-item').forEach(function(item){
+  item.addEventListener('click',function(){
+    var tab = this.getAttribute('data-tab');
+    document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active')});
+    this.classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(function(c){c.classList.remove('active')});
+    document.getElementById('content-'+tab).classList.add('active');
+  });
+});
+
+/* card expand */
+document.querySelectorAll('.card-expand').forEach(function(btn){
+  btn.addEventListener('click',function(e){
+    e.stopPropagation();
+    var card = this.closest('.card');
+    var txt = card.querySelector('.card-text');
+    if(card.classList.contains('expanded')){
+      card.classList.remove('expanded');txt.classList.remove('full');
+      this.textContent = this.textContent.includes('播放') ? '▶ 播放影片' : '展開詳情 ▾';
+    } else {
+      card.classList.add('expanded');txt.classList.add('full');
+      this.textContent = this.textContent.includes('播放') ? '▲ 收合' : '收合 ▴';
+    }
+  });
+});
+
+/* tag filter */
+document.querySelectorAll('.tag-btn').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    this.parentElement.querySelectorAll('.tag-btn').forEach(function(b){b.classList.remove('active')});
+    this.classList.add('active');
+  });
+});
+
+/* pagination */
+document.querySelectorAll('.page-btn:not(.disabled)').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    this.parentElement.querySelectorAll('.page-btn').forEach(function(b){b.classList.remove('active')});
+    this.classList.add('active');
+  });
+});
+
+/* lightbox */
+document.querySelectorAll('.thumb img').forEach(function(img){
+  img.addEventListener('click',function(e){
+    e.stopPropagation();
+    var src = this.getAttribute('src');
+    document.querySelector('#lightbox .lb-content').innerHTML = '<img src="'+src+'" style="max-height:80vh">';
+    document.querySelector('.lb-counter').textContent = '1 / 1';
+    document.getElementById('lightbox').classList.add('open');
+  });
+});
+document.querySelector('.lb-close').addEventListener('click',function(){
+  document.getElementById('lightbox').classList.remove('open');
+});
+document.getElementById('lightbox').addEventListener('click',function(e){
+  if(e.target===this) this.classList.remove('open');
+});
+</script>
+
 </body>
 </html>

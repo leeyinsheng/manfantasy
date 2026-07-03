@@ -1,4 +1,4 @@
-"""Integration test: validates v5 APP mode HTML structure, embedded data, plus xvideos."""
+"""Integration test: validates v3 HTML structure, embedded data, and new components, plus v4 xvideos."""
 import json
 import re
 import sys
@@ -43,7 +43,7 @@ class TestGenerateHtml(unittest.TestCase):
     def _write_test_channels(self):
         channels = {
             "channels": [
-                {"id": "ai_guoman", "username": "AIguoman18", "name": "異想空間",
+                {"id": "ai_guoman", "username": "AIguoman18", "name": "男人的幻想",
                  "mode": "text", "group": "mens_fantasy", "fetch_limit": 50},
                 {"id": "dashijian", "username": "dashijian", "name": "東南亞大事件",
                  "mode": "text", "fetch_limit": 50},
@@ -74,22 +74,20 @@ class TestGenerateHtml(unittest.TestCase):
     def test_html_contains_tabs(self):
         generate_html.generate()
         html = self._read_html()
-        self.assertIn("異想空間", html)
-        self.assertIn("大事件", html)
+        self.assertIn("男人的幻想", html)
+        self.assertIn("東南亞大事件", html)
 
-    def test_html_has_app_structure(self):
+    def test_html_has_tab_content_v3(self):
         generate_html.generate()
         html = self._read_html()
-        self.assertIn("app-shell", html)
-        self.assertIn("app-header", html)
-        self.assertIn("bottom-nav", html)
-        self.assertIn("nav-item", html)
+        self.assertIn("tab-mens_fantasy", html)
+        self.assertIn("tab-dashijian", html)
         self.assertIn("tab-content active", html)
 
     def test_badge_counts_embedded(self):
         generate_html.generate()
         html = self._read_html()
-        self.assertIn("__DATA__", html)
+        self.assertIn("badge", html)
 
     def test_news_data_in_json(self):
         generate_html.generate()
@@ -131,6 +129,15 @@ class TestGenerateHtml(unittest.TestCase):
         self.assertIn("lb-next", html)
         self.assertIn("lb-counter", html)
 
+    def test_search_bar_present(self):
+        generate_html.generate()
+        html = self._read_html()
+        self.assertIn("search-bar", html)
+        self.assertIn("search-input", html)
+        self.assertIn("time-presets", html)
+        self.assertIn("preset-btn", html)
+        self.assertIn("result-count", html)
+
     def test_pagination_present(self):
         generate_html.generate()
         html = self._read_html()
@@ -142,7 +149,7 @@ class TestGenerateHtml(unittest.TestCase):
         html = self._read_html()
         data = self._extract_json_data(html)
         self.assertIn("mens_fantasy", data)
-        self.assertEqual(data["mens_fantasy"]["name"], "異想空間")
+        self.assertEqual(data["mens_fantasy"]["name"], "男人的幻想")
 
     def test_card_structure_in_json(self):
         generate_html.generate()
@@ -190,6 +197,7 @@ class TestXvHtml(unittest.TestCase):
         mod.CHANNELS_FILE = Path(self._tmp_channels)
         self._write_test_channels()
 
+        # setup xv data
         xv_file = mod.DOWNLOAD_DIR / "xvideos" / "videos.jsonl"
         xv_videos = [
             {"eid": "eid1", "video_id": 1, "title": "Test Video 1", "duration": "10 min",
@@ -230,8 +238,8 @@ class TestXvHtml(unittest.TestCase):
     def test_xv_tab_present(self):
         generate_html.generate()
         html = self._read_html()
-        self.assertIn("弟兄們", html)
-        self.assertIn("content-xvideos", html)
+        self.assertIn("衝啊, 弟兄們", html)
+        self.assertIn("tab-xvideos", html)
 
     def test_xv_data_embedded(self):
         generate_html.generate()
@@ -242,7 +250,7 @@ class TestXvHtml(unittest.TestCase):
         generate_html.generate()
         html = self._read_html()
         m = re.search(r"window\.__XV_DATA__\s*=\s*(\{.*?\});", html, re.DOTALL)
-        self.assertIsNotNone(m)
+        self.assertIsNotNone(m, "Should find __XV_DATA__ in HTML")
         data = json.loads(m.group(1))
         self.assertIn("videos", data)
         self.assertEqual(len(data["videos"]), 2)
@@ -266,7 +274,7 @@ class TestXvHtml(unittest.TestCase):
         generate_html.generate()
         html = self._read_html()
         tab_xv_match = re.search(
-            r'<div class="tab-content(?: active)?" id="content-xvideos".*?</nav>',
+            r'<div class="tab-content(?: active)?" id="tab-xvideos".*?</div>\s*</div>',
             html, re.DOTALL
         )
         if tab_xv_match:
@@ -276,9 +284,11 @@ class TestXvHtml(unittest.TestCase):
     def test_existing_tabs_unaffected(self):
         generate_html.generate()
         html = self._read_html()
-        self.assertIn("大事件", html)
-        self.assertIn("bottom-nav", html)
-        self.assertIn("content-mens_fantasy", html)
+        self.assertIn("東南亞大事件", html)
+        self.assertIn("男人的幻想", html)
+        self.assertIn("tab-mens_fantasy", html)
+        self.assertIn("tab-dashijian", html)
+        self.assertIn("search-bar", html)
 
     def test_xv_pagination_present(self):
         generate_html.generate()
