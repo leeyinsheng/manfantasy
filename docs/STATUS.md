@@ -6,14 +6,14 @@
 |-------|------|--------|
 | 1-7 | All | ✅ |
 
-## v3 Improvement Cycle
+## v4 Improvement Cycle
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | Product Ideation | ✅ (video-only mode + javfh) |
+| 1 | Product Ideation | ✅ (xvideos embed + 4 sources merged) |
 | 2 | Product Design | ✅ |
-| 3 | Feature Dev + Unit Tests | ✅ |
-| 4 | Code Review | ✅ |
-| 5 | Regression Testing | ✅ |
-| 6 | Feature Verification | ✅ |
-| 7 | User Acceptance | ✅ |
+| 3 | Feature Dev + Unit Tests | ✅ (89 tests pass) |
+| 4 | Code Review | ⏳ |
+| 5 | Regression Testing | ⏳ |
+| 6 | Feature Verification | ⏳ |
+| 7 | User Acceptance | ⏳ |
