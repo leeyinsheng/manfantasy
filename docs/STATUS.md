@@ -10,10 +10,16 @@
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | Product Ideation | ✅ (xvideos embed + 4 sources merged) |
-| 2 | Product Design | ✅ |
-| 3 | Feature Dev + Unit Tests | ✅ (89 tests pass) |
-| 4 | Code Review | ✅ (PASS, no blockers) |
-| 5 | Regression Testing | ✅ (89/89 pass) |
-| 6 | Feature Verification | ✅ (all features verified) |
-| 7 | User Acceptance | ✅ (signed off) |
+| 1-7 | All | ✅ |
+
+## v5 Redesign Cycle
+
+| Phase | Name | Status |
+|-------|------|--------|
+| 1 | Product Ideation | ⏳ (2026 gambling casino design) |
+| 2 | Product Design | ⏳ |
+| 3 | Feature Dev + Unit Tests | ⏳ |
+| 4 | Code Review | ⏳ |
+| 5 | Regression Testing | ⏳ |
+| 6 | Feature Verification | ⏳ |
+| 7 | User Acceptance | ⏳ |
