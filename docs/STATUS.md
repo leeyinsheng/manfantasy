@@ -16,8 +16,8 @@
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 1 | Product Ideation | ⏳ (2026 gambling casino design) |
-| 2 | Product Design | ⏳ |
+| 1 | Product Ideation | ✅ (2026 gambling casino design) |
+| 2 | Product Design | ✅ |
 | 3 | Feature Dev + Unit Tests | ⏳ |
 | 4 | Code Review | ⏳ |
 | 5 | Regression Testing | ⏳ |
