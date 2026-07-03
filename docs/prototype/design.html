@@ -1,292 +1,402 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Adult Dream v3 — 設計原型</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Man's Fantasy — v4 原型</title>
 <style>
   :root {
-    --bg: #0f0f14; --surface: #1a1a24; --surface2: #22223a;
-    --accent: #f0a050; --accent2: #50b0e0; --text: #e4e4ec;
-    --text-dim: #8888a0; --border: #2a2a3a; --radius: 10px;
-    --tag: #6a4fc0;
+    --bg: #0a0a0a; --surface: #161616; --surface-2: #1e1e1e;
+    --fg: #e5e5e5; --fg-secondary: #a0a0a0; --muted: #6a6a6a;
+    --border: #2a2a2a; --accent: #d14334; --accent-hover: #e05545;
+    --accent-bg: rgba(209,67,52,0.08); --radius: 8px;
+    --font-display: 'Iowan Old Style','Charter',Georgia,serif;
+    --font-body: -apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+    --max-w: 840px;
   }
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
-    background:var(--bg); color:var(--text); min-height:100vh;
-  }
-  .container { max-width:960px; margin:0 auto; padding:20px 16px; }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html{font-size:clamp(14px,1vw + 10px,17px)}
+  body{font-family:var(--font-body);background:var(--bg);color:var(--fg);line-height:1.6;min-height:100dvh;overflow-x:hidden}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{color:var(--accent-hover)}
+  img,video{max-width:100%;height:auto;display:block}
+  button{cursor:pointer;font:inherit;border:none;background:none;color:inherit}
+  input{font:inherit;color:inherit}
+  .header{padding:2rem 1rem 1rem;border-bottom:1px solid var(--border);text-align:center}
+  .header h1{font-family:var(--font-display);font-size:clamp(1.6rem,3.5vw,2.4rem);font-weight:400;letter-spacing:0.04em}
+  .header .time{font-size:0.8rem;color:var(--muted);margin-top:0.4rem}
+  .header .time span{color:var(--fg-secondary)}
+  .tab-nav{display:flex;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;background:var(--bg)}
+  .tab-btn{flex:1;padding:0.8rem 0.5rem;text-align:center;font-size:0.85rem;font-weight:500;color:var(--muted);transition:color .2s,background .2s;position:relative}
+  .tab-btn:hover{color:var(--fg-secondary);background:var(--surface)}
+  .tab-btn.active{color:var(--fg)}
+  .tab-btn.active::after{content:'';position:absolute;bottom:0;left:10%;width:80%;height:2px;background:var(--accent);border-radius:1px 1px 0 0}
+  .tab-btn .badge{display:inline-block;font-size:0.7rem;background:var(--surface-2);color:var(--muted);padding:1px 6px;border-radius:8px;margin-left:4px;vertical-align:middle}
+  .tab-btn.active .badge{color:var(--fg-secondary)}
+  main{padding:0 1rem;max-width:var(--max-w);margin:0 auto}
+  .tab-content{display:none;padding:1rem 0}
+  .tab-content.active{display:block}
+  .search-bar{display:flex;flex-wrap:wrap;gap:0.5rem;padding:0.75rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:1.5rem;align-items:center}
+  .search-bar input[type="text"]{flex:1;min-width:160px;padding:0.5rem 0.75rem;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;font-size:0.85rem;color:var(--fg)}
+  .search-bar input[type="text"]::placeholder{color:var(--muted)}
+  .search-bar input[type="text"]:focus{border-color:var(--accent);outline:none}
+  .time-presets{display:flex;gap:4px;flex-wrap:wrap}
+  .preset-btn{padding:0.35rem 0.6rem;font-size:0.75rem;color:var(--muted);background:var(--surface-2);border:1px solid var(--border);border-radius:4px;transition:all .15s}
+  .preset-btn:hover{color:var(--fg-secondary);border-color:var(--muted)}
+  .preset-btn.active{color:var(--fg);background:var(--accent-bg);border-color:var(--accent)}
+  .search-bar .result-count{font-size:0.8rem;color:var(--muted);margin-left:auto}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:0.75rem;transition:border-color .2s}
+  .card:hover{border-color:var(--muted)}
+  .card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;font-size:0.78rem;color:var(--muted)}
+  .card-source{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:var(--surface-2);border-radius:4px;color:var(--fg-secondary);font-size:0.75rem}
+  .card-source::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent)}
+  .card-source.xv::before{background:#a070e0}
+  .card-date{font-family:var(--font-display);font-size:0.75rem;color:var(--muted)}
+  .card-text{font-size:0.9rem;line-height:1.65;margin-bottom:0.5rem;word-wrap:break-word;white-space:pre-wrap;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+  .card-text.full{-webkit-line-clamp:unset;display:block}
+  .card-thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:4px;margin-top:0.5rem}
+  .thumb{position:relative;aspect-ratio:1;overflow:hidden;border-radius:4px;background:var(--surface-2);cursor:pointer}
+  .thumb img{width:100%;height:100%;object-fit:cover}
+  .thumb .vid-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:24px;height:24px;background:rgba(0,0,0,0.6);border-radius:50%;display:flex;align-items:center;justify-content:center;pointer-events:none}
+  .thumb .vid-icon::after{content:'';border-left:8px solid #fff;border-top:5px solid transparent;border-bottom:5px solid transparent;margin-left:2px}
+  .card-expand{text-align:center;font-size:0.8rem;color:var(--muted);margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--border);cursor:pointer;user-select:none}
+  .card-expand:hover{color:var(--fg-secondary)}
+  .pagination{display:flex;justify-content:center;align-items:center;gap:4px;padding:1rem 0;flex-wrap:wrap}
+  .page-btn{min-width:36px;height:36px;display:flex;align-items:center;justify-content:center;padding:0 8px;font-size:0.82rem;color:var(--muted);background:var(--surface-2);border:1px solid var(--border);border-radius:4px;cursor:pointer;transition:all .15s;user-select:none}
+  .page-btn:hover{color:var(--fg);border-color:var(--muted)}
+  .page-btn.active{color:var(--fg);background:var(--accent-bg);border-color:var(--accent)}
+  .page-btn.disabled{color:var(--muted);opacity:0.4;cursor:default;pointer-events:none}
+  .page-info{font-size:0.8rem;color:var(--muted);padding:0 12px}
+  .lightbox{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.92)}
+  .lightbox.open{display:flex;align-items:center;justify-content:center}
+  .lb-close{position:absolute;top:1rem;right:1rem;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:#fff;cursor:pointer;z-index:2;border-radius:50%;background:rgba(255,255,255,0.1)}
+  .lb-close:hover{background:rgba(255,255,255,0.2)}
+  .lb-prev,.lb-next{position:absolute;top:50%;transform:translateY(-50%);width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-size:2.2rem;color:#fff;cursor:pointer;z-index:2;border-radius:50%;background:rgba(255,255,255,0.06)}
+  .lb-prev:hover,.lb-next:hover{background:rgba(255,255,255,0.15)}
+  .lb-prev{left:1rem}
+  .lb-next{right:1rem}
+  .lb-counter{position:absolute;bottom:1.5rem;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.6);font-size:0.85rem;z-index:2;font-family:var(--font-display)}
+  .lb-content{max-width:90vw;max-height:85vh;display:flex;align-items:center;justify-content:center}
+  .lb-content img,.lb-content video{max-width:100%;max-height:85vh;object-fit:contain;border-radius:4px}
+  .hidden{display:none!important}
 
-  /* Header */
-  header { text-align:center; padding:32px 0 20px; border-bottom:1px solid var(--border); margin-bottom:20px; }
-  header h1 { font-size:22px; font-weight:700; }
-  header p { color:var(--text-dim); font-size:13px; margin-top:4px; }
+  /* ── xv tag bar ── */
+  .tag-bar{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap}
+  .tag-btn{padding:0.35rem 0.7rem;font-size:0.78rem;color:var(--muted);background:var(--surface-2);border:1px solid var(--border);border-radius:4px;cursor:pointer;transition:all .15s;user-select:none}
+  .tag-btn:hover{color:var(--fg-secondary);border-color:var(--muted)}
+  .tag-btn.active{color:var(--fg);background:var(--accent-bg);border-color:var(--accent)}
+  .tag-count{font-size:0.7rem;color:var(--muted);margin-left:3px}
 
-  /* Tabs */
-  .tabs { display:flex; margin-bottom:24px; border-bottom:2px solid var(--border); }
-  .tab { padding:10px 24px; font-size:14px; font-weight:500; cursor:pointer; color:var(--text-dim); border-bottom:2px solid transparent; margin-bottom:-2px; transition:all .15s; user-select:none; }
-  .tab:hover { color:var(--text); }
-  .tab.active { color:var(--accent2); border-bottom-color:var(--accent2); }
-  .tab-content { display:none; }
-  .tab-content.active { display:block; }
+  /* ── xv embed ── */
+  .xv-embed{margin-top:0.5rem;border-radius:6px;overflow:hidden;background:#000}
+  .xv-embed iframe{display:block;border:none;width:100%;min-height:420px}
 
-  /* Search Bar */
-  .search-bar { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
-  .search-bar input { padding:8px 12px; background:var(--surface); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:13px; outline:none; }
-  .search-bar input:focus { border-color:var(--accent2); }
-  .search-bar input[type="text"] { flex:1; min-width:160px; }
-  .search-bar input[type="date"] { color-scheme:dark; }
-  .search-count { font-size:12px; color:var(--text-dim); margin-bottom:8px; min-height:18px; }
+  /* ── tag badge on card ── */
+  .tag-badge{display:inline-block;font-size:0.65rem;padding:1px 6px;border-radius:3px;background:rgba(160,112,224,0.15);color:#b8a0e0;margin-left:4px;vertical-align:middle}
 
-  /* Card */
-  .card { background:var(--surface); border-radius:var(--radius); border:1px solid var(--border); margin-bottom:16px; overflow:hidden; }
-  .card-date { font-size:12px; color:var(--accent); padding:14px 16px 0; font-weight:500; }
-  .card-source { display:inline-block; font-size:11px; color:var(--text); background:var(--tag); padding:2px 8px; border-radius:4px; margin:6px 16px 0; }
-  .card-text { padding:8px 16px 14px; font-size:14px; line-height:1.7; color:var(--text); white-space:pre-wrap; }
-  .card-media { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:2px; padding:0; }
-  .card-media img { width:100%; height:150px; object-fit:cover; cursor:pointer; display:block; }
-
-  /* Gallery */
-  .gallery { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:4px; }
-  .gallery img { width:100%; height:200px; object-fit:cover; border-radius:4px; cursor:pointer; transition:opacity .15s; }
-  .gallery img:hover { opacity:.8; }
-
-  /* Load More */
-  .load-more { text-align:center; padding:14px; cursor:pointer; color:var(--accent2); font-size:13px; font-weight:500; border:1px dashed var(--border); border-radius:var(--radius); margin-top:8px; transition:all .15s; user-select:none; }
-  .load-more:hover { background:var(--surface2); border-color:var(--accent2); }
-  .load-more.done { color:var(--text-dim); cursor:default; border-color:var(--border); opacity:.6; }
-
-  /* Lightbox */
-  .lightbox { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.94); z-index:9999; justify-content:center; align-items:center; }
-  .lightbox.active { display:flex; }
-  .lb-content { max-width:90vw; max-height:90vh; display:flex; align-items:center; justify-content:center; }
-  .lb-content img { max-width:90vw; max-height:85vh; object-fit:contain; border-radius:4px; box-shadow:0 0 40px rgba(0,0,0,0.5); }
-  .lb-close { position:fixed; top:16px; right:24px; font-size:36px; color:#aaa; cursor:pointer; z-index:10001; line-height:1; user-select:none; }
-  .lb-close:hover { color:#fff; }
-  .lb-prev,.lb-next { position:fixed; top:50%; transform:translateY(-50%); font-size:52px; color:#aaa; cursor:pointer; z-index:10001; padding:8px 12px; user-select:none; }
-  .lb-prev:hover,.lb-next:hover { color:#fff; }
-  .lb-prev { left:12px; }
-  .lb-next { right:12px; }
-  .lb-counter { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); color:#aaa; font-size:13px; z-index:10001; }
-
-  .hidden { display:none !important; }
-
-  @media (max-width:640px) {
-    .gallery { grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); }
-    .gallery img { height:140px; }
-    .lb-prev { left:4px; font-size:40px; padding:4px; }
-    .lb-next { right:4px; font-size:40px; padding:4px; }
+  @media(max-width:600px){
+    .header{padding:1.2rem 0.8rem 0.8rem}
+    main{padding:0 0.6rem}
+    .card{padding:0.8rem}
+    .search-bar{flex-direction:column;align-items:stretch}
+    .result-count{margin-left:0;text-align:right}
+    .tab-btn{font-size:0.78rem;padding:0.7rem 0.4rem}
+    .card-thumbs{grid-template-columns:repeat(auto-fill,minmax(64px,1fr))}
+    .lb-prev{left:0.5rem;width:36px;height:36px;font-size:1.6rem}
+    .lb-next{right:0.5rem;width:36px;height:36px;font-size:1.6rem}
+    .lb-content{max-width:96vw}
+    .xv-embed iframe{min-height:240px}
   }
 </style>
 </head>
 <body>
-<div class="container">
-  <header>
-    <h1>Adult Dream</h1>
-    <p>更新時間: 2025-07-02 12:00:00</p>
-    <p style="margin-top:8px;font-size:11px;color:var(--accent);">v3 設計原型 — 合併頁籤 + 燈箱 + 搜尋 + 分頁</p>
-  </header>
 
-  <div class="tabs">
-    <div class="tab active" onclick="switchTab('mens_fantasy')">男人的幻想</div>
-    <div class="tab" onclick="switchTab('dashijian')">東南亞大事件</div>
-  </div>
+<header class="header">
+  <h1>Man's Fantasy</h1>
+  <div class="time">最後更新：<span>2026-07-03 23:07</span></div>
+</header>
 
-  <!-- Tab: 男人的幻想 (合併三個頻道) -->
-  <div id="tab-mens_fantasy" class="tab-content active">
+<nav class="tab-nav" role="tablist">
+  <button class="tab-btn active" role="tab" aria-selected="true" data-tab="news">東南亞大事件 <span class="badge">1010</span></button>
+  <button class="tab-btn" role="tab" aria-selected="false" data-tab="guaba_bl">吃瓜爆料 <span class="badge">340</span></button>
+  <button class="tab-btn" role="tab" aria-selected="false" data-tab="ai_drama">AI短劇 <span class="badge">65</span></button>
+  <button class="tab-btn" role="tab" aria-selected="false" data-tab="mens_fantasy">異想空間 <span class="badge">518</span></button>
+  <button class="tab-btn" role="tab" aria-selected="false" data-tab="xvideos">衝啊, 弟兄們 <span class="badge">600</span></button>
+</nav>
+
+<main>
+  <!-- ====== TG: 東南亞大事件 ====== -->
+  <div class="tab-content active" id="tab-news" role="tabpanel">
     <div class="search-bar">
-      <input id="search-input" type="text" placeholder="搜尋訊息..." oninput="doSearch()">
-      <input id="date-from" type="date" title="起始日期" onchange="doSearch()">
-      <input id="date-to" type="date" title="結束日期" onchange="doSearch()">
-    </div>
-    <div id="search-count" class="search-count"></div>
-    <div class="cards-container">
-      <!-- Card 1 — from AIguoman18 -->
-      <div class="card">
-        <div class="card-date">2025-07-02T10:15:30</div>
-        <span class="card-source">AIguoman18</span>
-        <div class="card-text">今日最新夢幻美圖合集，精選多張高畫質寫真，點擊放大欣賞。</div>
-        <div class="card-media">
-          <a href="#" data-lightbox="mens_fantasy"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%232a2a3a' width='400' height='300'/%3E%3Ctext x='200' y='155' text-anchor='middle' fill='%2388a' font-size='16'%3E🖼 圖片 1%3C/text%3E%3C/svg%3E" alt=""></a>
-          <a href="#" data-lightbox="mens_fantasy"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%232a3a3a' width='400' height='300'/%3E%3Ctext x='200' y='155' text-anchor='middle' fill='%2388a' font-size='16'%3E🖼 圖片 2%3C/text%3E%3C/svg%3E" alt=""></a>
-        </div>
+      <input type="text" placeholder="搜尋訊息…">
+      <div class="time-presets">
+        <button class="preset-btn active" data-range="all">全部</button>
+        <button class="preset-btn" data-range="today">今日</button>
+        <button class="preset-btn" data-range="3d">近3日</button>
+        <button class="preset-btn" data-range="7d">近7日</button>
+        <button class="preset-btn" data-range="month">本月</button>
+        <button class="preset-btn" data-range="halfyear">近半年</button>
       </div>
-
-      <!-- Card 2 — from ciyuanb -->
-      <div class="card">
-        <div class="card-date">2025-07-02T09:45:00</div>
-        <span class="card-source">ciyuanb</span>
-        <div class="card-text">二次元精選插畫分享，今天的主題是夏日泳裝特輯，多位繪師作品一次收集。</div>
-        <div class="card-media">
-          <a href="#" data-lightbox="mens_fantasy"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%233a2a3a' width='400' height='300'/%3E%3Ctext x='200' y='155' text-anchor='middle' fill='%2388a' font-size='16'%3E🖼 圖片 3%3C/text%3E%3C/svg%3E" alt=""></a>
-          <a href="#" data-lightbox="mens_fantasy"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%233a3a2a' width='400' height='300'/%3E%3Ctext x='200' y='155' text-anchor='middle' fill='%2388a' font-size='16'%3E🖼 圖片 4%3C/text%3E%3C/svg%3E" alt=""></a>
-          <a href="#" data-lightbox="mens_fantasy"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%233a3a3a' width='400' height='300'/%3E%3Ctext x='200' y='155' text-anchor='middle' fill='%2388a' font-size='16'%3E🖼 圖片 5%3C/text%3E%3C/svg%3E" alt=""></a>
-        </div>
-      </div>
-
-      <!-- Card 3 — from llcosfc -->
-      <div class="card">
-        <div class="card-date">2025-07-01T22:30:00</div>
-        <span class="card-source">llcosfc</span>
-        <div class="card-text">深夜福利合集，內含多組寫真套圖與短影片，完整收藏。</div>
-        <div class="card-media">
-          <a href="#" data-lightbox="mens_fantasy"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%232a2a4a' width='400' height='300'/%3E%3Ctext x='200' y='155' text-anchor='middle' fill='%2388a' font-size='16'%3E🖼 圖片 6%3C/text%3E%3C/svg%3E" alt=""></a>
-        </div>
-      </div>
+      <span class="result-count"></span>
     </div>
-    <div class="load-more" onclick="loadMore(this)">載入更多 (3)</div>
-  </div>
-
-  <!-- Tab: 東南亞大事件 -->
-  <div id="tab-dashijian" class="tab-content">
-    <div class="search-bar">
-      <input type="text" placeholder="搜尋訊息..." oninput="doSearch()">
-      <input type="date" title="起始日期" onchange="doSearch()">
-      <input type="date" title="結束日期" onchange="doSearch()">
-    </div>
-    <div class="search-count"></div>
     <div class="cards-container">
       <div class="card">
-        <div class="card-date">2025-07-02T08:00:00</div>
+        <div class="card-header"><span class="card-source">dashijian</span><span class="card-date">2026-07-03 08:00</span></div>
         <div class="card-text">泰國曼谷發生大規模示威活動，抗議者要求政府改革選舉制度。警方已封鎖主要道路，呼籲民眾避開市中心區域。</div>
       </div>
       <div class="card">
-        <div class="card-date">2025-07-01T18:30:00</div>
-        <div class="card-text">越南胡志明市地鐵一號線正式通車，首日即湧入超過十萬人次試乘。全長19.7公里，共14個車站，為越南首條地鐵線路。</div>
-      </div>
-      <div class="card">
-        <div class="card-date">2025-07-01T14:20:00</div>
-        <div class="card-text">印尼雅加達空氣污染指數持續惡化，PM2.5濃度達到危險等級。政府宣布中小學停課兩天，並限制私家車上路。</div>
-        <div class="card-media">
-          <a href="#" data-lightbox="dashijian"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%234a2a2a' width='400' height='300'/%3E%3Ctext x='200' y='155' text-anchor='middle' fill='%2388a' font-size='16'%3E📰 新聞圖片%3C/text%3E%3C/svg%3E" alt=""></a>
-        </div>
-      </div>
-      <div class="card" style="display:none">
-        <div class="card-date">2025-07-01T10:00:00</div>
-        <div class="card-text">菲律賓馬尼拉灣發現大量油汙，疑似貨輪洩漏。環保團體呼籲政府立即啟動應變機制，避免生態浩劫擴大。</div>
-      </div>
-      <div class="card" style="display:none">
-        <div class="card-date">2025-06-30T16:00:00</div>
-        <div class="card-text">馬來西亞吉隆坡雙子星塔周邊發生火災，消防隊迅速控制火勢。所幸無人員傷亡，起火原因仍待調查。</div>
+        <div class="card-header"><span class="card-source">ll111</span><span class="card-date">2026-07-02 18:30</span></div>
+        <div class="card-text">越南胡志明市地鐵一號線正式通車，首日即湧入超過十萬人次試乘。</div>
       </div>
     </div>
-    <div class="load-more" onclick="loadMore(this)">載入更多 (2)</div>
+    <div class="pagination">
+      <button class="page-btn disabled">&lsaquo; 上一頁</button>
+      <button class="page-btn active">1</button><button class="page-btn">2</button><button class="page-btn">3</button>
+      <span class="page-info">…</span>
+      <button class="page-btn">51</button>
+      <button class="page-btn">下一頁 &rsaquo;</button>
+    </div>
   </div>
-</div>
 
-<!-- Lightbox -->
-<div id="lightbox" class="lightbox">
-  <span id="lb-close" class="lb-close" onclick="closeLb()">&times;</span>
-  <span id="lb-prev" class="lb-prev" onclick="navLb(-1)">&lsaquo;</span>
-  <span id="lb-next" class="lb-next" onclick="navLb(1)">&rsaquo;</span>
-  <span class="lb-counter"></span>
-  <div class="lb-content">
-    <img id="lb-img" src="" alt="">
+  <!-- ====== TG: 吃瓜爆料 ====== -->
+  <div class="tab-content" id="tab-guaba_bl" role="tabpanel">
+    <div class="search-bar"><input type="text" placeholder="搜尋訊息…"><div class="time-presets"><button class="preset-btn active">全部</button><button class="preset-btn">今日</button><button class="preset-btn">近3日</button><button class="preset-btn">近7日</button><button class="preset-btn">本月</button><button class="preset-btn">近半年</button></div><span class="result-count"></span></div>
+    <div class="cards-container"><div class="card"><div class="card-header"><span class="card-source">dyvv9</span><span class="card-date">2026-07-03 15:20</span></div><div class="card-text">某頂流男星深夜密會神秘女子，全程手牽手漫步街頭...</div></div></div>
+    <div class="pagination"><button class="page-btn disabled">&lsaquo;</button><button class="page-btn active">1</button><button class="page-btn">2</button><button class="page-btn">&rsaquo;</button></div>
   </div>
+
+  <!-- ====== TG: AI短劇 ====== -->
+  <div class="tab-content" id="tab-ai_drama" role="tabpanel">
+    <div class="search-bar"><input type="text" placeholder="搜尋訊息…"><div class="time-presets"><button class="preset-btn active">全部</button><button class="preset-btn">今日</button><button class="preset-btn">近3日</button><button class="preset-btn">近7日</button><button class="preset-btn">本月</button><button class="preset-btn">近半年</button></div><span class="result-count"></span></div>
+    <div class="cards-container"><div class="card"><div class="card-header"><span class="card-source">huangmangaix</span><span class="card-date">2026-07-03 12:00</span></div><div class="card-text">AI短劇第12集：修仙歸來，發現地球已是廢土世界...</div></div></div>
+    <div class="pagination"><button class="page-btn disabled">&lsaquo;</button><button class="page-btn active">1</button><button class="page-btn">2</button><button class="page-btn">&rsaquo;</button></div>
+  </div>
+
+  <!-- ====== TG: 異想空間 ====== -->
+  <div class="tab-content" id="tab-mens_fantasy" role="tabpanel">
+    <div class="search-bar"><input type="text" placeholder="搜尋訊息…"><div class="time-presets"><button class="preset-btn active">全部</button><button class="preset-btn">今日</button><button class="preset-btn">近3日</button><button class="preset-btn">近7日</button><button class="preset-btn">本月</button><button class="preset-btn">近半年</button></div><span class="result-count"></span></div>
+    <div class="cards-container">
+      <div class="card">
+        <div class="card-header"><span class="card-source">AIguoman18</span><span class="card-date">2026-07-03 10:15</span></div>
+        <div class="card-text">今日最新夢幻美圖合集，精選多張高畫質寫真，點擊放大欣賞。</div>
+        <div class="card-thumbs">
+          <div class="thumb"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%232a2a35' width='200' height='200'/%3E%3Ctext x='100' y='105' text-anchor='middle' fill='%236a6a6a' font-size='14'%3E🖼 1%3C/text%3E%3C/svg%3E" alt="" loading="lazy"></div>
+          <div class="thumb"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%23352a2a' width='200' height='200'/%3E%3Ctext x='100' y='105' text-anchor='middle' fill='%236a6a6a' font-size='14'%3E🖼 2%3C/text%3E%3C/svg%3E" alt="" loading="lazy"></div>
+        </div>
+      </div>
+    </div>
+    <div class="pagination"><button class="page-btn disabled">&lsaquo;</button><button class="page-btn active">1</button><button class="page-btn">2</button><button class="page-btn">3</button><button class="page-btn">&rsaquo;</button></div>
+  </div>
+
+  <!-- ====== xv: 衝啊, 弟兄們 ====== -->
+  <div class="tab-content" id="tab-xvideos" role="tabpanel">
+    <div class="tag-bar">
+      <button class="tag-btn active" data-tag="all">全部 <span class="tag-count">8</span></button>
+      <button class="tag-btn" data-tag="內衣絲襪">內衣絲襪 <span class="tag-count">2</span></button>
+      <button class="tag-btn" data-tag="日本">日本 <span class="tag-count">2</span></button>
+      <button class="tag-btn" data-tag="中國">中國 <span class="tag-count">2</span></button>
+      <button class="tag-btn" data-tag="內射">內射 <span class="tag-count">2</span></button>
+    </div>
+    <div class="cards-container">
+      <!-- 最新 = 內衣絲襪 -->
+      <div class="card" data-tags="內衣絲襪">
+        <div class="card-header">
+          <span class="card-source xv">xv · Amoulsolo <span class="tag-badge">內衣絲襪</span></span>
+          <span class="card-date">2026-07-03</span>
+        </div>
+        <div class="card-text full">Sexy O2, T&A XRed 392 (01) - Dressed in Corset, Stockings, Garters, Hat and Accessories .. Ready for the fuck party !!</div>
+        <div class="card-thumbs"><div class="thumb"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='240'%3E%3Crect fill='%231e1628' width='320' height='240'/%3E%3Ctext x='160' y='125' text-anchor='middle' fill='%239a80d0' font-size='14'%3E🎬%3C/text%3E%3C/svg%3E" loading="lazy" alt=""><div class="vid-icon"></div></div></div>
+        <div class="xv-embed" id="embed-khluvuo33b8"></div>
+        <div class="card-expand" onclick="toggleEmbed(this,'khluvuo33b8')">▶ 播放影片</div>
+      </div>
+      <!-- 日本 -->
+      <div class="card" data-tags="日本">
+        <div class="card-header">
+          <span class="card-source xv">xv · Adimartim <span class="tag-badge">日本</span></span>
+          <span class="card-date">2026-07-03</span>
+        </div>
+        <div class="card-text full">japanese step mom and daughter - 1</div>
+        <div class="card-thumbs"><div class="thumb"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='240'%3E%3Crect fill='%231e2816' width='320' height='240'/%3E%3Ctext x='160' y='125' text-anchor='middle' fill='%239a80d0' font-size='14'%3E🎬%3C/text%3E%3C/svg%3E" loading="lazy" alt=""><div class="vid-icon"></div></div></div>
+        <div class="xv-embed" id="embed-ikimlom056d"></div>
+        <div class="card-expand" onclick="toggleEmbed(this,'ikimlom056d')">▶ 播放影片</div>
+      </div>
+      <!-- 中國 -->
+      <div class="card" data-tags="中國">
+        <div class="card-header">
+          <span class="card-source xv">xv · Mitaozhi <span class="tag-badge">中國</span></span>
+          <span class="card-date">2026-07-03</span>
+        </div>
+        <div class="card-text full">日本家庭乱斗综艺乱斗</div>
+        <div class="card-thumbs"><div class="thumb"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='240'%3E%3Crect fill='%23281e1e' width='320' height='240'/%3E%3Ctext x='160' y='125' text-anchor='middle' fill='%239a80d0' font-size='14'%3E🎬%3C/text%3E%3C/svg%3E" loading="lazy" alt=""><div class="vid-icon"></div></div></div>
+        <div class="xv-embed" id="embed-ihkfbboe4a5"></div>
+        <div class="card-expand" onclick="toggleEmbed(this,'ihkfbboe4a5')">▶ 播放影片</div>
+      </div>
+      <!-- 內射 -->
+      <div class="card" data-tags="內射">
+        <div class="card-header">
+          <span class="card-source xv">xv · Javhub <span class="tag-badge">內射</span></span>
+          <span class="card-date">2026-07-02</span>
+        </div>
+        <div class="card-text full">JAVHUB Big tit Japanese girl Asuka fucked in lingerie</div>
+        <div class="card-thumbs"><div class="thumb"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='240'%3E%3Crect fill='%23281e28' width='320' height='240'/%3E%3Ctext x='160' y='125' text-anchor='middle' fill='%239a80d0' font-size='14'%3E🎬%3C/text%3E%3C/svg%3E" loading="lazy" alt=""><div class="vid-icon"></div></div></div>
+        <div class="xv-embed" id="embed-kalmvuff590"></div>
+        <div class="card-expand" onclick="toggleEmbed(this,'kalmvuff590')">▶ 播放影片</div>
+      </div>
+      <!-- second batch with different order to show mixed sorting -->
+      <div class="card" data-tags="內衣絲襪">
+        <div class="card-header">
+          <span class="card-source xv">xv · Jav HD <span class="tag-badge">內衣絲襪</span></span>
+          <span class="card-date">2026-07-02</span>
+        </div>
+        <div class="card-text full">Busty milf removes lingerie to have rough sex</div>
+        <div class="card-thumbs"><div class="thumb"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='240'%3E%3Crect fill='%23281e16' width='320' height='240'/%3E%3Ctext x='160' y='125' text-anchor='middle' fill='%239a80d0' font-size='14'%3E🎬%3C/text%3E%3C/svg%3E" loading="lazy" alt=""><div class="vid-icon"></div></div></div>
+        <div class="xv-embed" id="embed-hioeofd8713"></div>
+        <div class="card-expand" onclick="toggleEmbed(this,'hioeofd8713')">▶ 播放影片</div>
+      </div>
+      <div class="card" data-tags="日本">
+        <div class="card-header">
+          <span class="card-source xv">xv · AV Stockings <span class="tag-badge">日本</span></span>
+          <span class="card-date">2026-07-02</span>
+        </div>
+        <div class="card-text full">Japanese Beauties in Lingerie Vol 14</div>
+        <div class="card-thumbs"><div class="thumb"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='240'%3E%3Crect fill='%231e281e' width='320' height='240'/%3E%3Ctext x='160' y='125' text-anchor='middle' fill='%239a80d0' font-size='14'%3E🎬%3C/text%3E%3C/svg%3E" loading="lazy" alt=""><div class="vid-icon"></div></div></div>
+        <div class="xv-embed" id="embed-kdbkpdf931d"></div>
+        <div class="card-expand" onclick="toggleEmbed(this,'kdbkpdf931d')">▶ 播放影片</div>
+      </div>
+      <div class="card" data-tags="中國">
+        <div class="card-header">
+          <span class="card-source xv">xv · 麻豆傳媒 <span class="tag-badge">中國</span></span>
+          <span class="card-date">2026-07-02</span>
+        </div>
+        <div class="card-text full">国产精品剧情系列 - 职场OL的秘密</div>
+        <div class="card-thumbs"><div class="thumb"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='240'%3E%3Crect fill='%231e1e28' width='320' height='240'/%3E%3Ctext x='160' y='125' text-anchor='middle' fill='%239a80d0' font-size='14'%3E🎬%3C/text%3E%3C/svg%3E" loading="lazy" alt=""><div class="vid-icon"></div></div></div>
+        <div class="xv-embed" id="embed-ichcldb0604"></div>
+        <div class="card-expand" onclick="toggleEmbed(this,'ichcldb0604')">▶ 播放影片</div>
+      </div>
+      <div class="card" data-tags="內射">
+        <div class="card-header">
+          <span class="card-source xv">xv · DorcelClub <span class="tag-badge">內射</span></span>
+          <span class="card-date">2026-07-02</span>
+        </div>
+        <div class="card-text full">Threesome with India Summer and Emily Willis in stockings</div>
+        <div class="card-thumbs"><div class="thumb"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='240'%3E%3Crect fill='%23281e28' width='320' height='240'/%3E%3Ctext x='160' y='125' text-anchor='middle' fill='%239a80d0' font-size='14'%3E🎬%3C/text%3E%3C/svg%3E" loading="lazy" alt=""><div class="vid-icon"></div></div></div>
+        <div class="xv-embed" id="embed-kcahefo9ca4"></div>
+        <div class="card-expand" onclick="toggleEmbed(this,'kcahefo9ca4')">▶ 播放影片</div>
+      </div>
+    </div>
+    <div class="pagination">
+      <button class="page-btn disabled">&lsaquo; 上一頁</button>
+      <button class="page-btn active">1</button><button class="page-btn">2</button><button class="page-btn">3</button>
+      <span class="page-info">…</span>
+      <button class="page-btn">20</button>
+      <span class="page-info">共 600 部</span>
+      <button class="page-btn">下一頁 &rsaquo;</button>
+    </div>
+  </div>
+</main>
+
+<div class="lightbox" id="lightbox" role="dialog" aria-label="圖片檢視">
+  <span class="lb-close" id="lb-close">&times;</span>
+  <span class="lb-prev" id="lb-prev">&lsaquo;</span>
+  <span class="lb-next" id="lb-next">&rsaquo;</span>
+  <div class="lb-content" id="lb-content"></div>
+  <span class="lb-counter" id="lb-counter"></span>
 </div>
 
 <script>
-var lbItems = [], lbIdx = 0;
-
-function switchTab(id) {
-  document.querySelectorAll('.tab').forEach(function(t){
-    t.classList.toggle('active', t.getAttribute('onclick').indexOf(id) !== -1);
+/* tab switch */
+document.querySelectorAll('.tab-btn').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    var tabId = this.getAttribute('data-tab');
+    document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');b.setAttribute('aria-selected','false')});
+    this.classList.add('active');this.setAttribute('aria-selected','true');
+    document.querySelectorAll('.tab-content').forEach(function(t){t.classList.remove('active')});
+    var target = document.getElementById('tab-' + tabId);
+    if(target) target.classList.add('active');
   });
-  document.querySelectorAll('.tab-content').forEach(function(c){
-    c.classList.toggle('active', c.id === 'tab-' + id);
-  });
-  doSearch();
-}
+});
 
-function loadMore(btn) {
-  var container = btn.previousElementSibling;
-  var hidden = container.querySelectorAll('[style*="display:none"], [style*="display: none"]');
-  var batch = Math.min(2, hidden.length);
-  for (var i = 0; i < batch; i++) hidden[i].style.display = '';
-  var rem = hidden.length - batch;
-  if (rem > 0) {
-    btn.textContent = '載入更多 (' + rem + ')';
+/* preset btns */
+document.querySelectorAll('.preset-btn').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    this.parentElement.querySelectorAll('.preset-btn').forEach(function(b){b.classList.remove('active')});
+    this.classList.add('active');
+  });
+});
+
+/* pagination */
+document.querySelectorAll('.page-btn:not(.disabled)').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    var pagination = this.parentElement;
+    pagination.querySelectorAll('.page-btn').forEach(function(b){b.classList.remove('active')});
+    this.classList.add('active');
+  });
+});
+
+/* ── tag filter ── */
+document.querySelectorAll('.tag-btn').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    var tag = this.getAttribute('data-tag');
+    var tab = this.closest('.tab-content');
+    var cards = tab.querySelectorAll('.card[data-tags]');
+
+    // toggle active
+    this.parentElement.querySelectorAll('.tag-btn').forEach(function(b){b.classList.remove('active')});
+    this.classList.add('active');
+
+    // filter cards
+    cards.forEach(function(card){
+      if (tag === 'all') {
+        card.classList.remove('hidden');
+      } else {
+        var tags = card.getAttribute('data-tags').split(' ');
+        if (tags.indexOf(tag) !== -1) {
+          card.classList.remove('hidden');
+        } else {
+          card.classList.add('hidden');
+        }
+      }
+    });
+  });
+});
+
+/* ── xv embed toggle ── */
+function toggleEmbed(btn, eid) {
+  var card = btn.closest('.card');
+  var embedDiv = document.getElementById('embed-' + eid);
+  if (card.classList.contains('expanded')) {
+    embedDiv.innerHTML = '';
+    card.classList.remove('expanded');
+    btn.textContent = '▶ 播放影片';
   } else {
-    btn.textContent = '已全部載入';
-    btn.classList.add('done');
+    embedDiv.innerHTML = '<iframe src="https://www.xvideos.com/embedframe/' + eid
+      + '" allowfullscreen frameborder="0" width="100%" height="420" loading="lazy"></iframe>';
+    card.classList.add('expanded');
+    btn.textContent = '▲ 收合';
   }
 }
 
-function doSearch() {
-  var active = document.querySelector('.tab-content.active');
-  if (!active) return;
-  var si = active.querySelector('input[type="text"]');
-  var df = active.querySelector('input[type="date"]');
-  var dt = active.querySelectorAll('input[type="date"]')[1];
-  var q = (si ? si.value : '').toLowerCase().trim();
-  var from = df ? df.value : '';
-  var to = dt ? dt.value : '';
-  var cards = active.querySelectorAll('.card');
-  var count = 0;
-  var hasFilter = q || from || to;
-  cards.forEach(function(card){
-    var show = true;
-    if (q) {
-      var te = card.querySelector('.card-text');
-      show = te && te.textContent.toLowerCase().indexOf(q) !== -1;
-    }
-    if (show && (from || to)) {
-      var de = card.querySelector('.card-date');
-      var d = de ? de.textContent.trim().substring(0, 10) : '';
-      if (from && d < from) show = false;
-      if (to && d > to) show = false;
-    }
-    card.style.display = hasFilter ? (show ? '' : 'none') : '';
-    if (show) count++;
+/* lightbox */
+var lbItems = [], lbIdx = 0;
+document.querySelectorAll('.thumb img').forEach(function(img){
+  img.addEventListener('click',function(e){
+    e.stopPropagation();
+    lbItems = [this.getAttribute('src')]; lbIdx = 0;
+    document.getElementById('lb-content').innerHTML = '<img src="' + lbItems[0] + '" style="max-height:85vh">';
+    document.getElementById('lb-counter').textContent = '1 / 1';
+    document.getElementById('lightbox').classList.add('open');
   });
-  var info = active.querySelector('.search-count');
-  if (info) info.textContent = hasFilter ? count + ' 筆結果' : '';
-  var btn = active.querySelector('.load-more');
-  if (btn) btn.style.display = hasFilter ? 'none' : '';
-}
-
-/* Lightbox */
-document.addEventListener('click', function(e){
-  var a = e.target.closest('a[data-lightbox]');
-  if (!a) return;
-  e.preventDefault();
-  var grp = a.getAttribute('data-lightbox');
-  var all = document.querySelectorAll('a[data-lightbox="' + grp + '"]');
-  lbItems = []; lbIdx = 0;
-  all.forEach(function(el, i){
-    var img = el.querySelector('img');
-    if (img) {
-      lbItems.push(img.getAttribute('src'));
-      if (el === a) lbIdx = lbItems.length - 1;
-    }
-  });
-  if (lbItems.length) openLb();
 });
-
-function openLb() {
-  document.getElementById('lb-img').src = lbItems[lbIdx];
-  document.getElementById('lightbox').classList.add('active');
-  document.querySelector('.lb-counter').textContent = (lbIdx + 1) + ' / ' + lbItems.length;
-}
-
-function closeLb() { document.getElementById('lightbox').classList.remove('active'); }
-
-function navLb(dir) {
-  lbIdx = ((lbIdx + dir) % lbItems.length + lbItems.length) % lbItems.length;
-  document.getElementById('lb-img').src = lbItems[lbIdx];
-  document.querySelector('.lb-counter').textContent = (lbIdx + 1) + ' / ' + lbItems.length;
-}
-
-document.getElementById('lightbox').addEventListener('click', function(e){
-  if (e.target === this) closeLb();
+document.getElementById('lb-close').addEventListener('click',function(){
+  document.getElementById('lightbox').classList.remove('open');
 });
-
-document.addEventListener('keydown', function(e){
-  if (!document.getElementById('lightbox').classList.contains('active')) return;
-  if (e.key === 'Escape') closeLb();
-  if (e.key === 'ArrowLeft') navLb(-1);
-  if (e.key === 'ArrowRight') navLb(1);
+document.getElementById('lightbox').addEventListener('click',function(e){
+  if(e.target === this) this.classList.remove('open');
+});
+document.addEventListener('keydown',function(e){
+  var lb = document.getElementById('lightbox');
+  if(!lb.classList.contains('open')) return;
+  if(e.key === 'Escape') lb.classList.remove('open');
 });
 </script>
 </body>

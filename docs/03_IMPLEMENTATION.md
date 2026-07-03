@@ -1,53 +1,92 @@
-# 03 - 實作摘要
+# 03 - Implementation Summary v4
 
-## 模組結構
+## Files Changed
+
+| File | Status | Lines |
+|------|--------|-------|
+| `src/xvideos.json` | **New** | 30 |
+| `src/xv_spider.py` | **New** | 170 |
+| `src/generate_html.py` | Modified | +120 |
+| `tests/test_xv_spider.py` | **New** | 220 |
+| `tests/test_html.py` | Modified | +90 |
+
+## What Was Built
+
+### xv_spider.py
+
+Crawls xvideos category and search result pages to extract video metadata.
+
+**Key functions:**
+- `load_sources()` — reads `src/xvideos.json`
+- `_build_url(source, page)` — constructs category or search URL with pagination
+- `_fetch_html(url)` — HTTP GET with User-Agent header
+- `_parse_video_blocks(html)` — regex-based HTML parser extracting: `eid`, `video_id`, title, duration, thumbnail, uploader, quality, views
+- `crawl_source(source, existing_eids)` — iterates pages, deduplicates by eid, tags each video with source tag
+- `_append_videos(videos)` — appends to `download/xvideos/videos.jsonl`
+- `crawl()` — main entry, iterates all sources, merges results
+
+**Supports two page types:**
+- Category: `/c/{id}?s={sort}`, pagination: `/c/{id}/{N}?s={sort}`
+- Search: `/?k={keyword}&sort={sort}`, pagination: `/?k={keyword}&p={N}&sort={sort}`
+
+### generate_html.py (changes)
+
+Added xvideos tab support alongside existing Telegram tabs:
+
+- `_load_xvideos()` — reads `videos.jsonl`, sorts by `fetched_at` descending
+- `_build_xv_tag_counts(videos)` — counts videos per tag
+- **New CSS**: `.tag-bar`, `.tag-btn`, `.tag-count`, `.card-source.xv`, `.xv-embed`, `.tag-badge`, responsive styles
+- **New JS functions**: `toggleXvEmbed()`, `filterXvTags()`, `renderXvCards()`, `renderXvPagination()`
+- **Modified JS**: `switchTab()` handles `xvideos` tab, click handler handles tag buttons, xv expand, xv pagination
+- **Added to HTML**: "衝啊, 弟兄們" tab with tag filter bar, `__XV_DATA__` embedded JSON
+
+**Design:**
+- xvideos tab reuses `.card` class; source indicator uses purple dot via `.card-source.xv::before`
+- Embed iframe created on expand, removed on collapse (`innerHTML = ''`)
+- Tag bar: click tag → filter cards by `data-tags` attribute
+
+### xvideos.json
+
+Configuration for 4 xvideos sources merged into one tab:
+
+| Source | Type | Tag |
+|--------|------|-----|
+| Lingerie-83 | category | 內衣絲襪 |
+| 日本 | search | 日本 |
+| 中國 | search | 中國 |
+| Creampie-40 | category | 內射 |
+
+## Test Results
+
+```
+Ran 89 tests in 0.456s — OK
+```
+
+- 17 new xv_spider tests (URL building, HTML parsing, config, dedup, file I/O)
+- 10 new xv_html tests (tab presence, data embedding, tag bar, embed container, existing tabs unaffected)
+- 62 existing tests unchanged, all pass
+
+## Architecture
 
 ```
 src/
-├── tg_core.py                  ← 純邏輯函式（無外部依賴）
-└── download_tg_channel.py      ← 主流程（依賴 telethon、tg_core）
+├── channels.json          (unchanged)
+├── xvideos.json           ★ NEW
+├── xv_spider.py           ★ NEW
+├── tg_core.py             (unchanged)
+├── download_tg_channel.py (unchanged)
+└── generate_html.py       ★ MODIFIED
+
+download/
+├── {tg channels}/         (unchanged)
+├── xvideos/
+│   └── videos.jsonl       ★ NEW merged output
+└── index.html             ★ includes xvideos tab
 
 tests/
-├── test_filename.py            ← 檔案命名 + MIME 工具函式測試
-├── test_media.py               ← 媒體分類邏輯測試
-└── test_state.py               ← 設定檔與狀態檔 I/O 測試
+├── test_filename.py       (unchanged)
+├── test_media.py          (unchanged)
+├── test_state.py          (unchanged)
+├── test_html.py           ★ MODIFIED
+└── test_xv_spider.py      ★ NEW
 ```
-
-## 重構重點
-
-將原始 `download_tg_channel.py` 中的內聯邏輯抽取為 `tg_core.py` 的獨立函式：
-
-| 函式 | 職責 | 可測試性 |
-|------|------|----------|
-| `generate_photo_filename()` | 產生圖片檔名 | 純函式，無副作用 |
-| `generate_document_filename()` | 產生文件檔名（含原始名稱/備用命名） | 純函式 |
-| `get_original_filename()` | 從文件屬性中提取原始檔名 | 純函式 |
-| `mime_to_extension()` | MIME 類型對應副檔名 | 純函式 |
-| `is_video_mime()` | 判斷是否為影片 MIME | 純函式 |
-| `classify_media()` | 媒體類型分類 | 純函式 |
-| `append_id_to_filename()` | 檔名衝突時附加訊息 ID | 純函式 |
-| `load_config()` | 讀取 API 設定檔 | 檔案 I/O |
-| `load_state()` | 讀取下載狀態檔 | 檔案 I/O |
-| `save_state()` | 寫入下載狀態檔 | 檔案 I/O |
-
-## 測試覆蓋
-
-共 **32 個測試案例**，分布如下：
-
-| 測試檔案 | 類別 | 案例數 |
-|----------|------|--------|
-| `test_filename.py` | `TestPhotoFilename` | 2 |
-| | `TestDocumentFilename` | 5 |
-| | `TestGetOriginalFilename` | 4 |
-| | `TestMimeToExtension` | 3 |
-| | `TestIsVideoMime` | 2 |
-| | `TestAppendIdToFilename` | 3 |
-| `test_media.py` | `TestClassifyMedia` | 6 |
-| `test_state.py` | `TestLoadConfig` | 2 |
-| | `TestLoadState` | 3 |
-| | `TestSaveState` | 2 |
-
-## 設計取捨
-
-- **未做整合測試**：`main()` 依賴 Telethon API 連線，需要真實 Telegram 憑證。整合測試成本高，實務上透過排程日誌進行驗證。
-- **未引入 mock 框架**：僅使用 `unittest` 標準庫，避免增加依賴。

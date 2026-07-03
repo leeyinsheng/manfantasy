@@ -4,6 +4,8 @@ from pathlib import Path
 
 import tg_core
 
+XV_VIDEOS_FILE = tg_core.DOWNLOAD_DIR / "xvideos" / "videos.jsonl"
+
 
 CHANNEL_USERNAME_MAP = {}
 
@@ -107,6 +109,29 @@ def _build_tab_data():
     return tabs
 
 
+def _load_xvideos():
+    videos = []
+    if XV_VIDEOS_FILE.exists():
+        with open(XV_VIDEOS_FILE, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    try:
+                        videos.append(_json.loads(line))
+                    except (_json.JSONDecodeError, ValueError):
+                        pass
+    videos.sort(key=lambda v: v.get("fetched_at", ""), reverse=True)
+    return videos
+
+
+def _build_xv_tag_counts(videos):
+    counts = {}
+    for v in videos:
+        for tag in v.get("tags", []):
+            counts[tag] = counts.get(tag, 0) + 1
+    return counts
+
+
 CSS = r"""
   :root {
     --bg: #0a0a0a; --surface: #161616; --surface-2: #1e1e1e;
@@ -188,6 +213,22 @@ CSS = r"""
   .lb-content img,.lb-content video{max-width:100%;max-height:85vh;object-fit:contain;border-radius:4px}
   .lb-content video{width:auto;height:auto}
   .hidden{display:none!important}
+  /* xv tag bar */
+  .tag-bar{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap}
+  .tag-btn{padding:0.35rem 0.7rem;font-size:0.78rem;color:var(--muted);background:var(--surface-2);border:1px solid var(--border);border-radius:4px;cursor:pointer;transition:all .15s;user-select:none}
+  .tag-btn:hover{color:var(--fg-secondary);border-color:var(--muted)}
+  .tag-btn.active{color:var(--fg);background:var(--accent-bg);border-color:var(--accent)}
+  .tag-count{font-size:0.7rem;color:var(--muted);margin-left:3px}
+  /* xv source */
+  .card-source.xv::before{background:#a070e0}
+  /* xv embed */
+  .xv-embed{margin-top:0.5rem;border-radius:6px;overflow:hidden;background:#000}
+  .xv-embed iframe{display:block;border:none;width:100%;min-height:420px}
+  /* xv tag badge */
+  .tag-badge{display:inline-block;font-size:0.65rem;padding:1px 6px;border-radius:3px;background:rgba(160,112,224,0.15);color:#b8a0e0;margin-left:4px;vertical-align:middle}
+  @media(max-width:600px){
+    .xv-embed iframe{min-height:240px}
+  }
   @media(max-width:600px){
     .header{padding:1.2rem 0.8rem 0.8rem}
     main{padding:0 0.6rem}
@@ -333,9 +374,12 @@ function switchTab(tabId){
   var panel = document.getElementById('tab-' + tabId);
   if(panel) panel.classList.add('active');
   currentTab = tabId;
-  var data = tabsData[tabId];
-  if(data && !data.page){
-    renderCards(tabId, 1);
+  if(tabId === 'xvideos'){
+    var xvData = window.__XV_DATA__;
+    if(xvData && !xvData.page) renderXvCards(1);
+  } else {
+    var data = tabsData[tabId];
+    if(data && !data.page) renderCards(tabId, 1);
   }
   applySearch(tabId);
 }
@@ -439,6 +483,103 @@ function closeLightbox(){
   document.body.style.overflow = '';
 }
 
+/* xv embed toggle */
+function toggleXvEmbed(btn){
+  var card = btn.closest('.card');
+  var embedDiv = btn.parentElement.querySelector('.xv-embed');
+  if(!embedDiv) return;
+  var eid = embedDiv.getAttribute('data-eid');
+  if(card.classList.contains('expanded')){
+    embedDiv.innerHTML = '';
+    card.classList.remove('expanded');
+    btn.textContent = '▶ 播放影片';
+  } else {
+    embedDiv.innerHTML = '<iframe src="https://www.xvideos.com/embedframe/'
+      + eid + '" allowfullscreen frameborder="0" width="100%" height="420" loading="lazy"></iframe>';
+    card.classList.add('expanded');
+    btn.textContent = '▲ 收合';
+  }
+}
+
+/* xv tag filter */
+function filterXvTags(btn){
+  var tag = btn.getAttribute('data-tag');
+  var container = btn.closest('.tab-content');
+  if(!container) return;
+  btn.parentElement.querySelectorAll('.tag-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  container.querySelectorAll('.card[data-tags]').forEach(function(card){
+    if(tag === 'all'){
+      card.classList.remove('hidden');
+    } else {
+      var tags = card.getAttribute('data-tags').split(',');
+      card.classList.toggle('hidden', tags.indexOf(tag) === -1);
+    }
+  });
+}
+
+/* xv cards render */
+function renderXvCards(pageNum){
+  var data = window.__XV_DATA__;
+  if(!data || !data.videos) return;
+  var container = document.getElementById('cards-xvideos');
+  if(!container) return;
+  var videos = data.videos;
+  var totalPages = Math.ceil(videos.length / PAGE_SIZE) || 1;
+  var p = Math.max(1, Math.min(pageNum, totalPages));
+  var start = (p - 1) * PAGE_SIZE;
+  var end = Math.min(start + PAGE_SIZE, videos.length);
+  var html = '';
+  for(var i=start;i<end;i++){
+    var v = videos[i];
+    var tagsStr = (v.tags||[]).join(',');
+    var tagBadges = '';
+    for(var t=0;t<(v.tags||[]).length;t++){
+      tagBadges += '<span class="tag-badge">' + escHtml(v.tags[t]) + '</span>';
+    }
+    html += '<div class="card" data-tags="' + tagsStr + '">';
+    html += '<div class="card-header">';
+    html += '<span class="card-source xv">xv · ' + escHtml(v.uploader||'') + tagBadges + '</span>';
+    html += '<span class="card-date">' + escHtml(v.duration||'') + ' · ' + escHtml(v.quality||'') + ' · ' + escHtml(v.views||'') + '</span>';
+    html += '</div>';
+    html += '<div class="card-text full">' + escHtml(v.title||'') + '</div>';
+    if(v.thumbnail){
+      html += '<div class="card-thumbs"><div class="thumb video"><img src="' + v.thumbnail + '" alt="" loading="lazy" referrerpolicy="no-referrer"><div class="vid-icon"></div></div></div>';
+    }
+    html += '<div class="xv-embed" data-eid="' + escHtml(v.eid||'') + '"></div>';
+    html += '<div class="card-expand xv-expand">▶ 播放影片</div>';
+    html += '</div>';
+  }
+  container.innerHTML = html;
+  data.page = p;
+  data.totalPages = totalPages;
+  renderXvPagination();
+}
+
+function renderXvPagination(){
+  var data = window.__XV_DATA__;
+  var wrap = document.getElementById('pagination-xvideos');
+  if(!wrap || !data || !data.videos) return;
+  var total = data.totalPages || Math.ceil(data.videos.length / PAGE_SIZE) || 1;
+  var cur = data.page || 1;
+  if(total <= 1){
+    wrap.innerHTML = '<span class="page-info">共 ' + data.videos.length + ' 部</span>';
+    return;
+  }
+  var html = '';
+  html += '<button class="page-btn' + (cur===1?' disabled':'') + '" data-xv-page="' + (cur-1) + '">← 上一頁</button>';
+  for(var i=1;i<=total;i++){
+    if(total>7 && i>2 && i<total-1 && Math.abs(i-cur)>1){
+      if(i===3 || i===total-2) html += '<span class="page-info">…</span>';
+      continue;
+    }
+    html += '<button class="page-btn' + (i===cur?' active':'') + '" data-xv-page="'+i+'">'+i+'</button>';
+  }
+  html += '<button class="page-btn' + (cur===total?' disabled':'') + '" data-xv-page="' + (cur+1) + '">下一頁 →</button>';
+  html += '<span class="page-info">共 ' + data.videos.length + ' 部</span>';
+  wrap.innerHTML = html;
+}
+
 /* init */
 function init(){
   var tabIds = [];
@@ -448,20 +589,37 @@ function init(){
     btn.addEventListener('click', function(){ switchTab(id); });
   });
 
-  if(tabIds.length > 0){
-    tabIds.forEach(function(id){ renderCards(id, 1); });
-    currentTab = tabIds[0];
-  }
+    if(tabIds.length > 0){
+      tabIds.forEach(function(id){
+        if(id === 'xvideos'){
+          renderXvCards(1);
+        } else {
+          renderCards(id, 1);
+        }
+      });
+      currentTab = tabIds[0];
+    }
 
   document.addEventListener('click', function(e){
     try{
     var loadBtn = e.target.closest('.page-btn:not(.disabled)');
     if(loadBtn){
       var tabId = loadBtn.getAttribute('data-tab');
-      var page = parseInt(loadBtn.getAttribute('data-page'));
-      if(tabId && page) renderCards(tabId, page);
+      if(tabId){
+        var page = parseInt(loadBtn.getAttribute('data-page'));
+        if(tabId && page) renderCards(tabId, page);
+      } else {
+        var xvPage = loadBtn.getAttribute('data-xv-page');
+        if(xvPage) renderXvCards(parseInt(xvPage));
+      }
       return;
     }
+
+    var tagBtn = e.target.closest('.tag-btn');
+    if(tagBtn){ filterXvTags(tagBtn); return; }
+
+    var xvExpand = e.target.closest('.xv-expand');
+    if(xvExpand){ toggleXvEmbed(xvExpand); return; }
 
     var thumb = e.target.closest('.thumb');
     if(thumb){
@@ -534,6 +692,7 @@ if(document.readyState === 'loading'){
 def generate():
     output_path = tg_core.DOWNLOAD_DIR / "index.html"
     tabs = _build_tab_data()
+    xv_videos = _load_xvideos()
 
     tabs_nav = ""
     tabs_content = ""
@@ -567,7 +726,37 @@ def generate():
     <div class="pagination" id="pagination-{tab_id}"></div>
   </div>'''
 
+    # xvideos tab
+    xv_count = len(xv_videos)
+    xv_tag_counts = _build_xv_tag_counts(xv_videos)
+    xv_active_cls = "" if tabs else " active"
+    if not first_id:
+        first_id = "xvideos"
+
+    tabs_nav += (
+        f'<button class="tab-btn{xv_active_cls}" role="tab" '
+        f'aria-selected="{str(not tabs).lower()}" '
+        f'data-tab="xvideos">衝啊, 弟兄們 '
+        f'<span class="badge">{xv_count}</span></button>'
+    )
+
+    tag_bar = '<div class="tag-bar">'
+    tag_bar += f'<button class="tag-btn active" data-tag="all">全部 <span class="tag-count">{xv_count}</span></button>'
+    for tag, count in sorted(xv_tag_counts.items()):
+        tag_bar += f'<button class="tag-btn" data-tag="{tag}">{tag} <span class="tag-count">{count}</span></button>'
+    tag_bar += '</div>'
+
+    tabs_content += f'''<div class="tab-content{xv_active_cls}" id="tab-xvideos" role="tabpanel">
+    {tag_bar}
+    <div class="cards-container" id="cards-xvideos"></div>
+    <div class="pagination" id="pagination-xvideos"></div>
+  </div>'''
+
+    if first_id is None:
+        first_id = "xvideos"
+
     tabs_json = _json.dumps(tabs, ensure_ascii=False, default=str)
+    xv_json = _json.dumps({"videos": xv_videos, "total": xv_count}, ensure_ascii=False, default=str)
 
     html = f"""<!DOCTYPE html>
 <html lang="zh-Hant">
@@ -602,6 +791,7 @@ def generate():
 
 <script>
 window.__DATA__ = {tabs_json};
+window.__XV_DATA__ = {xv_json};
 </script>
 <script>{JS}</script>
 </body>
