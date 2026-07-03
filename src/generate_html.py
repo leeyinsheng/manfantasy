@@ -594,8 +594,11 @@ function init(){
     }
 
   document.addEventListener('click', function(e){
+    var t = e.target;
+    if(t.nodeType === 3) t = t.parentElement;
+    if(!t) return;
     try{
-    var loadBtn = e.target.closest('.page-btn:not(.disabled)');
+    var loadBtn = t.closest('.page-btn:not(.disabled)');
     if(loadBtn){
       var tabId = loadBtn.getAttribute('data-tab');
       if(tabId){
@@ -608,13 +611,13 @@ function init(){
       return;
     }
 
-    var tagBtn = e.target.closest('.tag-btn');
+    var tagBtn = t.closest('.tag-btn');
     if(tagBtn){ filterXvTags(tagBtn); return; }
 
-    var xvExpand = e.target.closest('.xv-expand');
+    var xvExpand = t.closest('.xv-expand');
     if(xvExpand){ toggleXvEmbed(xvExpand); return; }
 
-    var thumb = e.target.closest('.thumb');
+    var thumb = t.closest('.thumb');
     if(thumb){
       var card2 = thumb.closest('.card');
       if(card2){
@@ -630,7 +633,7 @@ function init(){
       return;
     }
 
-    var preset = e.target.closest('.preset-btn');
+    var preset = t.closest('.preset-btn');
     if(preset){
       var bar = preset.closest('.search-bar');
       bar.querySelectorAll('.preset-btn').forEach(function(b){ b.classList.remove('active'); });
@@ -640,10 +643,10 @@ function init(){
       return;
     }
 
-    var card = e.target.closest('.card');
+    var card = t.closest('.card');
     if(card){
-      var onThumb = e.target.closest('.thumb');
-      var onPageBtn = e.target.closest('.page-btn');
+      var onThumb = t.closest('.thumb');
+      var onPageBtn = t.closest('.page-btn');
       if(!onThumb && !onPageBtn){
         toggleCard(card);
       }
