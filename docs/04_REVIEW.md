@@ -1,77 +1,97 @@
-# 04 - Code Review v3
+# 04 - Code Review v4
 
-## Scope Check
+## Scope Check: CLEAN
 
-| ID | Requirement | Status |
-|----|-------------|--------|
-| F14 | 平行頻道下載 | ✅ `asyncio.gather()` in `main()` |
-| F15 | 圖片燈箱 | ✅ CSS + JS lightbox with keyboard nav |
-| F16 | 搜尋+日期篩選 | ✅ `applySearch()` with keyword + date range |
-| F17 | 分頁載入 | ✅ `renderCards()` with `PAGE_SIZE=50` |
-| F18 | 媒體效能 | ✅ `loading="lazy"` + `preload="none"` |
-| F19 | 文字回溯 | ✅ `_get_existing_media_records()` + backfill flag |
-
-**Intent:** 4-channel TG downloader with merged tab UI, parallel download, backfill
-**Delivered:** All 6 requirements implemented. 3 new channels, group-based merging, JS-rendered UI matching prototype.
-
-**Scope:** CLEAN — all changes trace to v3 PRD requirements.
+- **Intent**: Add xvideos embed integration with spider, single tab, tag filtering
+- **Delivered**: `xv_spider.py`, `xvideos.json`, updated `generate_html.py`, unit + integration tests (89 pass)
+- **Drift**: None. All changes trace to v4 PRD requirements
+- **Missing**: None. All PRD features covered (F20-F24)
 
 ---
 
-## File-by-File Review
+## Review Findings
 
-### `src/channels.json`
-- 4 channels: ai_guoman (backfill), ciyuanb (new), llcosfc (new), dashijian (unchanged)
-- Group `mens_fantasy` merges 3 channels into one tab
-- **Note:** `backfill: true` on ai_guoman. Remove after first successful run.
+### Strengths
 
-### `src/download_tg_channel.py`
-- **Parallel download** (line 200-204): Clean `asyncio.gather()` with `return_exceptions=True`. Each channel has independent state/dir — no race conditions.
-- **Backfill support** (line 28-118): `_get_existing_media_records()` checks filesystem for previously downloaded files. `process_channel()` handles backfill flag with three-way branching: normal / backfill-existing / backfill-new.
-- **DRY note:** `_get_existing_media_records()` duplicates filename generation logic from `download_media_message()`. Acceptable for one-time backfill operation, but if backfill logic grows, consider extracting shared `_predict_media_paths()` helper.
-- **Error handling:** Each channel wrapped in try/except within `asyncio.gather()`. Failed channel doesn't block others.
+| Area | Notes |
+|------|-------|
+| Test coverage | 17 spider + 10 HTML = 27 new tests, all 89 pass |
+| Backward compat | Existing Telegram tabs/cards/lightbox untouched; `__XV_DATA__` separate from `__DATA__` |
+| CSS extension | xv-specific CSS is additive only (`.xv-embed`, `.tag-bar`, `.card-source.xv`), no existing selectors changed |
+| Dedup | `load_existing_eids()` prevents duplicate video entries by eid |
+| Regex parsing | `_parse_video_blocks` uses `finditer` for efficient chunk extraction, avoids full-HTML greediness |
+| Iframe lifecycle | `toggleXvEmbed()` clears `innerHTML = ''` on collapse, preventing background playback |
 
-### `src/generate_html.py`
-- **Architecture change:** Server-side HTML generation → JS-driven rendering from `window.__DATA__` JSON. This is a deliberate shift per prototype design.
-- **CSS:** Full color system swap to `#d14334` red accent, serif display font, sticky tabs. Matches `design_20260702.html` line-for-line.
-- **JS:** ~230 lines covering tab switching, `renderCards()`, `applySearch()`, lightbox, pagination. Uses ES5 syntax for broad browser compatibility.
-- **Channel merging:** `_build_tab_data()` groups channels by `group` field, merges messages sorted by ID descending, annotates `channel` field with username.
-- **Global state:** `CHANNEL_USERNAME_MAP` as module-level cache. Safe for single-invocation script.
-- **XSS:** `escHtml()` escapes all text content. Media paths are filesystem-originated, not user-controlled.
-- **`padStart`:** ES2017. All modern browsers (Chrome 57+, Firefox 51+, Safari 10+, Edge 15+) support it. IE11 already unsupported by CSS features used.
+### Issues
 
-### `tests/test_html.py`
-- **14 tests** covering: structure, tabs, JSON data extraction, media paths, lightbox HTML, search bar, load more, channel grouping, card structure, empty tabs.
-- Test setup now creates a temporary `channels.json` to control tab layout.
-- **Missing:** Backfill unit test, channel merge logic unit test. Acceptable for v3 — backfill is a one-time operation best verified with real Telegram data.
+**ISSUE 1 (Medium) — CSS has duplicate `@media(max-width:600px)` blocks**
+
+`src/generate_html.py:220-225` adds xv-iframes responsive rule before existing `@media(max-width:600px)` block at line 226. Both use the same query. Not a functional bug (CSS cascade handles it), but adds ~5 lines of dead code.
+
+**Recommendation**: Merge both `@media(max-width:600px)` blocks into one.
 
 ---
 
-## Test Coverage
+**ISSUE 2 (Low) — `xv_spider.py` uses `urllib` without TLS certificate verification risk**
 
-| Suite | Tests | Status |
-|-------|-------|--------|
-| Unit (core logic) | 51 | ALL PASS |
-| Integration (HTML gen v3) | 14 | ALL PASS |
-| **Total** | **64** | **ALL PASS** |
+`urllib.request.urlopen()` on Windows with default context trusts system CA store, which is fine. However, `_fetch_html` does not set a timeout for the connection phase, only for the read phase via `timeout=30`. Slow DNS could hang.
+
+**Recommendation**: Consider wrapping in a connection timeout or adding retry logic. Not blocking for v4.
 
 ---
 
-## Verdict
+**ISSUE 3 (Low) — `crawl_source()` breaks on first page failure, losing subsequent pages**
 
-**APPROVED** — all v3 requirements implemented, 64 tests pass, no regressions.
+```python
+try:
+    html = _fetch_html(url)
+except Exception as e:
+    print(f"  [SKIP] {url}: {e}")
+    break  # exits entire page loop for this source
+```
 
-### Action items (non-blocking):
-1. Remove `backfill: true` from `channels.json` after first successful run
-2. Consider extracting shared media path prediction in a future refactor
+If page 2 fails with a transient error, pages 3-5 are never fetched. Using `continue` instead of `break` would try remaining pages.
 
 ---
 
-## Diff Summary
+**ISSUE 4 (Medium) — `_append_videos` opens/closes file for every source call**
 
-| File | + | - | Change |
-|------|---|---|--------|
-| `channels.json` | +18 | -2 | 2 new channels, group, backfill |
-| `download_tg_channel.py` | +83 | -6 | Parallel + backfill |
-| `generate_html.py` | +316 | -200 | Full UI rewrite |
-| `test_html.py` | +91 | -42 | Rewritten for v3 structure |
+Each source's results are appended in a separate `open()` call. For 4 sources with 5 pages each, that's 4 file opens. Not a correctness issue but could interleave data if called concurrently.
+
+**Recommendation**: Acceptable for sequential single-threaded use. If parallelism is added in v5, use a lock.
+
+---
+
+**ISSUE 5 (Info) — `generate_html.py` uses `_json` (global) for `import json as _json` but `json` is referenced elsewhere**
+
+The file imports `json as _json` at top, then uses `_json.dumps()`, `_json.loads()`, `_json.JSONDecodeError`. All references are consistent. The `json` name is shadowed — any code path using bare `json.` would raise `NameError`. Current code is clean.
+
+---
+
+**ISSUE 6 (Low) — `_build_xv_tag_counts` returns unsorted dict**
+
+Python 3.7+ dicts preserve insertion order, so tag buttons appear in the order videos with those tags were first encountered. This is unpredictable for the user. The `generate()` function calls `sorted(xv_tag_counts.items())` when rendering, so the HTML output is sorted. Fine for now.
+
+---
+
+**ISSUE 7 (Info) — No rate-limiting user-agent rotation in spider**
+
+Single `USER_AGENT` string for all requests. xvideos may eventually rate-limit based on this. Not blocking for v4 (5 pages * 4 sources = 20 requests with 2s delays = harmless).
+
+---
+
+## Summary
+
+| Metric | Value |
+|--------|-------|
+| New files | 4 (spider, config, 2 test files) |
+| Modified files | 2 (generate_html, test_html) |
+| New tests | 27 |
+| Issues found | 2 Medium, 3 Low, 2 Info |
+| Blockers | 0 |
+
+**Verdict**: Phase 4 PASS. No blocking issues. Recommendation: fix ISSUE 1 (duplicate media query) before deployment for cleanliness.
+
+---
+
+*Review completed 2026-07-03*

@@ -228,8 +228,6 @@ CSS = r"""
   .tag-badge{display:inline-block;font-size:0.65rem;padding:1px 6px;border-radius:3px;background:rgba(160,112,224,0.15);color:#b8a0e0;margin-left:4px;vertical-align:middle}
   @media(max-width:600px){
     .xv-embed iframe{min-height:240px}
-  }
-  @media(max-width:600px){
     .header{padding:1.2rem 0.8rem 0.8rem}
     main{padding:0 0.6rem}
     .card{padding:0.8rem}
