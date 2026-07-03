@@ -500,20 +500,13 @@ function toggleXvEmbed(btn){
 }
 
 /* xv tag filter */
+var xvActiveTag = 'all';
 function filterXvTags(btn){
   var tag = btn.getAttribute('data-tag');
-  var container = btn.closest('.tab-content');
-  if(!container) return;
+  xvActiveTag = tag;
   btn.parentElement.querySelectorAll('.tag-btn').forEach(function(b){b.classList.remove('active');});
   btn.classList.add('active');
-  container.querySelectorAll('.card[data-tags]').forEach(function(card){
-    if(tag === 'all'){
-      card.classList.remove('hidden');
-    } else {
-      var tags = card.getAttribute('data-tags').split(',');
-      card.classList.toggle('hidden', tags.indexOf(tag) === -1);
-    }
-  });
+  renderXvCards(1);
 }
 
 /* xv cards render */
@@ -523,6 +516,11 @@ function renderXvCards(pageNum){
   var container = document.getElementById('cards-xvideos');
   if(!container) return;
   var videos = data.videos;
+  if(xvActiveTag !== 'all'){
+    videos = videos.filter(function(v){
+      return (v.tags||[]).indexOf(xvActiveTag) !== -1;
+    });
+  }
   var totalPages = Math.ceil(videos.length / PAGE_SIZE) || 1;
   var p = Math.max(1, Math.min(pageNum, totalPages));
   var start = (p - 1) * PAGE_SIZE;
@@ -535,7 +533,7 @@ function renderXvCards(pageNum){
     for(var t=0;t<(v.tags||[]).length;t++){
       tagBadges += '<span class="tag-badge">' + escHtml(v.tags[t]) + '</span>';
     }
-    html += '<div class="card" data-tags="' + tagsStr + '">';
+    html += '<div class="card">';
     html += '<div class="card-header">';
     html += '<span class="card-source xv">xv · ' + escHtml(v.uploader||'') + tagBadges + '</span>';
     html += '<span class="card-date">' + escHtml(v.duration||'') + ' · ' + escHtml(v.quality||'') + ' · ' + escHtml(v.views||'') + '</span>';
