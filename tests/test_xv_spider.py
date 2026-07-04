@@ -38,6 +38,21 @@ class TestUrlBuilding(unittest.TestCase):
         url = xv_spider._build_url(src, 0)
         self.assertIn("k=%E4%B8%AD%E5%9C%8B", url)
 
+    def test_user_url_page0(self):
+        src = {"type": "user", "id": "maderotic"}
+        url = xv_spider._build_url(src, 0)
+        self.assertEqual(url, "https://www.xvideos.com/maderotic/videos/0")
+
+    def test_user_url_page3(self):
+        src = {"type": "user", "id": "maderotic"}
+        url = xv_spider._build_url(src, 3)
+        self.assertEqual(url, "https://www.xvideos.com/maderotic/videos/3")
+
+    def test_user_url_with_sort(self):
+        src = {"type": "user", "id": "testuser", "sort": "uploaddate"}
+        url = xv_spider._build_url(src, 2)
+        self.assertEqual(url, "https://www.xvideos.com/testuser/videos/2")
+
 
 class TestHtmlParsing(unittest.TestCase):
     def test_parse_single_block(self):

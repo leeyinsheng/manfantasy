@@ -231,5 +231,125 @@ class TestGenerateHtml(unittest.TestCase):
         self.assertIn(generate_html.DEFAULT_ICON, html)
 
 
+class TestXvideoTab(unittest.TestCase):
+    def setUp(self):
+        self.original_download = mod.DOWNLOAD_DIR
+        self.original_channels = mod.CHANNELS_FILE
+        self.tmpdir = tempfile.TemporaryDirectory()
+        mod.DOWNLOAD_DIR = Path(self.tmpdir.name)
+
+        for ch_id in ("ai_guoman", "dashijian"):
+            (mod.DOWNLOAD_DIR / ch_id / "photo").mkdir(parents=True, exist_ok=True)
+            (mod.DOWNLOAD_DIR / ch_id / "video").mkdir(parents=True, exist_ok=True)
+
+        self._tmp_channels = self.tmpdir.name + "/_channels.json"
+        mod.CHANNELS_FILE = Path(self._tmp_channels)
+        mod.CHANNELS_FILE.write_text(json.dumps({
+            "channels": [
+                {"id": "ai_guoman", "username": "AIguoman18", "name": "男人的幻想",
+                 "mode": "text", "group": "mens_fantasy", "fetch_limit": 50},
+            ]
+        }), encoding="utf-8")
+
+        xv_dir = mod.DOWNLOAD_DIR / "xvideos"
+        xv_dir.mkdir(parents=True, exist_ok=True)
+        (xv_dir / "videos.jsonl").write_text(
+            json.dumps({"eid": "eid001", "video_id": 12345, "title": "Test Video",
+                        "duration": "12:34", "thumbnail": "https://img.test/1.jpg",
+                        "fetched_at": "2025-07-01T12:00:00"},
+                       ensure_ascii=False) + "\n"
+            + json.dumps({"eid": "eid002", "video_id": 67890, "title": "Test Video 2",
+                        "duration": "8:15", "thumbnail": "https://img.test/2.jpg",
+                        "fetched_at": "2025-07-02T09:00:00"},
+                       ensure_ascii=False) + "\n",
+            encoding="utf-8"
+        )
+
+    def tearDown(self):
+        mod.DOWNLOAD_DIR = self.original_download
+        mod.CHANNELS_FILE = self.original_channels
+        self.tmpdir.cleanup()
+
+    def _read_html(self):
+        out = mod.DOWNLOAD_DIR / "index.html"
+        with open(out, encoding="utf-8") as f:
+            return f.read()
+
+    def _extract_json_data(self, html):
+        m = re.search(r"window\.__DATA__\s*=\s*(\{.*?\});", html, re.DOTALL)
+        if m:
+            return json.loads(m.group(1))
+        return {}
+
+    def test_xvideo_tab_in_html(self):
+        generate_html.generate()
+        html = self._read_html()
+        self.assertIn("xvideo", html)
+        self.assertIn("tab-xvideo", html)
+        self.assertIn("❌", html)
+
+    def test_xvideo_tab_in_nav(self):
+        generate_html.generate()
+        html = self._read_html()
+        self.assertIn('data-tab="xvideo"', html)
+        self.assertIn('aria-label="xvideo"', html)
+
+    def test_xvideo_in_embedded_data(self):
+        generate_html.generate()
+        html = self._read_html()
+        data = self._extract_json_data(html)
+        self.assertIn("xvideo", data)
+        self.assertEqual(len(data["xvideo"]["messages"]), 2)
+
+    def test_xvideo_message_has_xv_flag(self):
+        generate_html.generate()
+        html = self._read_html()
+        data = self._extract_json_data(html)
+        for msg in data["xvideo"]["messages"]:
+            self.assertTrue(msg["_xv"])
+            self.assertIn("video_id", msg)
+            self.assertIn("thumbnail", msg)
+            self.assertIn("duration", msg)
+
+    def test_xvideo_nav_icon_only_no_text_label(self):
+        generate_html.generate()
+        html = self._read_html()
+        self.assertNotIn('<span class="label">', html)
+
+    def test_xvideo_nav_has_active_indicator(self):
+        generate_html.generate()
+        html = self._read_html()
+        self.assertIn(".nav-item::after", html)
+
+    def test_xvideo_card_has_badge_duration_css(self):
+        generate_html.generate()
+        html = self._read_html()
+        self.assertIn("badge-duration", html)
+
+    def test_xvideo_embed_css_present(self):
+        generate_html.generate()
+        html = self._read_html()
+        self.assertIn("xv-embed", html)
+
+    def test_lightbox_embed_function_in_js(self):
+        generate_html.generate()
+        html = self._read_html()
+        self.assertIn("openLbEmbed", html)
+        self.assertIn("embedframe", html)
+
+    def test_no_text_label_in_nav_items(self):
+        generate_html.generate()
+        html = self._read_html()
+        self.assertNotIn('class="label"', html)
+
+    def test_xvideo_messages_sorted_by_date(self):
+        generate_html.generate()
+        html = self._read_html()
+        data = self._extract_json_data(html)
+        msgs = data["xvideo"]["messages"]
+        self.assertEqual(msgs[0]["text"], "Test Video 2")
+        self.assertEqual(msgs[1]["text"], "Test Video")
+
+
 if __name__ == "__main__":
     unittest.main()

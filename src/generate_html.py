@@ -5,6 +5,32 @@ from pathlib import Path
 import tg_core
 
 
+def _load_xvideos():
+    xv_file = tg_core.DOWNLOAD_DIR / "xvideos" / "videos.jsonl"
+    videos = []
+    if xv_file.exists():
+        with open(xv_file, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    try:
+                        v = _json.loads(line)
+                        videos.append({
+                            "id": f"xv_{v.get('eid', '')}",
+                            "date": v.get("fetched_at", ""),
+                            "text": v.get("title", ""),
+                            "channel": "xvideos",
+                            "media": [],
+                            "_xv": True,
+                            "video_id": str(v.get("video_id", "")),
+                            "thumbnail": v.get("thumbnail", ""),
+                            "duration": v.get("duration", ""),
+                        })
+                    except (_json.JSONDecodeError, ValueError):
+                        pass
+    return videos
+
+
 CHANNEL_USERNAME_MAP = {}
 
 def _build_channel_map():
@@ -104,6 +130,14 @@ def _build_tab_data():
             "total": len(msgs),
         }
 
+    xvideos = _load_xvideos()
+    xvideos.sort(key=lambda x: x.get("date", ""), reverse=True)
+    tabs["xvideo"] = {
+        "name": "xvideo",
+        "messages": xvideos,
+        "total": len(xvideos),
+    }
+
     return tabs
 
 
@@ -112,6 +146,7 @@ ICON_MAP = {
     "news": "📰",
     "guaba_bl": "🔥",
     "ai_drama": "🎬",
+    "xvideo": "❌",
 }
 DEFAULT_ICON = "📌"
 
@@ -199,9 +234,15 @@ CSS = r"""
   .lb-content img,.lb-content video{max-width:100%;max-height:85vh;object-fit:contain;border-radius:4px}
 
   .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:var(--app-w);display:flex;justify-content:space-around;background:rgba(10,10,10,0.97);border-top:1px solid var(--border);z-index:20;padding:0.35rem 0 max(0.35rem,env(safe-area-inset-bottom))}
-  .nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:0.3rem;min-width:56px;font-size:0.62rem;color:var(--muted)}
-  .nav-item .icon{font-size:1.25rem;line-height:1}
+  .nav-item{display:flex;align-items:center;justify-content:center;padding:0.5rem 0 0.35rem;flex:1;min-width:0;color:var(--muted);position:relative;transition:color .15s}
+  .nav-item .icon{font-size:1.65rem;line-height:1}
+  .nav-item::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:0;height:3px;border-radius:2px;background:var(--accent);transition:width .2s ease}
   .nav-item.active{color:var(--accent)}
+  .nav-item.active::after{width:24px}
+  .nav-item:active{opacity:0.6}
+  .badge-duration{position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.8);color:#fff;font-size:0.66rem;padding:2px 5px;border-radius:4px;display:flex;align-items:center;gap:3px}
+  .xv-embed{position:relative;width:100%;padding-top:56.25%;background:#000;border-radius:8px;overflow:hidden}
+  .xv-embed iframe{position:absolute;inset:0;width:100%;height:100%}
 """
 
 JS = r"""'use strict';
@@ -240,6 +281,17 @@ function cardImageHtml(tabId, idx, m){
     + '</div></div>';
 }
 
+function cardXvHtml(tabId, idx, m){
+  return '<div class="card" data-tab="' + tabId + '" data-idx="' + idx + '" data-xv="1">'
+    + '<div class="card-cover"><img src="' + escAttr(m.thumbnail) + '" loading="lazy">'
+    + '<span class="badge-play"></span>'
+    + '<span class="badge-duration">⏱ ' + escHtml(m.duration) + '</span></div>'
+    + '<div class="card-body">'
+    + '<div class="card-text">' + escHtml(m.text||'') + '</div>'
+    + '<div class="card-foot"><span class="card-source">xvideos</span><span>maderotic</span></div>'
+    + '</div></div>';
+}
+
 function cardTextOnlyHtml(tabId, idx, m){
   return '<div class="card text-only" data-tab="' + tabId + '" data-idx="' + idx + '">'
     + '<div class="card-body">'
@@ -256,7 +308,11 @@ function appendItems(tabId, indices){
   var textWrap = document.getElementById('textonly-' + tabId);
   indices.forEach(function(i){
     var m = data.messages[i];
-    if(m.media && m.media.length){
+    if(m._xv){
+      var target = (data.wfCounter % 2 === 0) ? col0 : col1;
+      target.insertAdjacentHTML('beforeend', cardXvHtml(tabId, i, m));
+      data.wfCounter++;
+    } else if(m.media && m.media.length){
       var target = (data.wfCounter % 2 === 0) ? col0 : col1;
       target.insertAdjacentHTML('beforeend', cardImageHtml(tabId, i, m));
       data.wfCounter++;
@@ -413,6 +469,13 @@ function lbNext(){
 }
 function closeLightbox(){
   document.getElementById('lightbox').classList.remove('open');
+  document.getElementById('lb-content').innerHTML = '';
+}
+
+function openLbEmbed(videoId){
+  document.getElementById('lb-content').innerHTML = '<div class="xv-embed"><iframe src="https://www.xvideos.com/embedframe/' + videoId + '" frameborder="0" scrolling="no" allowfullscreen></iframe></div>';
+  document.getElementById('lb-counter').textContent = '';
+  document.getElementById('lightbox').classList.add('open');
 }
 
 function switchTab(tabId){
@@ -500,6 +563,11 @@ function init(){
     if(card){
       var tabId2 = card.getAttribute('data-tab');
       var idx2 = parseInt(card.getAttribute('data-idx'), 10);
+      if(card.getAttribute('data-xv') === '1'){
+        var xvMsg = tabsData[tabId2].messages[idx2];
+        openLbEmbed(xvMsg.video_id);
+        return;
+      }
       openSheet(tabId2, idx2);
       return;
     }
@@ -558,8 +626,9 @@ def generate():
         bottom_nav += (
             f'<button class="nav-item{active_cls}" role="tab" '
             f'aria-selected="{str(tab_id == first_id).lower()}" '
+            f'aria-label="{tab["name"]}" '
             f'data-tab="{tab_id}">'
-            f'<span class="icon">{icon}</span><span class="label">{tab["name"]}</span></button>'
+            f'<span class="icon">{icon}</span></button>'
         )
 
         tabs_content += f'''<div class="tab-content{active_cls}" id="tab-{tab_id}" role="tabpanel">
