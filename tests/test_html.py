@@ -1,4 +1,4 @@
-"""Integration test: validates v3 HTML structure, embedded data, and new components."""
+"""Integration test: validates v7 waterfall HTML structure and embedded data."""
 import json
 import re
 import sys
@@ -31,6 +31,9 @@ class TestGenerateHtml(unittest.TestCase):
             json.dumps({"id": 1, "date": "2025-07-01T12:00:00", "text": "Test news",
                         "channel": "dashijian",
                         "media": [{"type": "photo", "path": "photo/test_news.jpg"}]},
+                       ensure_ascii=False) + "\n"
+            + json.dumps({"id": 2, "date": "2025-07-02T09:00:00", "text": "Text-only news",
+                        "channel": "dashijian", "media": []},
                        ensure_ascii=False) + "\n",
             encoding="utf-8"
         )
@@ -45,7 +48,7 @@ class TestGenerateHtml(unittest.TestCase):
                 {"id": "ai_guoman", "username": "AIguoman18", "name": "男人的幻想",
                  "mode": "text", "group": "mens_fantasy", "fetch_limit": 50},
                 {"id": "dashijian", "username": "dashijian", "name": "東南亞大事件",
-                 "mode": "text", "fetch_limit": 50},
+                 "mode": "text", "group": "news", "fetch_limit": 50},
             ]
         }
         Path(self._tmp_channels).write_text(json.dumps(channels), encoding="utf-8")
@@ -76,27 +79,22 @@ class TestGenerateHtml(unittest.TestCase):
         self.assertIn("男人的幻想", html)
         self.assertIn("東南亞大事件", html)
 
-    def test_html_has_tab_content_v3(self):
+    def test_html_has_tab_content(self):
         generate_html.generate()
         html = self._read_html()
         self.assertIn("tab-mens_fantasy", html)
-        self.assertIn("tab-dashijian", html)
+        self.assertIn("tab-news", html)
         self.assertIn("tab-content active", html)
-
-    def test_badge_counts_embedded(self):
-        generate_html.generate()
-        html = self._read_html()
-        self.assertIn("badge", html)
 
     def test_news_data_in_json(self):
         generate_html.generate()
         html = self._read_html()
         data = self._extract_json_data(html)
-        self.assertIn("dashijian", data)
-        msgs = data["dashijian"]["messages"]
+        self.assertIn("news", data)
+        msgs = data["news"]["messages"]
         self.assertGreaterEqual(len(msgs), 1)
-        self.assertEqual(msgs[0]["text"], "Test news")
-        self.assertIn("media", msgs[0])
+        photo_msg = next(m for m in msgs if m["text"] == "Test news")
+        self.assertIn("media", photo_msg)
 
     def test_media_paths_in_json_start_with_channel_id(self):
         generate_html.generate()
@@ -119,6 +117,47 @@ class TestGenerateHtml(unittest.TestCase):
         self.assertIn("<script>", html)
         self.assertIn("</script>", html)
 
+    def test_viewport_mobile_only(self):
+        generate_html.generate()
+        html = self._read_html()
+        self.assertIn('name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"', html)
+
+    def test_app_shell_present(self):
+        generate_html.generate()
+        html = self._read_html()
+        self.assertIn('class="app"', html)
+        self.assertIn('class="app-header"', html)
+        self.assertIn('class="app-content"', html)
+
+    def test_bottom_nav_present(self):
+        generate_html.generate()
+        html = self._read_html()
+        self.assertIn("bottom-nav", html)
+        self.assertIn("nav-item", html)
+        self.assertIn('data-tab="mens_fantasy"', html)
+        self.assertIn("🏠", html)
+        self.assertIn("📰", html)
+
+    def test_no_top_tab_bar(self):
+        generate_html.generate()
+        html = self._read_html()
+        self.assertNotIn("tab-nav", html)
+        self.assertNotIn("tab-btn", html)
+
+    def test_waterfall_columns_present(self):
+        generate_html.generate()
+        html = self._read_html()
+        self.assertIn("wfcol-mens_fantasy-0", html)
+        self.assertIn("wfcol-mens_fantasy-1", html)
+        self.assertIn("textonly-mens_fantasy", html)
+
+    def test_sentinel_present_no_pagination(self):
+        generate_html.generate()
+        html = self._read_html()
+        self.assertIn("sentinel-mens_fantasy", html)
+        self.assertNotIn("pagination", html)
+        self.assertNotIn("page-btn", html)
+
     def test_lightbox_html_present(self):
         generate_html.generate()
         html = self._read_html()
@@ -128,20 +167,22 @@ class TestGenerateHtml(unittest.TestCase):
         self.assertIn("lb-next", html)
         self.assertIn("lb-counter", html)
 
-    def test_search_bar_present(self):
+    def test_detail_sheet_present(self):
         generate_html.generate()
         html = self._read_html()
-        self.assertIn("search-bar", html)
+        self.assertIn("sheet-backdrop", html)
+        self.assertIn("sheet-close", html)
+        self.assertIn("sheet-body", html)
+
+    def test_search_panel_present(self):
+        generate_html.generate()
+        html = self._read_html()
+        self.assertIn("search-panel-mens_fantasy", html)
         self.assertIn("search-input", html)
         self.assertIn("time-presets", html)
         self.assertIn("preset-btn", html)
         self.assertIn("result-count", html)
-
-    def test_pagination_present(self):
-        generate_html.generate()
-        html = self._read_html()
-        self.assertIn("pagination", html)
-        self.assertIn("page-btn", html)
+        self.assertIn("search-toggle", html)
 
     def test_channel_group_produces_merged_tab(self):
         generate_html.generate()
@@ -168,6 +209,26 @@ class TestGenerateHtml(unittest.TestCase):
         self.assertIn("mens_fantasy", data)
         self.assertIn("messages", data["mens_fantasy"])
         self.assertIn("total", data["mens_fantasy"])
+
+    def test_text_only_message_has_empty_media(self):
+        generate_html.generate()
+        html = self._read_html()
+        data = self._extract_json_data(html)
+        msgs = data["news"]["messages"]
+        text_only = [m for m in msgs if m["text"] == "Text-only news"]
+        self.assertEqual(len(text_only), 1)
+        self.assertEqual(text_only[0]["media"], [])
+
+    def test_default_icon_for_unmapped_group(self):
+        mod.CHANNELS_FILE.write_text(json.dumps({
+            "channels": [
+                {"id": "misc_ch", "username": "misc", "name": "雜項",
+                 "mode": "text", "group": "misc", "fetch_limit": 50},
+            ]
+        }), encoding="utf-8")
+        generate_html.generate()
+        html = self._read_html()
+        self.assertIn(generate_html.DEFAULT_ICON, html)
 
 
 if __name__ == "__main__":
