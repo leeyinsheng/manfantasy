@@ -335,7 +335,7 @@ class TestXvideoTab(unittest.TestCase):
         generate_html.generate()
         html = self._read_html()
         self.assertIn("openLbEmbed", html)
-        self.assertIn("embedframe", html)
+        self.assertIn("xvideos.com/video", html)
 
     def test_no_text_label_in_nav_items(self):
         generate_html.generate()

@@ -473,7 +473,7 @@ function closeLightbox(){
 }
 
 function openLbEmbed(videoId){
-  document.getElementById('lb-content').innerHTML = '<div class="xv-embed"><iframe src="https://www.xvideos.com/embedframe/' + videoId + '" frameborder="0" scrolling="no" allowfullscreen></iframe></div>';
+  document.getElementById('lb-content').innerHTML = '<div class="xv-link"><p style="text-align:center;color:var(--fg);margin-bottom:1rem">xvideos 影片無法內嵌播放</p><a href="https://www.xvideos.com/video' + videoId + '/" target="_blank" rel="noopener" style="display:inline-block;padding:0.8rem 2rem;background:var(--accent);color:#fff;border-radius:8px;text-decoration:none;font-size:1rem">在 xvideos 觀看</a></div>';
   document.getElementById('lb-counter').textContent = '';
   document.getElementById('lightbox').classList.add('open');
 }
