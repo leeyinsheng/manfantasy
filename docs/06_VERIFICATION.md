@@ -1,66 +1,56 @@
-# 06 - Feature Verification v4
+# 06 - Feature Verification v7
 
-## Verification Checklist
+## Verification Checklist (against `01_PRD.md` / `02_DESIGN.md`)
 
-### F20 — xvideos Spider
-- [x] `src/xvideos.json` loads 4 sources (categories + searches)
-- [x] `_build_url` produces correct URLs for both page types
-- [x] `_build_url` URL-encodes keyword parameters
-- [x] `_parse_video_blocks` extracts all 8 fields from HTML
-- [x] `_parse_video_blocks` handles quality (HD/SD/none)
-- [x] `_parse_video_blocks` handles views in "k" and "M" formats
-- [x] `crawl_source` iterates pages until `pages` limit or no new eids
-- [x] Duplicate eids skipped per `load_existing_eids`
-- [x] Each video tagged with source tag
-- [x] `_append_videos` appends to single `download/xvideos/videos.jsonl`
+### Waterfall Card Layout
+- [x] Image posts render as two-column waterfall cards, alternately assigned (`i % 2`), preserving chronological order within each column
+- [x] Cover image keeps its natural aspect ratio (no forced crop) — irregular waterfall heights confirmed visually
+- [x] Multi-image posts show a "📷 N" badge; single-image posts don't
+- [x] Video-covered posts show a play-icon badge
+- [x] Text-only posts (no media) render as full-width cards below the waterfall, not forced into the two-column grid
 
-### F21 — Embed Playback
-- [x] xvideos card renders `.card` with `.card-source.xv` (purple dot)
-- [x] `.xv-embed` container with `data-eid` present
-- [x] `toggleXvEmbed()` creates `<iframe src="embedframe/{eid}">` on expand
-- [x] `toggleXvEmbed()` clears innerHTML on collapse
-- [x] xv tab has no search bar (`.search-bar` absent)
+### Mobile-Portrait-Only Layout
+- [x] `.app` container is a fixed narrow width, centered
+- [x] Verified at 390px (mobile) and 1200px (wide desktop) viewports — identical centered layout at both, no responsive breakpoint changes the structure
 
-### F22 — Mixed Tab Display
-- [x] "衝啊, 弟兄們" tab appended after existing Telegram tabs
-- [x] Badge count reflects total videos
-- [x] `__XV_DATA__` separate from `__DATA__`
-- [x] Existing Telegram tabs/cards/search/lightbox unchanged
-- [x] `referrerpolicy="no-referrer"` on xv thumbnail images
+### Bottom Navigation
+- [x] Bottom nav replaces the old top tab bar (`tab-nav`/`tab-btn` markup fully removed)
+- [x] 4 channel-group tabs with icon + label, active tab highlighted in accent color
+- [x] Icon lookup falls back to a default icon for any unmapped channel group
 
-### F23 — Periodic Update
-- [x] `crawl()` can be called from cron/script
-- [x] `load_existing_eids()` handles empty file (first run)
-- [x] Duplicate prevention by eid
+### Search & Time Filter
+- [x] Collapsible per-tab search panel, toggled by a single header search icon
+- [x] Icon's active/highlighted state stays in sync with the currently active tab's panel state when switching tabs (fixed during Phase 3 browser testing)
+- [x] Keyword + time-range presets (今日/近3日/近7日/本月/近半年) filter across the tab's **entire** dataset, not just the currently loaded batch
+- [x] Result count displayed; clearing the search restores the normal infinite-scroll view
 
-### F24 — Tag Filtering
-- [x] `.tag-bar` rendered with correct tag buttons + counts
-- [x] Tags sorted alphabetically in output
-- [x] `filterXvTags()` toggles `.hidden` on non-matching cards
-- [x] "全部" button shows all cards
-- [x] Tag badges rendered in card headers
+### Detail Sheet + Lightbox
+- [x] Tapping an image/video card opens a bottom sheet with full text + all thumbnails
+- [x] Tapping a thumbnail opens the lightbox (image or video), with prev/next, counter, Escape/Arrow-key navigation, and click-outside-to-close — reused from v3 with no loss of functionality
+- [x] Tapping a text-only card expands/collapses inline instead (no sheet, since there's nothing to view)
 
----
+### Infinite Scroll
+- [x] Pagination markup (`pagination`, `page-btn`) fully removed
+- [x] `IntersectionObserver` on a per-tab sentinel loads the next batch (`PAGE_SIZE=20`) as the user scrolls
+- [x] Empty tab shows "已無更多內容" immediately (Phase 4 fix verified)
 
-## Structure Verification
+### Data Layer (Unchanged, Out of Scope)
+- [x] `__DATA__` JSON schema unchanged (`id`/`date`/`text`/`channel`/`media`)
+- [x] Grouped multi-photo messages (`grouped_id`) still merge into a single card with the correct image count
+- [x] Media path channel-id prefixing unaffected
+- [x] Telegram data layer (`tg_core.py`, `download_tg_channel.py`, `channels.json`) untouched
 
-| File | Lines | Purpose | Verified |
-|------|-------|---------|----------|
-| `src/xvideos.json` | 34 | Source configuration | Correct JSON schema |
-| `src/xv_spider.py` | 191 | Crawler + parser | 17 tests pass |
-| `src/generate_html.py` | ~811 | HTML generation | 24 tests pass (11 xv + 13 TG) |
-| `tests/test_xv_spider.py` | 211 | Spider unit tests | 17 tests pass |
-| `tests/test_html.py` | ~344 | HTML integration tests | 24 tests pass |
-
----
+### Security (found during Phase 5, fixed)
+- [x] `</script>` sequences in channel post text can no longer break out of the inline `__DATA__` script block — verified with a live XSS payload before and after the fix
 
 ## Final Sanity Check
 
 ```
-$ python -m unittest discover tests
-Ran 89 tests in 0.401s — OK
+$ python3 -m unittest discover tests
+Ran 88 tests in 0.079s — OK
 ```
 
-All v4 features verified against PRD and DESIGN specifications.
+All v7 features verified against the PRD and DESIGN specifications, including edge cases beyond what
+static-HTML unit tests can cover (verified interactively via Playwright against a real generated page).
 
-**Verdict**: Phase 6 — **PASS**. All features implemented as designed, no deviations.
+**Verdict**: Phase 6 — **PASS**. Ready for Phase 7 (User Acceptance).
