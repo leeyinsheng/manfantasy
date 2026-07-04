@@ -275,7 +275,8 @@ function updateSentinel(tabId){
 
 function loadNextBatch(tabId){
   var data = tabsData[tabId];
-  if(!data || data.loaded >= data.messages.length) return;
+  if(!data) return;
+  if(data.loaded >= data.messages.length){ updateSentinel(tabId); return; }
   var start = data.loaded;
   var end = Math.min(start + PAGE_SIZE, data.messages.length);
   var indices = [];
