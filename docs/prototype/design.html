@@ -86,9 +86,14 @@ img{display:block;width:100%}
 
 /* bottom nav */
 .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:var(--app-w);display:flex;justify-content:space-around;background:rgba(10,10,10,0.97);border-top:1px solid var(--border);z-index:20;padding:0.35rem 0 max(0.35rem,env(safe-area-inset-bottom))}
-.nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:0.3rem;min-width:56px;font-size:0.62rem;color:var(--mut)}
-.nav-item .icon{font-size:1.25rem;line-height:1}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:0.3rem;flex:1;min-width:0;font-size:0.55rem;color:var(--mut)}
+.nav-item .icon{font-size:1.15rem;line-height:1}
 .nav-item.active{color:var(--accent)}
+/* xvideo duration badge */
+.badge-duration{position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.8);color:#fff;font-size:0.66rem;padding:2px 5px;border-radius:4px;display:flex;align-items:center;gap:3px}
+/* xv iframe embed container */
+.xv-embed{position:relative;width:100%;padding-top:56.25%;background:#000;border-radius:8px;overflow:hidden}
+.xv-embed iframe{position:absolute;inset:0;width:100%;height:100%}
 </style>
 </head>
 <body>
@@ -124,13 +129,18 @@ img{display:block;width:100%}
       <div class="waterfall" id="wf-news"></div>
       <div class="sentinel">— 捲動載入更多 —</div>
     </div>
+    <div class="tab-panel" id="panel-xv">
+      <div class="waterfall" id="wf-xv"></div>
+      <div class="sentinel">— 捲動載入更多 —</div>
+    </div>
   </main>
 
   <nav class="bottom-nav">
     <div class="nav-item active" data-tab="fantasy"><span class="icon">🏠</span><span>異想空間</span></div>
     <div class="nav-item" data-tab="news"><span class="icon">📰</span><span>大事件</span></div>
     <div class="nav-item" data-tab="guaba"><span class="icon">🔥</span><span>吃瓜</span></div>
-    <div class="nav-item" data-tab="drama"><span class="icon">🎬</span><span>AI短劇</span></div>
+    <div class="nav-item" data-tab="drama"><span class="icon">🎬</span><span>AI短</span></div>
+    <div class="nav-item" data-tab="xv"><span class="icon">❌</span><span>xv</span></div>
   </nav>
 </div>
 
@@ -146,7 +156,8 @@ img{display:block;width:100%}
 
 <div class="lightbox" id="lightbox">
   <span class="lb-close" id="lb-close">&times;</span>
-  <img id="lb-img" src="" alt="">
+  <img id="lb-img" src="" alt="" style="display:none">
+  <div id="lb-embed" style="display:none;width:92vw;max-width:500px"></div>
 </div>
 
 <script>
@@ -180,8 +191,16 @@ var MOCK = {
   ],
   news: [
     { text:'東南亞地區今日快訊摘要，多起事件同步追蹤中。', media: mockMedia(2,true) },
-    { text:'', media: null, textOnly:true, full:'純文字新聞快報：今日重點事件整理，包含區域政策變動與相關單位回應，詳細內容持續更新中，請留意後續報導。' },
+    { text:'', media: null, textOnly:true, full:'純文字新聞快報：今日重點整理，包含區域政策變動與相關單位回應，詳細內容持續更新中。' },
     { text:'現場圖集', media: mockMedia(3,true) },
+  ],
+  xv: [
+    { text:'Maderotic 最新熱門影片合集，性感內衣秀精彩剪輯。', thumbnail: ph(400,260,'🎬 #1a1620'), duration:'14:32', vid:'12345601' },
+    { text:'火辣身材完美展現，高清畫質帶你體驗極致誘惑。', thumbnail: ph(400,300,'🎬 #141822'), duration:'8:15', vid:'12345602' },
+    { text:'亞洲精選系列，甜美臉蛋魔鬼身材不容錯過。', thumbnail: ph(400,230,'🎬 #181414'), duration:'11:47', vid:'12345603' },
+    { text:'私密鏡頭特別企劃，第一視角讓你身歷其境。', thumbnail: ph(400,280,'🎬 #141a18'), duration:'19:03', vid:'12345604' },
+    { text:'性感舞者表演，火辣律動與迷人曲線。', thumbnail: ph(400,250,'🎬 #1a1620'), duration:'6:21', vid:'12345605' },
+    { text:'浴室系列特輯，濕身誘惑挑戰你的感官極限。', thumbnail: ph(400,310,'🎬 #141822'), duration:'22:10', vid:'12345606' },
   ]
 };
 
@@ -199,6 +218,21 @@ function renderWaterfall(tabId){
         + '<div class="card-text">' + esc(m.full) + '</div>'
         + '<div class="card-expand">展開詳情 ▾</div>'
         + '</div></div>';
+      return;
+    }
+    if(m.vid){
+      /* xvideos card */
+      var cardHtml = '<div class="card" data-idx="' + idx + '" data-tab="' + tabId + '">'
+        + '<div class="card-cover"><img src="' + m.thumbnail + '" loading="lazy">'
+        + '<span class="badge-play"></span>'
+        + '<span class="badge-duration">⏱ ' + m.duration + '</span></div>'
+        + '<div class="card-body">'
+        + '<div class="card-text">' + esc(m.text) + '</div>'
+        + '<div class="card-foot"><span class="card-source">xvideos</span><span>maderotic</span></div>'
+        + '</div></div>';
+      var target = (ci % 2 === 0) ? col0 : col1;
+      target.insertAdjacentHTML('beforeend', cardHtml);
+      ci++;
       return;
     }
     var cover = m.media[0];
@@ -228,6 +262,7 @@ function escAttr(s){ return esc(s).replace(/"/g,'&quot;'); }
 
 renderWaterfall('fantasy');
 renderWaterfall('news');
+renderWaterfall('xv');
 
 /* search panel toggle */
 var searchToggle = document.getElementById('search-toggle');
@@ -285,15 +320,49 @@ sheetBackdrop.addEventListener('click', function(e){ if(e.target === sheetBackdr
 /* lightbox from sheet thumb */
 var lightbox = document.getElementById('lightbox');
 var lbImg = document.getElementById('lb-img');
+var lbEmbed = document.getElementById('lb-embed');
+function openLbImage(src){
+  lbEmbed.style.display = 'none';
+  lbEmbed.innerHTML = '';
+  lbImg.style.display = '';
+  lbImg.src = src;
+  lightbox.classList.add('open');
+}
+function openLbEmbed(vid){
+  lbImg.style.display = 'none';
+  lbImg.src = '';
+  lbEmbed.style.display = '';
+  lbEmbed.innerHTML = '<div class="xv-embed"><iframe src="https://www.xvideos.com/embedframe/' + vid + '" frameborder="0" scrolling="no" allowfullscreen></iframe></div>';
+  lightbox.classList.add('open');
+}
+function closeLightbox(){
+  lightbox.classList.remove('open');
+  lbEmbed.innerHTML = '';
+  lbEmbed.style.display = 'none';
+  lbImg.style.display = '';
+  lbImg.src = '';
+}
+/* card click: xv -> embed, regular -> sheet */
+document.addEventListener('click', function(e){
+  var card = e.target.closest('.card:not(.text-only)');
+  if(card){
+    var tabId = card.getAttribute('data-tab');
+    if(tabId === 'xv'){
+      var idx = parseInt(card.getAttribute('data-idx'));
+      var m = MOCK[tabId][idx];
+      openLbEmbed(m.vid);
+      return;
+    }
+  }
+});
 sheetBody.addEventListener && document.addEventListener('click', function(e){
   var thumb = e.target.closest('.sheet-thumbs .thumb');
   if(thumb){
-    lbImg.src = thumb.getAttribute('data-src');
-    lightbox.classList.add('open');
+    openLbImage(thumb.getAttribute('data-src'));
   }
 });
-document.getElementById('lb-close').addEventListener('click', function(){ lightbox.classList.remove('open'); });
-lightbox.addEventListener('click', function(e){ if(e.target === lightbox) lightbox.classList.remove('open'); });
+document.getElementById('lb-close').addEventListener('click', closeLightbox);
+lightbox.addEventListener('click', function(e){ if(e.target === lightbox) closeLightbox(); });
 
 /* infinite-scroll sentinel demo: just visually indicate it would load more */
 document.querySelectorAll('.sentinel').forEach(function(s){
