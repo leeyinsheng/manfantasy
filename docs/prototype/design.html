@@ -1,84 +1,309 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>MAN'S FANTASY — v6 APP Prototype</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>MAN'S FANTASY — v7 Waterfall Prototype</title>
 <style>
 :root {
-  --bg:#0a0c12; --surf:rgba(16,18,26,0.92); --surf2:#141720;
-  --fg:#e4e1db; --fg2:#908d86; --mut:#524f4a;
-  --bd:rgba(201,162,78,0.10); --gold:#c9a24e; --gl:#e0c878;
-  --abg:rgba(201,162,78,0.10); --r:8px; --aw:430px;
+  --bg:#0a0a0a; --surface:#161616; --surface-2:#1e1e1e;
+  --fg:#e5e5e5; --fg2:#a0a0a0; --mut:#6a6a6a;
+  --border:#2a2a2a; --accent:#d14334; --accent-hover:#e05545;
+  --radius:10px; --app-w:560px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{font-size:15px}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:#06070a;display:flex;justify-content:center;min-height:100dvh;color:var(--fg);line-height:1.6;-webkit-tap-highlight-color:transparent}
-.app-shell{width:100%;max-width:var(--aw);min-height:100dvh;display:flex;flex-direction:column;background:var(--bg);border-left:1px solid rgba(255,255,255,0.02);border-right:1px solid rgba(255,255,255,0.02)}
-.app-header{padding:0.8rem 1rem;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:10;background:rgba(10,12,18,0.96)}
-.app-header .title{font-family:Georgia,serif;font-size:0.85rem;font-weight:600;color:var(--gold);letter-spacing:0.06em;text-shadow:0 0 12px rgba(201,162,78,0.15)}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:#000;display:flex;justify-content:center;min-height:100dvh;color:var(--fg);line-height:1.5;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+img{display:block;width:100%}
+
+.app{width:100%;max-width:var(--app-w);min-height:100dvh;background:var(--bg);display:flex;flex-direction:column}
+
+/* header */
+.app-header{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:0.7rem 0.9rem;border-bottom:1px solid var(--border);background:rgba(10,10,10,0.96)}
+.app-header .title{font-size:0.95rem;font-weight:600;letter-spacing:0.03em}
+.app-header .right{display:flex;align-items:center;gap:0.6rem}
 .app-header .time{font-size:0.68rem;color:var(--mut)}
-.app-content{flex:1;overflow-y:auto;padding:0.75rem 0.75rem 4.5rem}
-.tab-content{display:none}
-.tab-content.active{display:block}
-.search-bar{display:flex;flex-wrap:wrap;gap:0.5rem;padding:0.75rem;background:var(--surf);border:1px solid var(--bd);border-radius:var(--r);margin-bottom:1rem;align-items:center}
-.search-bar input[type="text"]{flex:1;min-width:100px;padding:0.5rem 0.75rem;background:var(--surf2);border:1px solid var(--bd);border-radius:6px;font-size:0.82rem;color:var(--fg);outline:none}
-.search-bar input[type="text"]:focus{border-color:var(--gold)}
+.search-toggle{width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:1rem;border-radius:50%;color:var(--fg2)}
+.search-toggle.active{color:var(--accent);background:rgba(209,67,52,0.1)}
+
+/* search panel (collapsed by default) */
+.search-panel{max-height:0;overflow:hidden;transition:max-height .2s ease;border-bottom:1px solid transparent}
+.search-panel.open{max-height:120px;border-bottom-color:var(--border)}
+.search-panel-inner{display:flex;flex-wrap:wrap;gap:0.5rem;padding:0.75rem 0.9rem;align-items:center}
+.search-panel input[type="text"]{flex:1;min-width:120px;padding:0.5rem 0.7rem;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;font-size:0.82rem;color:var(--fg);outline:none}
+.search-panel input:focus{border-color:var(--accent)}
 .time-presets{display:flex;gap:4px;flex-wrap:wrap}
-.preset-btn{padding:0.3rem 0.5rem;font-size:0.7rem;color:var(--mut);background:var(--surf2);border:1px solid var(--bd);border-radius:4px;cursor:pointer}
-.preset-btn.active{color:var(--fg);background:var(--abg);border-color:var(--gold)}
-.card{background:var(--surf);border:1px solid var(--bd);border-radius:var(--r);padding:0.8rem;margin-bottom:0.5rem}
-.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;font-size:0.72rem}
-.card-source{display:inline-flex;align-items:center;gap:4px;padding:2px 6px;background:var(--surf2);border-radius:3px;color:var(--fg2);font-size:0.68rem}
-.card-source::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--gold)}
-.card-date{font-family:Georgia,serif;font-size:0.66rem;color:var(--mut)}
-.card-text{font-size:0.84rem;line-height:1.6;margin-bottom:0.4rem;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
-.card-thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:3px;margin-top:0.4rem}
-.thumb{position:relative;aspect-ratio:1;overflow:hidden;border-radius:3px;background:var(--surf2)}
-.thumb img{width:100%;height:100%;object-fit:cover}
-.card-expand{text-align:center;font-size:0.72rem;color:var(--mut);padding:0.5rem 0 0;margin-top:0.4rem;border-top:1px solid var(--bd);cursor:pointer}
-.pagination{display:flex;justify-content:center;align-items:center;gap:4px;padding:0.75rem 0 0.5rem;flex-wrap:wrap}
-.page-btn{min-width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:0.75rem;color:var(--mut);background:rgba(255,255,255,0.03);border:1px solid var(--bd);border-radius:4px;cursor:pointer}
-.page-btn.active{color:var(--fg);background:var(--abg);border-color:var(--gold)}
-.page-btn.disabled{opacity:0.3;pointer-events:none}
-.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:var(--aw);display:flex;justify-content:space-around;background:rgba(8,10,16,0.96);border-top:1px solid var(--bd);z-index:20;padding:0.3rem 0 max(0.3rem,env(safe-area-inset-bottom))}
-.nav-item{display:flex;flex-direction:column;align-items:center;gap:1px;padding:0.35rem 0.3rem;min-width:52px;font-size:0.58rem;color:var(--mut);cursor:pointer;user-select:none}
-.nav-item .icon{font-size:1.15rem;line-height:1}
-.nav-item.active{color:var(--gold)}
-.nav-item.active .icon{text-shadow:0 0 10px rgba(201,162,78,0.2)}
+.preset-btn{padding:0.35rem 0.6rem;font-size:0.72rem;color:var(--mut);background:var(--surface-2);border:1px solid var(--border);border-radius:6px}
+.preset-btn.active{color:var(--fg);border-color:var(--accent);background:rgba(209,67,52,0.08)}
+
+/* content */
+.app-content{flex:1;padding:0.75rem 0.75rem 5rem}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+.waterfall{display:flex;gap:0.6rem}
+.wf-col{flex:1;display:flex;flex-direction:column;gap:0.6rem;min-width:0}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.card-cover{position:relative}
+.card-cover img{object-fit:cover}
+.badge-count{position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.6);color:#fff;font-size:0.66rem;padding:2px 6px;border-radius:10px;display:flex;align-items:center;gap:2px}
+.badge-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:34px;height:34px;background:rgba(0,0,0,0.55);border-radius:50%;display:flex;align-items:center;justify-content:center}
+.badge-play::after{content:'';border-left:11px solid #fff;border-top:7px solid transparent;border-bottom:7px solid transparent;margin-left:3px}
+.card-body{padding:0.6rem 0.65rem}
+.card-text{font-size:0.82rem;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin-bottom:0.4rem}
+.card-foot{display:flex;justify-content:space-between;align-items:center;font-size:0.68rem;color:var(--mut)}
+.card-source{display:inline-flex;align-items:center;gap:4px}
+.card-source::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent)}
+
+/* text-only card: full width */
+.card.text-only{width:100%;margin-bottom:0.6rem;padding:0}
+.card.text-only .card-body{padding:0.75rem 0.8rem}
+.card.text-only .card-text{-webkit-line-clamp:3;font-size:0.86rem}
+.card.text-only.expanded .card-text{-webkit-line-clamp:unset}
+.card.text-only .card-expand{font-size:0.7rem;color:var(--mut);text-align:center;padding-top:0.4rem;margin-top:0.4rem;border-top:1px solid var(--border)}
+
+.sentinel{text-align:center;font-size:0.72rem;color:var(--mut);padding:1rem 0}
+
+/* detail sheet */
+.sheet-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:50}
+.sheet-backdrop.open{display:block}
+.sheet{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:100%;max-width:var(--app-w);max-height:85vh;background:var(--surface);border-radius:16px 16px 0 0;z-index:51;display:flex;flex-direction:column;overflow:hidden}
+.sheet-header{display:flex;justify-content:space-between;align-items:center;padding:0.8rem 1rem;border-bottom:1px solid var(--border)}
+.sheet-close{font-size:1.3rem;color:var(--fg2)}
+.sheet-body{overflow-y:auto;padding:0.9rem 1rem}
+.sheet-body .full-text{font-size:0.88rem;line-height:1.7;margin-bottom:0.8rem;white-space:pre-wrap}
+.sheet-thumbs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.sheet-thumbs .thumb{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden}
+.sheet-thumbs img{width:100%;height:100%;object-fit:cover}
+
+/* lightbox (reused pattern from v3) */
+.lightbox{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.94);align-items:center;justify-content:center}
+.lightbox.open{display:flex}
+.lightbox img{max-width:92vw;max-height:85vh;object-fit:contain;width:auto}
+.lb-close{position:absolute;top:1rem;right:1rem;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.1);color:#fff;font-size:1.4rem;display:flex;align-items:center;justify-content:center}
+
+/* bottom nav */
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:var(--app-w);display:flex;justify-content:space-around;background:rgba(10,10,10,0.97);border-top:1px solid var(--border);z-index:20;padding:0.35rem 0 max(0.35rem,env(safe-area-inset-bottom))}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:0.3rem;min-width:56px;font-size:0.62rem;color:var(--mut)}
+.nav-item .icon{font-size:1.25rem;line-height:1}
+.nav-item.active{color:var(--accent)}
 </style>
 </head>
 <body>
-<div class="app-shell">
-<header class="app-header">
-  <span class="title">MAN'S FANTASY</span>
-  <span class="time">更新 12:00</span>
-</header>
-<main class="app-content">
-  <div class="tab-content active" id="content-mens_fantasy">
-    <div class="search-bar">
+<div class="app">
+
+  <header class="app-header">
+    <span class="title">MAN'S FANTASY</span>
+    <div class="right">
+      <span class="time">更新 07-04 08:30</span>
+      <button class="search-toggle" id="search-toggle">🔍</button>
+    </div>
+  </header>
+
+  <div class="search-panel" id="search-panel">
+    <div class="search-panel-inner">
       <input type="text" placeholder="搜尋訊息…">
       <div class="time-presets">
-        <button class="preset-btn active">全部</button><button class="preset-btn">今日</button><button class="preset-btn">近3日</button><button class="preset-btn">近7日</button>
+        <button class="preset-btn active">全部</button>
+        <button class="preset-btn">今日</button>
+        <button class="preset-btn">近3日</button>
+        <button class="preset-btn">近7日</button>
+        <button class="preset-btn">本月</button>
       </div>
-    </div>
-    <div class="card">
-      <div class="card-header"><span class="card-source">AIguoman18</span><span class="card-date">07-03 10:15</span></div>
-      <div class="card-text">今日最新夢幻美圖合集，精選多張高畫質寫真。</div>
-      <div class="card-thumbs">
-        <div class="thumb"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%23141822' width='200' height='200'/%3E%3Ctext x='100' y='105' text-anchor='middle' fill='%23524f4a' font-size='14'%3E🖼%3C/text%3E%3C/svg%3E"></div>
-      </div>
-    </div>
-    <div class="pagination">
-      <button class="page-btn disabled">←</button><button class="page-btn active">1</button><button class="page-btn">2</button><button class="page-btn">→</button>
     </div>
   </div>
-</main>
-<nav class="bottom-nav">
-  <div class="nav-item active" data-tab="mens_fantasy"><span class="icon">🏠</span><span>異想空間</span></div>
-  <div class="nav-item" data-tab="news"><span class="icon">📰</span><span>大事件</span></div>
-  <div class="nav-item" data-tab="guaba_bl"><span class="icon">🔥</span><span>吃瓜</span></div>
-  <div class="nav-item" data-tab="ai_drama"><span class="icon">🎬</span><span>AI短劇</span></div>
-</nav>
+
+  <main class="app-content">
+    <div class="tab-panel active" id="panel-fantasy">
+      <div class="waterfall" id="wf-fantasy"></div>
+      <div class="sentinel">— 捲動載入更多 —</div>
+    </div>
+    <div class="tab-panel" id="panel-news">
+      <div class="waterfall" id="wf-news"></div>
+      <div class="sentinel">— 捲動載入更多 —</div>
+    </div>
+  </main>
+
+  <nav class="bottom-nav">
+    <div class="nav-item active" data-tab="fantasy"><span class="icon">🏠</span><span>異想空間</span></div>
+    <div class="nav-item" data-tab="news"><span class="icon">📰</span><span>大事件</span></div>
+    <div class="nav-item" data-tab="guaba"><span class="icon">🔥</span><span>吃瓜</span></div>
+    <div class="nav-item" data-tab="drama"><span class="icon">🎬</span><span>AI短劇</span></div>
+  </nav>
 </div>
+
+<div class="sheet-backdrop" id="sheet-backdrop">
+  <div class="sheet" id="sheet">
+    <div class="sheet-header">
+      <span>貼文詳情</span>
+      <span class="sheet-close" id="sheet-close">&times;</span>
+    </div>
+    <div class="sheet-body" id="sheet-body"></div>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox">
+  <span class="lb-close" id="lb-close">&times;</span>
+  <img id="lb-img" src="" alt="">
+</div>
+
+<script>
+'use strict';
+function ph(w,h,label,color){
+  var svg = "<svg xmlns='http://www.w3.org/2000/svg' width='"+w+"' height='"+h+"'>"
+    + "<rect fill='"+color+"' width='"+w+"' height='"+h+"'/>"
+    + "<text x='"+(w/2)+"' y='"+(h/2)+"' text-anchor='middle' fill='#524f4a' font-size='22' dy='.3em'>"+label+"</text></svg>";
+  return "data:image/svg+xml," + encodeURIComponent(svg);
+}
+
+var COLORS = ['#141822','#181414','#141a18','#1a1620'];
+function mockMedia(n, tall){
+  var out = [];
+  for(var i=0;i<n;i++){
+    var h = tall ? (300 + (i%3)*90) : 220;
+    out.push({ type: (i===0 && n===1 && tall==='video') ? 'video' : 'photo',
+      src: ph(400, h, '🖼', COLORS[i%COLORS.length]), h: h });
+  }
+  return out;
+}
+
+var MOCK = {
+  fantasy: [
+    { text:'今日最新夢幻美圖合集，精選多張高畫質寫真，內容更新於凌晨整理完成。', media: mockMedia(4,true) },
+    { text:'單張封面精選', media: mockMedia(1,true) },
+    { text:'影片預覽 — 點擊查看完整版本', media: mockMedia(1,'video') },
+    { text:'', media: null, textOnly:true, full:'今天沒有配圖，純文字快訊：頻道整理公告，近期更新頻率為每日兩次，感謝大家支持與回饋，如有問題歡迎留言反應，我們會盡快處理。' },
+    { text:'三連圖', media: mockMedia(3,true) },
+    { text:'雙拼', media: mockMedia(2,true) },
+  ],
+  news: [
+    { text:'東南亞地區今日快訊摘要，多起事件同步追蹤中。', media: mockMedia(2,true) },
+    { text:'', media: null, textOnly:true, full:'純文字新聞快報：今日重點事件整理，包含區域政策變動與相關單位回應，詳細內容持續更新中，請留意後續報導。' },
+    { text:'現場圖集', media: mockMedia(3,true) },
+  ]
+};
+
+function renderWaterfall(tabId){
+  var wrap = document.getElementById('wf-' + tabId);
+  var items = MOCK[tabId] || [];
+  var col0 = document.createElement('div'); col0.className = 'wf-col';
+  var col1 = document.createElement('div'); col1.className = 'wf-col';
+  var textOnlyHtml = '';
+  var ci = 0;
+  items.forEach(function(m, idx){
+    if(m.textOnly){
+      textOnlyHtml += '<div class="card text-only" data-full="' + escAttr(m.full) + '">'
+        + '<div class="card-body">'
+        + '<div class="card-text">' + esc(m.full) + '</div>'
+        + '<div class="card-expand">展開詳情 ▾</div>'
+        + '</div></div>';
+      return;
+    }
+    var cover = m.media[0];
+    var badge = '';
+    if(m.media.length > 1) badge = '<span class="badge-count">📷 ' + m.media.length + '</span>';
+    var play = cover.type === 'video' ? '<span class="badge-play"></span>' : '';
+    var cardHtml = '<div class="card" data-idx="' + idx + '" data-tab="' + tabId + '">'
+      + '<div class="card-cover"><img src="' + cover.src + '" loading="lazy">' + badge + play + '</div>'
+      + '<div class="card-body">'
+      + '<div class="card-text">' + esc(m.text) + '</div>'
+      + '<div class="card-foot"><span class="card-source">telegram_ch</span><span>07-04 0' + (idx+1) + ':00</span></div>'
+      + '</div></div>';
+    var target = (ci % 2 === 0) ? col0 : col1;
+    target.insertAdjacentHTML('beforeend', cardHtml);
+    ci++;
+  });
+  wrap.innerHTML = '';
+  wrap.appendChild(col0);
+  wrap.appendChild(col1);
+  if(textOnlyHtml) wrap.insertAdjacentHTML('afterend', textOnlyHtml);
+}
+
+function esc(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function escAttr(s){ return esc(s).replace(/"/g,'&quot;'); }
+
+renderWaterfall('fantasy');
+renderWaterfall('news');
+
+/* search panel toggle */
+var searchToggle = document.getElementById('search-toggle');
+var searchPanel = document.getElementById('search-panel');
+searchToggle.addEventListener('click', function(){
+  searchPanel.classList.toggle('open');
+  searchToggle.classList.toggle('active');
+});
+document.querySelectorAll('.preset-btn').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    btn.parentNode.querySelectorAll('.preset-btn').forEach(function(b){ b.classList.remove('active'); });
+    btn.classList.add('active');
+  });
+});
+
+/* bottom nav tab switching */
+document.querySelectorAll('.nav-item').forEach(function(item){
+  item.addEventListener('click', function(){
+    var tab = item.getAttribute('data-tab');
+    if(!MOCK[tab]) return; /* guaba / drama are visual-only in this prototype */
+    document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
+    item.classList.add('active');
+    document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+    document.getElementById('panel-' + tab).classList.add('active');
+  });
+});
+
+/* card tap -> detail sheet (image cards) / inline expand (text-only cards) */
+var sheetBackdrop = document.getElementById('sheet-backdrop');
+var sheetBody = document.getElementById('sheet-body');
+document.addEventListener('click', function(e){
+  var textOnly = e.target.closest('.card.text-only');
+  if(textOnly){
+    textOnly.classList.toggle('expanded');
+    var exp = textOnly.querySelector('.card-expand');
+    exp.textContent = textOnly.classList.contains('expanded') ? '收合 ▴' : '展開詳情 ▾';
+    return;
+  }
+  var card = e.target.closest('.card:not(.text-only)');
+  if(card){
+    var tabId = card.getAttribute('data-tab');
+    var idx = parseInt(card.getAttribute('data-idx'));
+    var m = MOCK[tabId][idx];
+    var thumbs = m.media.map(function(item, i){
+      return '<div class="thumb" data-src="' + item.src + '"><img src="' + item.src + '"></div>';
+    }).join('');
+    sheetBody.innerHTML = '<div class="full-text">' + esc(m.text) + '</div><div class="sheet-thumbs">' + thumbs + '</div>';
+    sheetBackdrop.classList.add('open');
+    return;
+  }
+});
+document.getElementById('sheet-close').addEventListener('click', function(){ sheetBackdrop.classList.remove('open'); });
+sheetBackdrop.addEventListener('click', function(e){ if(e.target === sheetBackdrop) sheetBackdrop.classList.remove('open'); });
+
+/* lightbox from sheet thumb */
+var lightbox = document.getElementById('lightbox');
+var lbImg = document.getElementById('lb-img');
+sheetBody.addEventListener && document.addEventListener('click', function(e){
+  var thumb = e.target.closest('.sheet-thumbs .thumb');
+  if(thumb){
+    lbImg.src = thumb.getAttribute('data-src');
+    lightbox.classList.add('open');
+  }
+});
+document.getElementById('lb-close').addEventListener('click', function(){ lightbox.classList.remove('open'); });
+lightbox.addEventListener('click', function(e){ if(e.target === lightbox) lightbox.classList.remove('open'); });
+
+/* infinite-scroll sentinel demo: just visually indicate it would load more */
+document.querySelectorAll('.sentinel').forEach(function(s){
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if(en.isIntersecting){ s.textContent = '（已是最新資料，示範用，Phase 3 會接上真實分批載入）'; }
+    });
+  });
+  io.observe(s);
+});
+</script>
 </body>
 </html>

@@ -21,7 +21,7 @@ CSS-only casino-gold/phone-frame attempt. Rolled back, never shipped. Live site 
 | Phase | Name | Status |
 |-------|------|--------|
 | 1 | Product Ideation | ✅ |
-| 2 | Product Design | ⏳ |
+| 2 | Product Design | ✅ |
 | 3 | Feature Dev + Unit Tests | ⏳ |
 | 4 | Code Review | ⏳ |
 | 5 | Regression Testing | ⏳ |
@@ -30,5 +30,5 @@ CSS-only casino-gold/phone-frame attempt. Rolled back, never shipped. Live site 
 
 ## Status
 
-**Current**: v7 in progress — 小紅書風格 waterfall 卡片 + 手機直向專屬版型, Phase 2 (Product Design).
+**Current**: v7 in progress — 小紅書風格 waterfall 卡片 + 手機直向專屬版型, Phase 3 (Feature Dev + Unit Tests).
 **Baseline**: v3 (Telegram only, red editorial theme) — this is what's live at http://8.213.209.231/dream/.
