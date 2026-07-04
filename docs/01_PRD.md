@@ -1,28 +1,55 @@
-# 01 - PRD v6：APP 模式前端設計 (Telegram only)
+# 01 - PRD v7：小紅書風格 Waterfall 卡片 + 手機直向專屬版型
+
+## 背景
+
+目前線上版本（v3，http://8.213.209.231/dream/ ）是深色編輯風格的單欄列表：襯線標題、頂部 tab bar、卡片內縮圖以小網格平鋪。這個版型偏「部落格/新聞列表」，不是使用者熟悉的手機 App 瀏覽體驗。
+
+先前 v5/v6 嘗試過「手機框架置中 + 底部導覽 + 賭場金色主題」，僅改 CSS、且已回滾，未真正解決版型與互動模式的問題。
+
+本輪目標：參考小紅書／IG 的雙欄 waterfall 卡片體驗，全面調整版型與互動，且**只服務手機直向**使用情境。
 
 ## 版本變更
 
-v3 → v6：純 CSS 重新設計為 APP 模式。功能、JS、HTML 結構全部不動。Telegram 頻道專用（無 xvideos）。
+v3 → v7。範圍全面開放：CSS、HTML 結構、JS 互動邏輯皆可重寫。
 
-## 設計目標
+## 目標
 
-模擬手機 APP 外觀：
-- 430px 手機框架置中
-- 底部導航 (🏠📰🔥🎬)
-- Compact header
-- 金色博彩主題
-- 51 項現有測試必須通過
+1. **雙欄 Waterfall 卡片**：有圖片的貼文以圖片為主視覺、雙欄瀏覽流排列（類小紅書/IG explore 頁）。
+2. **手機直向專屬**：不做響應式寬螢幕排版。桌面瀏覽器開啟時，套用同一份手機版版型並置中顯示（窄欄，不因螢幕變寬而改變排版邏輯）。
+3. **底部導覽列**：以底部 tab（現有 4 個頻道分類）取代目前的頂部 tab bar，符合主流手機 App 導覽慣例。
+4. **保留現有功能**：頻道分類切換、搜尋、時間篩選（今日/近3日/近7日/本月/近半年）、圖片/影片燈箱瀏覽、分頁或捲動載入 — 功能不減少，只換呈現與互動方式。
+5. **通過所有回歸測試**，並在 UAT 簽核後部署到線上環境。
 
-## 變更範圍
+## 範圍
 
-| 檔案 | 變更 |
-|------|------|
-| `src/generate_html.py` CSS block | 完全重寫 |
-| 其他全部 | 不變 |
+### In Scope
+- `src/generate_html.py`：CSS、HTML 模板、JS 互動邏輯全部可重寫
+- `tests/test_html.py`：隨新結構同步改寫
+- `docs/02_DESIGN.md` + `docs/prototype/design.html`：新版視覺與互動設計稿（Phase 2 產出）
+- 部署腳本/流程（用既有 SSH key 部署到 http://8.213.209.231/dream/ ，repo：https://github.com/leeyinsheng/manfantasy ）— 於 Phase 7 UAT 通過後執行
 
-## Out of Scope
+### Out of Scope
+- 不改動資料層：`download_tg_channel.py`、`tg_core.py`、`channels.json`、既有訊息 JSON 結構（`id`/`date`/`text`/`channel`/`media`/`grouped_id`）不變 — 只改前端如何呈現這份資料
+- 不重新引入 xvideos 整合（`xv_spider.py`/`xvideos.json` 為先前已回滾的功能，不在此次範圍內）
+- 不做深色/淺色模式切換等本次未提及的新功能
 
-- 不含 xvideos
-- 不改 JS
-- 不改 HTML 結構
-- 不改 Telegram 功能
+## 假設（待確認，會在 Phase 2 設計稿中具體呈現）
+
+1. **純文字貼文（無圖）**：不強塞進雙欄 waterfall 網格（避免高度不一、版面破碎），改以全寬卡片呈現於 waterfall 區塊之間。
+2. **卡片內容**：waterfall 卡片顯示封面圖（多圖取第一張）+ 2 行文字摘要 + 來源/時間小字；點擊卡片才展開完整文字與所有圖片（沿用現有燈箱瀏覽大圖/影片邏輯）。
+3. **分頁 vs 捲動載入**：既然 JS 開放調整，預設改為捲動載入更多（infinite scroll），比現有頁碼分頁更符合小紅書/IG 的瀏覽習慣；若使用者期望保留頁碼分頁，Phase 2 設計稿中可另外討論。
+4. **搜尋/時間篩選**：功能保留，但 UI 收斂為更精簡的形式（例如搜尋圖示點開才展開篩選列），避免佔用手機直向寶貴的垂直空間。
+
+## 成功標準
+
+- 現有 + 新增的單元測試全數通過（`python3 -m unittest discover tests`）
+- 手機瀏覽器（以 390px 寬度為基準）呈現雙欄 waterfall 卡片、底部導覽列
+- 桌面瀏覽器開啟時，套用同一份手機版版型並置中（不需額外的寬螢幕排版）
+- 現有 4 個頻道分類、搜尋、時間篩選、燈箱瀏覽功能皆正常運作，無功能倒退
+- UAT 簽核通過後成功部署到 http://8.213.209.231/dream/
+
+## 部署資訊（供 Phase 7 參考）
+
+- 線上網址：http://8.213.209.231/dream/
+- GitHub repo：https://github.com/leeyinsheng/manfantasy
+- 伺服器可用專案根目錄的 SSH key（`id_ed25519`）登入部署（該金鑰已在 `.gitignore` 中排除，不會進版控）
