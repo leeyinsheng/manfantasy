@@ -1,108 +1,40 @@
-# 05 - Test Plan v4
+# 05 - Test Plan v7
 
-## Test Scope
+Derived from `docs/02_DESIGN.md` and the Phase 3 implementation in `src/generate_html.py` / `tests/test_html.py`.
 
-| Layer | Scope | Tests |
-|-------|-------|-------|
-| Unit | xv_spider.py URL building, HTML parsing, config, dedup, file I/O | 17 tests |
-| Integration | HTML generation with xv tabs, embedded data, CSS selectors | 11 xv tests |
-| Regression | All existing Telegram functionality | 62 tests |
-| **Total** | | **90 tests** |
+## Functional (covered by `tests/test_html.py`, 88 tests total)
 
----
+- App shell / header / bottom-nav / no-top-tab-bar markup present
+- Waterfall column containers + textonly-list container present per tab
+- Sentinel present, pagination markup fully removed
+- Search panel, search-toggle, time-presets markup present
+- Detail sheet + lightbox markup present
+- `__DATA__` JSON structure unchanged (id/date/text/channel/media), media paths channel-prefixed
+- Channel grouping → merged tab (`mens_fantasy` group name/messages/total)
+- Text-only message (empty `media`) round-trips through JSON correctly
+- Unmapped channel group falls back to `DEFAULT_ICON`
 
-## Functional Test Cases
+## Edge Cases / Error Paths (need a real browser — not visible in static-HTML unit tests)
 
-### T1 — Spider URL Building
-- **category page 0**: `/c/Lingerie-83?s=uploaddate`
-- **category page N**: `/c/Lingerie-83/2?s=uploaddate`
-- **search page 0**: `/?k=%E6%97%A5%E6%9C%AC&sort=uploaddate`
-- **search page N**: `/?k=%E6%97%A5%E6%9C%AC&p=3&sort=uploaddate`
-- **Chinese keyword encoding**: `/%E4%B8%AD%E5%9C%8B` for 中國
-
-### T2 — HTML Parsing
-- Parse single video block: extract eid, video_id, title, duration, quality (1080p), uploader, views, thumbnail
-- Parse SD quality (360p)
-- Parse no quality tag
-- Parse views in millions (8.8M views)
-- Parse multiple blocks in single HTML
-- Parse empty HTML returns []
-
-### T3 — Config Loading
-- Valid config returns sources list
-- Missing config returns []
-- Missing xvideos.json returns []
-
-### T4 — Eid Deduplication
-- Empty videos.jsonl returns empty set
-- Existing eids loaded into set
-- Duplicate eids not re-added
-
-### T5 — File Appending
-- First append creates file
-- Second append preserves existing entries
-- Corrupted lines skipped in load
-
-### T6 — HTML Generation (xvideos)
-- "衝啊, 弟兄們" tab present with badge count
-- `__XV_DATA__` embedded in HTML
-- Video data (eid, title, tags) present in JSON
-- Tag bar with correct tag buttons
-- xv-embed container and data-eid attribute
-- xv tab has no search bar (unlike TG tabs)
-- xv pagination container present
-
-### T7 — Regression (Telegram)
-- All existing TG tabs present
-- Search bar and time presets present
-- Lightbox HTML present
-- Pagination present
-- Card structure in JSON valid
-- Grouped channels merge correctly
-- Media paths include channel_id prefix
-- HTML is valid structure (DOCTYPE, html, style, script)
-
----
-
-## Edge Cases & Error Paths
-
-| Case | Expected | Test |
-|------|----------|------|
-| Empty xvideos.json | `load_sources()` returns `[]`, crawl prints "No xvideos sources" | Covered |
-| Corrupted JSON in videos.jsonl | `load_existing_eids()` skips line | Covered |
-| Parse page with no video blocks | Returns `[]` | Covered |
-| Single page crawl (pages=1) | Only fetches page 0 | Covered |
-| HTML with `data-is-channel` attr | Parser skips non-video attributes | Covered via real xvideos HTML |
-| Tag filter with unknown tag | No cards shown | JS logic covered in prototype |
-
----
+| Case | Why it matters | Method |
+|------|-----------------|--------|
+| XSS-unsafe characters in post text (`<`, `&`, `"`, `'`) | Card/sheet text is built via string concatenation in JS; must confirm `escHtml`/`escAttr` actually neutralize it at runtime | Browser render + accessibility snapshot |
+| Zero-message tab | Phase 4 fix for sentinel getting stuck on "載入更多…" | Browser render |
+| Grouped multi-photo message (`grouped_id`) | `_merge_grouped_messages` merge logic is unchanged, but must confirm the merged media list still renders as one waterfall card with correct multi-image badge | Browser render |
+| Search with zero matches | Result count + empty waterfall, no stale cards left over from before search | Browser interaction |
+| Infinite scroll past first batch | `PAGE_SIZE=20` batching + column balance across batches | Browser render (already spot-checked in Phase 3, re-verified here) |
 
 ## Integration Points
 
-| Integration | Verified | How |
-|-------------|----------|-----|
-| xv_spider → videos.jsonl | Yes | TestAppendVideos |
-| videos.jsonl → generate_html | Yes | TestXvHtml creates videos.jsonl then calls generate() |
-| generate_html → `__XV_DATA__` | Yes | TestXvHtml.test_xv_data_content |
-| CSS → JS interaction | Yes | CSS selectors (`.tag-btn`, `.xv-expand`, `.page-btn`) verified by HTML structure tests |
+- `window.__DATA__` schema is the only contract between Python and JS — unchanged, verified above
+- Bottom-nav tab order follows `channels.json` group insertion order — unchanged from v3 behavior
+- Media path resolution (`{channel_id}/{subdir}/{filename}`) — untouched, covered by existing `test_media_paths_in_json_start_with_channel_id`
 
----
+## Regression Scope
 
-## Regression Test Scope
+- Data layer (`tg_core.py`, `download_tg_channel.py`, `channels.json`) not touched this cycle — covered by pre-existing `test_state.py` (12 tests), `test_media.py` (7 tests), `test_filename.py` (29 tests), all still passing
+- `xv_spider.py` / xvideos integration is out of scope (already removed pre-v7) — `test_xv_spider.py` (19 tests) still passing, confirms no accidental interference
 
-All files unchanged except `generate_html.py` additions:
+## Gate
 
-- `tg_core.py`: No code changes, all state/load/save functions tested — **12 tests pass**
-- `test_filename.py`: **29 tests pass**
-- `test_media.py`: No new media tests, existing **7 tests pass**
-- `test_state.py`: **17 tests pass**
-- Existing Telegram HTML rendering: **13 tests pass**
-
----
-
-## Test Execution
-
-```
-python -m unittest discover tests -v
-Ran 90 tests in 0.456s — OK
-```
+All unit tests pass **and** all edge cases above execute correctly in a real browser → proceed to Phase 6.

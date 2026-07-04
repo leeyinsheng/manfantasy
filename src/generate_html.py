@@ -585,7 +585,9 @@ def generate():
     <div class="sentinel" id="sentinel-{tab_id}">載入更多…</div>
   </div>'''
 
-    tabs_json = _json.dumps(tabs, ensure_ascii=False, default=str)
+    # Escape "</" so a message containing "</script>" can't break out of the
+    # inline <script> block below (HTML parsing happens before JS parsing).
+    tabs_json = _json.dumps(tabs, ensure_ascii=False, default=str).replace("</", "<\\/")
 
     html = f"""<!DOCTYPE html>
 <html lang="zh-Hant">
