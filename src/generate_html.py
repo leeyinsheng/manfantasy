@@ -4,8 +4,6 @@ from pathlib import Path
 
 import tg_core
 
-XV_VIDEOS_FILE = tg_core.DOWNLOAD_DIR / "xvideos" / "videos.jsonl"
-
 
 CHANNEL_USERNAME_MAP = {}
 
@@ -109,36 +107,13 @@ def _build_tab_data():
     return tabs
 
 
-def _load_xvideos():
-    videos = []
-    if XV_VIDEOS_FILE.exists():
-        with open(XV_VIDEOS_FILE, "r", encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if line:
-                    try:
-                        videos.append(_json.loads(line))
-                    except (_json.JSONDecodeError, ValueError):
-                        pass
-    videos.sort(key=lambda v: v.get("fetched_at", ""), reverse=True)
-    return videos
-
-
-def _build_xv_tag_counts(videos):
-    counts = {}
-    for v in videos:
-        for tag in v.get("tags", []):
-            counts[tag] = counts.get(tag, 0) + 1
-    return counts
-
-
 CSS = r"""
   :root {
-    --bg: #0a0c12; --surface: rgba(16,18,26,0.92); --surface-2: #141720;
-    --fg: #e4e1db; --fg-secondary: #908d86; --muted: #524f4a;
-    --border: rgba(201,162,78,0.10); --accent: #c9a24e; --accent-hover: #e0c878;
-    --accent-bg: rgba(201,162,78,0.10); --radius: 8px;
-    --font-display: Georgia,'Times New Roman',serif;
+    --bg: #0a0a0a; --surface: #161616; --surface-2: #1e1e1e;
+    --fg: #e5e5e5; --fg-secondary: #a0a0a0; --muted: #6a6a6a;
+    --border: #2a2a2a; --accent: #d14334; --accent-hover: #e05545;
+    --accent-bg: rgba(209,67,52,0.08); --radius: 8px;
+    --font-display: 'Iowan Old Style','Charter',Georgia,serif;
     --font-body: -apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
     --max-w: 840px;
   }
@@ -151,16 +126,16 @@ CSS = r"""
   button{cursor:pointer;font:inherit;border:none;background:none;color:inherit}
   input{font:inherit;color:inherit}
   .header{padding:2rem 1rem 1rem;border-bottom:1px solid var(--border);text-align:center}
-  .header h1{font-family:var(--font-display);font-size:clamp(1.6rem,3.5vw,2.4rem);font-weight:400;letter-spacing:0.04em;color:var(--accent);text-shadow:0 0 20px rgba(201,162,78,0.15)}
+  .header h1{font-family:var(--font-display);font-size:clamp(1.6rem,3.5vw,2.4rem);font-weight:400;letter-spacing:0.04em}
   .header .time{font-size:0.8rem;color:var(--muted);margin-top:0.4rem}
   .header .time span{color:var(--fg-secondary)}
   .tab-nav{display:flex;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;background:var(--bg)}
   .tab-btn{flex:1;padding:0.8rem 1rem;text-align:center;font-size:0.9rem;font-weight:500;color:var(--muted);transition:color .2s,background .2s;position:relative}
   .tab-btn:hover{color:var(--fg-secondary);background:var(--surface)}
-  .tab-btn.active{color:var(--accent);text-shadow:0 0 8px rgba(201,162,78,0.15)}
-  .tab-btn.active::after{content:'';position:absolute;bottom:0;left:10%;width:80%;height:2px;background:linear-gradient(90deg,transparent,var(--accent),var(--accent-hover),var(--accent),transparent);border-radius:1px 1px 0 0}
+  .tab-btn.active{color:var(--fg)}
+  .tab-btn.active::after{content:'';position:absolute;bottom:0;left:10%;width:80%;height:2px;background:var(--accent);border-radius:1px 1px 0 0}
   .tab-btn .badge{display:inline-block;font-size:0.7rem;background:var(--surface-2);color:var(--muted);padding:1px 6px;border-radius:8px;margin-left:4px;vertical-align:middle}
-  .tab-btn.active .badge{background:var(--accent-bg);color:var(--accent)}
+  .tab-btn.active .badge{color:var(--fg-secondary)}
   main{padding:0 1rem;max-width:var(--max-w);margin:0 auto}
   .tab-content{display:none;padding:1rem 0}
   .tab-content.active{display:block}
@@ -190,7 +165,7 @@ CSS = r"""
   .thumb{position:relative;aspect-ratio:1;overflow:hidden;border-radius:4px;background:var(--surface-2);cursor:pointer}
   .thumb img{width:100%;height:100%;object-fit:cover}
   .thumb .vid-icon{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:24px;height:24px;background:rgba(0,0,0,0.6);border-radius:50%;display:flex;align-items:center;justify-content:center;pointer-events:none}
-  .thumb .vid-icon::after{content:'';border-left:8px solid var(--accent);border-top:5px solid transparent;border-bottom:5px solid transparent;margin-left:2px}
+  .thumb .vid-icon::after{content:'';border-left:8px solid #fff;border-top:5px solid transparent;border-bottom:5px solid transparent;margin-left:2px}
   .card-expand{text-align:center;font-size:0.8rem;color:var(--muted);margin-top:0.5rem;padding-top:0.5rem;border-top:1px solid var(--border);cursor:pointer;user-select:none}
   .card-expand:hover{color:var(--fg-secondary)}
   .load-more-wrap{padding:1rem 0;text-align:center}
@@ -202,29 +177,18 @@ CSS = r"""
   .page-info{font-size:0.8rem;color:var(--muted);padding:0 12px}
   .lightbox{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.92)}
   .lightbox.open{display:flex;align-items:center;justify-content:center}
-  .lb-close{position:absolute;top:1rem;right:1rem;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:var(--accent);cursor:pointer;z-index:2;border-radius:50%;border:1px solid var(--border)}
-  .lb-close:hover{color:var(--accent-hover);border-color:var(--accent)}
-  .lb-prev,.lb-next{position:absolute;top:50%;transform:translateY(-50%);width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-size:2.2rem;color:var(--accent);cursor:pointer;z-index:2;border-radius:50%;background:rgba(201,162,78,0.04)}
-  .lb-prev:hover,.lb-next:hover{background:rgba(201,162,78,0.12)}
+  .lb-close{position:absolute;top:1rem;right:1rem;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:#fff;cursor:pointer;z-index:2;border-radius:50%;background:rgba(255,255,255,0.1)}
+  .lb-close:hover{background:rgba(255,255,255,0.2)}
+  .lb-prev,.lb-next{position:absolute;top:50%;transform:translateY(-50%);width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-size:2.2rem;color:#fff;cursor:pointer;z-index:2;border-radius:50%;background:rgba(255,255,255,0.06)}
+  .lb-prev:hover,.lb-next:hover{background:rgba(255,255,255,0.15)}
   .lb-prev{left:1rem}
   .lb-next{right:1rem}
-  .lb-counter{position:absolute;bottom:1.5rem;left:50%;transform:translateX(-50%);color:var(--fg-secondary);font-size:0.85rem;z-index:2;font-family:var(--font-display)}
+  .lb-counter{position:absolute;bottom:1.5rem;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.6);font-size:0.85rem;z-index:2;font-family:var(--font-display)}
   .lb-content{max-width:90vw;max-height:85vh;display:flex;align-items:center;justify-content:center}
   .lb-content img,.lb-content video{max-width:100%;max-height:85vh;object-fit:contain;border-radius:4px}
   .lb-content video{width:auto;height:auto}
   .hidden{display:none!important}
-  .tag-bar{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap}
-  .tag-btn{padding:0.35rem 0.7rem;font-size:0.78rem;color:var(--muted);background:var(--surface-2);border:1px solid var(--border);border-radius:16px;cursor:pointer;transition:all .15s;user-select:none}
-  .tag-btn:hover{color:var(--fg-secondary);border-color:var(--muted)}
-  .tag-btn.active{color:var(--bg);background:linear-gradient(135deg,var(--accent),var(--accent-hover));border-color:transparent;font-weight:600}
-  .tag-count{font-size:0.7rem;color:var(--muted);margin-left:3px}
-  .tag-btn.active .tag-count{color:var(--bg)}
-  .card-source.xv::before{background:var(--accent)}
-  .xv-embed{margin-top:0.5rem;border-radius:6px;overflow:hidden;background:#000}
-  .xv-embed iframe{display:block;border:none;width:100%;min-height:420px}
-  .tag-badge{display:inline-block;font-size:0.65rem;padding:1px 6px;border-radius:3px;background:var(--accent-bg);color:var(--accent);margin-left:4px;vertical-align:middle}
   @media(max-width:600px){
-    .xv-embed iframe{min-height:240px}
     .header{padding:1.2rem 0.8rem 0.8rem}
     main{padding:0 0.6rem}
     .card{padding:0.8rem}
@@ -369,12 +333,9 @@ function switchTab(tabId){
   var panel = document.getElementById('tab-' + tabId);
   if(panel) panel.classList.add('active');
   currentTab = tabId;
-  if(tabId === 'xvideos'){
-    var xvData = window.__XV_DATA__;
-    if(xvData && !xvData.page) renderXvCards(1);
-  } else {
-    var data = tabsData[tabId];
-    if(data && !data.page) renderCards(tabId, 1);
+  var data = tabsData[tabId];
+  if(data && !data.page){
+    renderCards(tabId, 1);
   }
   applySearch(tabId);
 }
@@ -478,101 +439,6 @@ function closeLightbox(){
   document.body.style.overflow = '';
 }
 
-/* xv embed toggle */
-function toggleXvEmbed(btn){
-  var card = btn.closest('.card');
-  var embedDiv = btn.parentElement.querySelector('.xv-embed');
-  if(!embedDiv) return;
-  var eid = embedDiv.getAttribute('data-eid');
-  if(card.classList.contains('expanded')){
-    embedDiv.innerHTML = '';
-    card.classList.remove('expanded');
-    btn.textContent = '▶ 播放影片';
-  } else {
-    embedDiv.innerHTML = '<iframe src="https://www.xvideos.com/embedframe/'
-      + eid + '" allowfullscreen frameborder="0" width="100%" height="420" loading="lazy"></iframe>';
-    card.classList.add('expanded');
-    btn.textContent = '▲ 收合';
-  }
-}
-
-/* xv tag filter */
-var xvActiveTag = 'all';
-function filterXvTags(btn){
-  var tag = btn.getAttribute('data-tag');
-  xvActiveTag = tag;
-  btn.parentElement.querySelectorAll('.tag-btn').forEach(function(b){b.classList.remove('active');});
-  btn.classList.add('active');
-  renderXvCards(1);
-}
-
-/* xv cards render */
-function renderXvCards(pageNum){
-  var data = window.__XV_DATA__;
-  if(!data || !data.videos) return;
-  var container = document.getElementById('cards-xvideos');
-  if(!container) return;
-  var videos = data.videos;
-  if(xvActiveTag !== 'all'){
-    videos = videos.filter(function(v){
-      return (v.tags||[]).indexOf(xvActiveTag) !== -1;
-    });
-  }
-  var totalPages = Math.ceil(videos.length / PAGE_SIZE) || 1;
-  var p = Math.max(1, Math.min(pageNum, totalPages));
-  var start = (p - 1) * PAGE_SIZE;
-  var end = Math.min(start + PAGE_SIZE, videos.length);
-  var html = '';
-  for(var i=start;i<end;i++){
-    var v = videos[i];
-    var tagsStr = (v.tags||[]).join(',');
-    var tagBadges = '';
-    for(var t=0;t<(v.tags||[]).length;t++){
-      tagBadges += '<span class="tag-badge">' + escHtml(v.tags[t]) + '</span>';
-    }
-    html += '<div class="card">';
-    html += '<div class="card-header">';
-    html += '<span class="card-source xv">xv · ' + escHtml(v.uploader||'') + tagBadges + '</span>';
-    html += '<span class="card-date">' + escHtml(v.duration||'') + ' · ' + escHtml(v.quality||'') + ' · ' + escHtml(v.views||'') + '</span>';
-    html += '</div>';
-    html += '<div class="card-text full">' + escHtml(v.title||'') + '</div>';
-    if(v.thumbnail){
-      html += '<div class="card-thumbs"><div class="thumb video"><img src="' + v.thumbnail + '" alt="" loading="lazy" referrerpolicy="no-referrer"><div class="vid-icon"></div></div></div>';
-    }
-    html += '<div class="xv-embed" data-eid="' + escHtml(v.eid||'') + '"></div>';
-    html += '<div class="card-expand xv-expand">▶ 播放影片</div>';
-    html += '</div>';
-  }
-  container.innerHTML = html;
-  data.page = p;
-  data.totalPages = totalPages;
-  renderXvPagination();
-}
-
-function renderXvPagination(){
-  var data = window.__XV_DATA__;
-  var wrap = document.getElementById('pagination-xvideos');
-  if(!wrap || !data || !data.videos) return;
-  var total = data.totalPages || Math.ceil(data.videos.length / PAGE_SIZE) || 1;
-  var cur = data.page || 1;
-  if(total <= 1){
-    wrap.innerHTML = '<span class="page-info">共 ' + data.videos.length + ' 部</span>';
-    return;
-  }
-  var html = '';
-  html += '<button class="page-btn' + (cur===1?' disabled':'') + '" data-xv-page="' + (cur-1) + '">← 上一頁</button>';
-  for(var i=1;i<=total;i++){
-    if(total>7 && i>2 && i<total-1 && Math.abs(i-cur)>1){
-      if(i===3 || i===total-2) html += '<span class="page-info">…</span>';
-      continue;
-    }
-    html += '<button class="page-btn' + (i===cur?' active':'') + '" data-xv-page="'+i+'">'+i+'</button>';
-  }
-  html += '<button class="page-btn' + (cur===total?' disabled':'') + '" data-xv-page="' + (cur+1) + '">下一頁 →</button>';
-  html += '<span class="page-info">共 ' + data.videos.length + ' 部</span>';
-  wrap.innerHTML = html;
-}
-
 /* init */
 function init(){
   var tabIds = [];
@@ -582,42 +448,22 @@ function init(){
     btn.addEventListener('click', function(){ switchTab(id); });
   });
 
-    if(tabIds.length > 0){
-      tabIds.forEach(function(id){
-        if(id === 'xvideos'){
-          renderXvCards(1);
-        } else {
-          renderCards(id, 1);
-        }
-      });
-      currentTab = tabIds[0];
-    }
+  if(tabIds.length > 0){
+    tabIds.forEach(function(id){ renderCards(id, 1); });
+    currentTab = tabIds[0];
+  }
 
   document.addEventListener('click', function(e){
-    var t = e.target;
-    if(t.nodeType === 3) t = t.parentElement;
-    if(!t) return;
     try{
-    var loadBtn = t.closest('.page-btn:not(.disabled)');
+    var loadBtn = e.target.closest('.page-btn:not(.disabled)');
     if(loadBtn){
       var tabId = loadBtn.getAttribute('data-tab');
-      if(tabId){
-        var page = parseInt(loadBtn.getAttribute('data-page'));
-        if(tabId && page) renderCards(tabId, page);
-      } else {
-        var xvPage = loadBtn.getAttribute('data-xv-page');
-        if(xvPage) renderXvCards(parseInt(xvPage));
-      }
+      var page = parseInt(loadBtn.getAttribute('data-page'));
+      if(tabId && page) renderCards(tabId, page);
       return;
     }
 
-    var tagBtn = t.closest('.tag-btn');
-    if(tagBtn){ filterXvTags(tagBtn); return; }
-
-    var xvExpand = t.closest('.xv-expand');
-    if(xvExpand){ toggleXvEmbed(xvExpand); return; }
-
-    var thumb = t.closest('.thumb');
+    var thumb = e.target.closest('.thumb');
     if(thumb){
       var card2 = thumb.closest('.card');
       if(card2){
@@ -633,7 +479,7 @@ function init(){
       return;
     }
 
-    var preset = t.closest('.preset-btn');
+    var preset = e.target.closest('.preset-btn');
     if(preset){
       var bar = preset.closest('.search-bar');
       bar.querySelectorAll('.preset-btn').forEach(function(b){ b.classList.remove('active'); });
@@ -643,10 +489,10 @@ function init(){
       return;
     }
 
-    var card = t.closest('.card');
+    var card = e.target.closest('.card');
     if(card){
-      var onThumb = t.closest('.thumb');
-      var onPageBtn = t.closest('.page-btn');
+      var onThumb = e.target.closest('.thumb');
+      var onPageBtn = e.target.closest('.page-btn');
       if(!onThumb && !onPageBtn){
         toggleCard(card);
       }
@@ -688,7 +534,6 @@ if(document.readyState === 'loading'){
 def generate():
     output_path = tg_core.DOWNLOAD_DIR / "index.html"
     tabs = _build_tab_data()
-    xv_videos = _load_xvideos()
 
     tabs_nav = ""
     tabs_content = ""
@@ -722,37 +567,7 @@ def generate():
     <div class="pagination" id="pagination-{tab_id}"></div>
   </div>'''
 
-    # xvideos tab
-    xv_count = len(xv_videos)
-    xv_tag_counts = _build_xv_tag_counts(xv_videos)
-    xv_active_cls = "" if tabs else " active"
-    if not first_id:
-        first_id = "xvideos"
-
-    tabs_nav += (
-        f'<button class="tab-btn{xv_active_cls}" role="tab" '
-        f'aria-selected="{str(not tabs).lower()}" '
-        f'data-tab="xvideos">衝啊, 弟兄們 '
-        f'<span class="badge">{xv_count}</span></button>'
-    )
-
-    tag_bar = '<div class="tag-bar">'
-    tag_bar += f'<button class="tag-btn active" data-tag="all">全部 <span class="tag-count">{xv_count}</span></button>'
-    for tag, count in sorted(xv_tag_counts.items()):
-        tag_bar += f'<button class="tag-btn" data-tag="{tag}">{tag} <span class="tag-count">{count}</span></button>'
-    tag_bar += '</div>'
-
-    tabs_content += f'''<div class="tab-content{xv_active_cls}" id="tab-xvideos" role="tabpanel">
-    {tag_bar}
-    <div class="cards-container" id="cards-xvideos"></div>
-    <div class="pagination" id="pagination-xvideos"></div>
-  </div>'''
-
-    if first_id is None:
-        first_id = "xvideos"
-
     tabs_json = _json.dumps(tabs, ensure_ascii=False, default=str)
-    xv_json = _json.dumps({"videos": xv_videos, "total": xv_count}, ensure_ascii=False, default=str)
 
     html = f"""<!DOCTYPE html>
 <html lang="zh-Hant">
@@ -787,7 +602,6 @@ def generate():
 
 <script>
 window.__DATA__ = {tabs_json};
-window.__XV_DATA__ = {xv_json};
 </script>
 <script>{JS}</script>
 </body>

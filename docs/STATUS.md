@@ -18,8 +18,8 @@
 |-------|------|--------|
 | 1 | Product Ideation | ✅ (2026 gambling casino design) |
 | 2 | Product Design | ✅ |
-| 3 | Feature Dev + Unit Tests | ✅ (81 tests pass) |
-| 4 | Code Review | ✅ |
-| 5 | Regression Testing | ✅ |
-| 6 | Feature Verification | ✅ |
-| 7 | User Acceptance | ✅ (signed off) |
+| 3 | Feature Dev + Unit Tests | ❌ (rollback to v4) |
+| 4 | Code Review | ❌ |
+| 5 | Regression Testing | ❌ |
+| 6 | Feature Verification | ❌ |
+| 7 | User Acceptance | ❌ (xv embed broken) |
