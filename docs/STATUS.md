@@ -12,14 +12,7 @@
 |-------|------|--------|
 | 1-7 | All | ✅ |
 
-## v5 Redesign Cycle
+## Status
 
-| Phase | Name | Status |
-|-------|------|--------|
-| 1 | Product Ideation | ✅ (2026 gambling casino design) |
-| 2 | Product Design | ✅ |
-| 3 | Feature Dev + Unit Tests | ❌ (rollback to v4) |
-| 4 | Code Review | ❌ |
-| 5 | Regression Testing | ❌ |
-| 6 | Feature Verification | ❌ |
-| 7 | User Acceptance | ❌ (xv embed broken) |
+**Current**: v3 (Telegram only). v4/v5 xvideos integration rolled back due to embed playback failure on production.
+
