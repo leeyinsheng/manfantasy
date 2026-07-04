@@ -35,8 +35,8 @@ CSS-only casino-gold/phone-frame attempt. Rolled back, never shipped. Live site 
 | 1 | Product Ideation | ✅ |
 | 2 | Product Design | ✅ |
 | 3 | Feature Dev + Unit Tests | ✅ (102 tests pass) |
-| 4 | Code Review | ⏳ |
-| 5 | Regression Testing | |
+| 4 | Code Review | ✅ (clean) |
+| 5 | Regression Testing | ⏳ |
 | 6 | Feature Verification | |
 | 7 | User Acceptance | |
 
