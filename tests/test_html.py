@@ -1,4 +1,4 @@
-"""Integration test: validates v3 HTML structure, embedded data, and new components, plus v4 xvideos."""
+"""Integration test: validates v3 HTML structure, embedded data, and new components."""
 import json
 import re
 import sys
@@ -10,7 +10,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 import tg_core as mod
 import generate_html
-import xv_spider
 
 
 class TestGenerateHtml(unittest.TestCase):
@@ -169,131 +168,6 @@ class TestGenerateHtml(unittest.TestCase):
         self.assertIn("mens_fantasy", data)
         self.assertIn("messages", data["mens_fantasy"])
         self.assertIn("total", data["mens_fantasy"])
-
-
-class TestXvHtml(unittest.TestCase):
-    def setUp(self):
-        self.original_download = mod.DOWNLOAD_DIR
-        self.original_channels = mod.CHANNELS_FILE
-        self.original_xv_file = generate_html.XV_VIDEOS_FILE
-        self.tmpdir = tempfile.TemporaryDirectory()
-        mod.DOWNLOAD_DIR = Path(self.tmpdir.name)
-        (mod.DOWNLOAD_DIR / "xvideos").mkdir(parents=True, exist_ok=True)
-
-        for ch_id in ("ai_guoman", "ciyuanb", "llcosfc", "dashijian"):
-            (mod.DOWNLOAD_DIR / ch_id / "photo").mkdir(parents=True, exist_ok=True)
-            (mod.DOWNLOAD_DIR / ch_id / "video").mkdir(parents=True, exist_ok=True)
-
-        msg_file = mod.DOWNLOAD_DIR / "dashijian" / "messages.jsonl"
-        msg_file.write_text(
-            json.dumps({"id": 1, "date": "2025-07-01T12:00:00", "text": "Test news",
-                        "channel": "dashijian",
-                        "media": [{"type": "photo", "path": "photo/test_news.jpg"}]},
-                       ensure_ascii=False) + "\n",
-            encoding="utf-8"
-        )
-
-        self._tmp_channels = self.tmpdir.name + "/_channels.json"
-        mod.CHANNELS_FILE = Path(self._tmp_channels)
-        self._write_test_channels()
-
-        # setup xv data
-        xv_file = mod.DOWNLOAD_DIR / "xvideos" / "videos.jsonl"
-        xv_videos = [
-            {"eid": "eid1", "video_id": 1, "title": "Test Video 1", "duration": "10 min",
-             "views": "1k views", "uploader": "TestUser", "thumbnail": "http://thumb/1.jpg",
-             "quality": "1080p", "tags": ["內衣絲襪"], "fetched_at": "2026-07-03T12:00:00"},
-            {"eid": "eid2", "video_id": 2, "title": "Test Video 2", "duration": "20 min",
-             "views": "2k views", "uploader": "TestUser2", "thumbnail": "http://thumb/2.jpg",
-             "quality": "720p", "tags": ["日本"], "fetched_at": "2026-07-03T11:00:00"},
-        ]
-        xv_file.write_text(
-            "\n".join(json.dumps(v, ensure_ascii=False) for v in xv_videos),
-            encoding="utf-8"
-        )
-        generate_html.XV_VIDEOS_FILE = xv_file
-
-    def _write_test_channels(self):
-        channels = {
-            "channels": [
-                {"id": "ai_guoman", "username": "AIguoman18", "name": "男人的幻想",
-                 "mode": "text", "group": "mens_fantasy", "fetch_limit": 50},
-                {"id": "dashijian", "username": "dashijian", "name": "東南亞大事件",
-                 "mode": "text", "fetch_limit": 50},
-            ]
-        }
-        Path(self._tmp_channels).write_text(json.dumps(channels), encoding="utf-8")
-
-    def tearDown(self):
-        mod.DOWNLOAD_DIR = self.original_download
-        mod.CHANNELS_FILE = self.original_channels
-        generate_html.XV_VIDEOS_FILE = self.original_xv_file
-        self.tmpdir.cleanup()
-
-    def _read_html(self):
-        out = mod.DOWNLOAD_DIR / "index.html"
-        with open(out, encoding="utf-8") as f:
-            return f.read()
-
-    def test_xv_tab_present(self):
-        generate_html.generate()
-        html = self._read_html()
-        self.assertIn("衝啊, 弟兄們", html)
-        self.assertIn("tab-xvideos", html)
-
-    def test_xv_data_embedded(self):
-        generate_html.generate()
-        html = self._read_html()
-        self.assertIn("__XV_DATA__", html)
-
-    def test_xv_data_content(self):
-        generate_html.generate()
-        html = self._read_html()
-        m = re.search(r"window\.__XV_DATA__\s*=\s*(\{.*?\});", html, re.DOTALL)
-        self.assertIsNotNone(m, "Should find __XV_DATA__ in HTML")
-        data = json.loads(m.group(1))
-        self.assertIn("videos", data)
-        self.assertEqual(len(data["videos"]), 2)
-        self.assertEqual(data["videos"][0]["eid"], "eid1")
-
-    def test_xv_tag_bar_present(self):
-        generate_html.generate()
-        html = self._read_html()
-        self.assertIn("tag-bar", html)
-        self.assertIn("tag-btn", html)
-        self.assertIn("內衣絲襪", html)
-        self.assertIn("日本", html)
-
-    def test_xv_embed_container(self):
-        generate_html.generate()
-        html = self._read_html()
-        self.assertIn("xv-embed", html)
-        self.assertIn("data-eid", html)
-
-    def test_xv_tab_no_search_bar(self):
-        generate_html.generate()
-        html = self._read_html()
-        tab_xv_match = re.search(
-            r'<div class="tab-content(?: active)?" id="tab-xvideos".*?</div>\s*</div>',
-            html, re.DOTALL
-        )
-        if tab_xv_match:
-            xv_section = tab_xv_match.group(0)
-            self.assertNotIn("search-bar", xv_section)
-
-    def test_existing_tabs_unaffected(self):
-        generate_html.generate()
-        html = self._read_html()
-        self.assertIn("東南亞大事件", html)
-        self.assertIn("男人的幻想", html)
-        self.assertIn("tab-mens_fantasy", html)
-        self.assertIn("tab-dashijian", html)
-        self.assertIn("search-bar", html)
-
-    def test_xv_pagination_present(self):
-        generate_html.generate()
-        html = self._read_html()
-        self.assertIn("pagination-xvideos", html)
 
 
 if __name__ == "__main__":

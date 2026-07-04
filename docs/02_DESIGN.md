@@ -1,35 +1,41 @@
-# 02 - Design v5：Casino Gold Theme
+# 02 - Design v6：APP Mode (Telegram only)
 
-CSS-only redesign. v4 JS/HTML structure unchanged. Only colors, fonts, visual polish.
+## Layout
+
+```
+        body (dark bg, center app-shell)
+   ┌─────────────────────────────────┐
+   │ .app-shell (430px, phone frame)  │
+   │  ┌──────────────────────────┐   │
+   │  │ MAN'S FANTASY     update │   │
+   │  ├──────────────────────────┤   │
+   │  │ [search] [全部/今日/..] │   │
+   │  │ cards...                │   │
+   │  │ pagination              │   │
+   │  ├──────────────────────────┤   │
+   │  │ 🏠     📰     🔥     🎬  │   │
+   │  │異想   大事件  吃瓜   AI短│   │
+   │  └──────────────────────────┘   │
+   └─────────────────────────────────┘
+```
 
 ## Color System
 
-| Token | v4 (Red) | v5 (Gold) |
-|-------|----------|-----------|
-| `--bg` | `#0a0a0a` | `#0a0c12` |
-| `--accent` | `#d14334` | `#c9a24e` |
-| `--accent-hover` | `#e05545` | `#e0c878` |
-| `--surface` | `#161616` | `rgba(16,18,26,0.92)` |
-| `--border` | `#2a2a2a` | `rgba(201,162,78,0.10)` |
+| Token | Value | Use |
+|-------|-------|-----|
+| `--bg` | `#0a0c12` | Page bg |
+| `--accent` | `#c9a24e` | Gold |
+| `--accent-hover` | `#e0c878` | Light gold |
+| `--app-w` | `430px` | Phone width |
 
-## Key Visual Changes
+## Bottom Nav
 
-| Element | v4 | v5 |
-|---------|-----|-----|
-| Header title | White text | Gold text with glow |
-| Tab active | Red underline | Gold gradient underline + glow |
-| Tab badge active | Gray | Gold |
-| Tag buttons | Square | Capsule (16px radius) |
-| Tag active | Red bg | Gold gradient bg, dark text |
-| Tag badge | Purple | Gold |
-| xv source dot | Purple | Gold (unified) |
-| Lightbox close | White semi-transparent | Gold color |
-| Vid icon play arrow | White | Gold |
+4 tabs with emoji icons, gold accent on active.
 
-## What Doesn't Change
+## Cards, Search, Pagination
 
-- HTML structure (tab-nav, cards, search-bar, lightbox)
-- JS logic (click handlers, rendering, toggleXvEmbed)
-- Data flow
-- Spider
-- All Python code outside CSS block
+Keep existing v3 component styles, just recolor to gold theme.
+
+## What Changes
+
+Only CSS block in `generate_html.py`. HTML structure and JS unchanged.
