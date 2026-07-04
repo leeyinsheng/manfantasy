@@ -1,55 +1,128 @@
-# 01 - PRD v7：小紅書風格 Waterfall 卡片 + 手機直向專屬版型
+# 01 - PRD v8：xvideos 頻道整合 — 嵌入式播放
 
 ## 背景
 
-目前線上版本（v3，http://8.213.209.231/dream/ ）是深色編輯風格的單欄列表：襯線標題、頂部 tab bar、卡片內縮圖以小網格平鋪。這個版型偏「部落格/新聞列表」，不是使用者熟悉的手機 App 瀏覽體驗。
+目前網站內容全部來自 Telegram 頻道，透過 `download_tg_channel.py` 下載訊息與媒體後，由 `generate_html.py` 產生靜態 HTML。使用者要求新增 xvideos 影片內容，但直接下載影片到本機伺服器會產生大量儲存與頻寬成本。
 
-先前 v5/v6 嘗試過「手機框架置中 + 底部導覽 + 賭場金色主題」，僅改 CSS、且已回滾，未真正解決版型與互動模式的問題。
-
-本輪目標：參考小紅書／IG 的雙欄 waterfall 卡片體驗，全面調整版型與互動，且**只服務手機直向**使用情境。
+xvideos 提供 iframe embed 功能，可以在不儲存影片檔案的情況下，直接在網站內嵌播放。
 
 ## 版本變更
 
-v3 → v7。範圍全面開放：CSS、HTML 結構、JS 互動邏輯皆可重寫。
+v7 → v8。僅新增功能，不修改既有架構。
 
 ## 目標
 
-1. **雙欄 Waterfall 卡片**：有圖片的貼文以圖片為主視覺、雙欄瀏覽流排列（類小紅書/IG explore 頁）。
-2. **手機直向專屬**：不做響應式寬螢幕排版。桌面瀏覽器開啟時，套用同一份手機版版型並置中顯示（窄欄，不因螢幕變寬而改變排版邏輯）。
-3. **底部導覽列**：以底部 tab（現有 4 個頻道分類）取代目前的頂部 tab bar，符合主流手機 App 導覽慣例。
-4. **保留現有功能**：頻道分類切換、搜尋、時間篩選（今日/近3日/近7日/本月/近半年）、圖片/影片燈箱瀏覽、分頁或捲動載入 — 功能不減少，只換呈現與互動方式。
-5. **通過所有回歸測試**，並在 UAT 簽核後部署到線上環境。
+1. **新增「xvideo」類別頁籤**：在底部導覽列新增一個 xvideo 分頁，展示來自 xvideos 的影片。
+2. **不儲存影片檔案**：透過 xvideos iframe embed 播放，不用下載影片到伺服器。
+3. **與現有 UI 一致**：卡片使用 waterfall 雙欄佈局，點擊播放時以燈箱嵌入 xvideos 播放器。
+4. **僅爬取 metadata**：抓取影片標題、縮圖、時長、影片 ID，不下載實際影片內容。
 
 ## 範圍
 
 ### In Scope
-- `src/generate_html.py`：CSS、HTML 模板、JS 互動邏輯全部可重寫
-- `tests/test_html.py`：隨新結構同步改寫
-- `docs/02_DESIGN.md` + `docs/prototype/design.html`：新版視覺與互動設計稿（Phase 2 產出）
-- 部署腳本/流程（用既有 SSH key 部署到 http://8.213.209.231/dream/ ，repo：https://github.com/leeyinsheng/manfantasy ）— 於 Phase 7 UAT 通過後執行
+- `src/xv_spider.py`：新增對 xvideos 頻道/使用者頁面 URL 的支援（`/maderotic` 格式）
+- `src/xvideos.json`：加入 `maderotic` 新來源
+- `src/generate_html.py`：
+  - 載入 `download/xvideos/videos.jsonl` 資料
+  - 新增 `xvideo` tab（包含在底部導覽、資料嵌入、卡片渲染）
+  - 燈箱影片播放改為支援 xvideos iframe embed
+- `tests/test_xv_spider.py`：新增對應的單元測試
+- 圖示：為 xvideo tab 選用適當 emoji（如 🔞 或 🎥）
 
 ### Out of Scope
-- 不改動資料層：`download_tg_channel.py`、`tg_core.py`、`channels.json`、既有訊息 JSON 結構（`id`/`date`/`text`/`channel`/`media`/`grouped_id`）不變 — 只改前端如何呈現這份資料
-- 不重新引入 xvideos 整合（`xv_spider.py`/`xvideos.json` 為先前已回滾的功能，不在此次範圍內）
-- 不做深色/淺色模式切換等本次未提及的新功能
+- 不下載 xvideos 影片檔案到 `download/`
+- 不修改既有 Telegram 頻道的下載與顯示邏輯
+- 不修改 `channels.json`（xvideos 是獨立資料源）
+- 不處理反爬蟲機制（若被阻擋，使用者自行處理 proxy）
 
-## 假設（待確認，會在 Phase 2 設計稿中具體呈現）
+## 技術方案
 
-1. **純文字貼文（無圖）**：不強塞進雙欄 waterfall 網格（避免高度不一、版面破碎），改以全寬卡片呈現於 waterfall 區塊之間。
-2. **卡片內容**：waterfall 卡片顯示封面圖（多圖取第一張）+ 2 行文字摘要 + 來源/時間小字；點擊卡片才展開完整文字與所有圖片（沿用現有燈箱瀏覽大圖/影片邏輯）。
-3. **分頁 vs 捲動載入**：既然 JS 開放調整，預設改為捲動載入更多（infinite scroll），比現有頁碼分頁更符合小紅書/IG 的瀏覽習慣；若使用者期望保留頁碼分頁，Phase 2 設計稿中可另外討論。
-4. **搜尋/時間篩選**：功能保留，但 UI 收斂為更精簡的形式（例如搜尋圖示點開才展開篩選列），避免佔用手機直向寶貴的垂直空間。
+### 資料流
+
+```
+xv_spider.py (爬取 metadata)
+       │
+       v
+download/xvideos/videos.jsonl (每行一筆影片資料)
+       │
+       v
+generate_html.py (讀取 xvideos 資料，嵌入 window.__DATA__)
+       │
+       v
+download/index.html (客戶端渲染卡片 + iframe embed)
+```
+
+### xvideos 影片 Embed
+
+xvideos 提供 embed 格式：
+```
+https://www.xvideos.com/embedframe/{video_id}
+```
+
+使用 `<iframe>` 嵌入燈箱播放：
+```html
+<iframe src="https://www.xvideos.com/embedframe/{video_id}"
+        frameborder="0" scrolling="no"
+        allowfullscreen="allowfullscreen"
+        width="100%" height="100%">
+</iframe>
+```
+
+資料格式（每筆影片）：
+```json
+{
+  "source": "maderotic",
+  "eid": "unique-id",
+  "video_id": "12345678",
+  "title": "影片標題",
+  "duration": "12:34",
+  "thumbnail": "https://img-thumbnail-url.jpg",
+  "uploader": "maderotic",
+  "quality": "HD"
+}
+```
+
+### 爬蟲策略
+
+- `xv_spider.py` 現已支援 category 與 search 兩種 URL 模式，需新增 `user/channel` 模式
+- channel URL：`https://www.xvideos.com/{username}`
+- 分頁：`https://www.xvideos.com/{username}/videos/{page}`
+- 請求間隔：每次請求延遲 2-3 秒，避免被 ban
+
+### 排程
+
+xvideos 資料不需即時更新。建議：
+- 手動執行 `python3 src/xv_spider.py` 更新
+- 或與 Telegram 爬蟲分離，不加入 cron `*/30 * * * *`
+
+## 分頁設計
+
+底部導覽新增頁籤：
+
+| Tab | 圖示 | 內容來源 |
+|-----|------|---------|
+| 異想空間 | 🏠 | Telegram mens_fantasy |
+| 東南亞大事件 | 📰 | Telegram news |
+| 吃瓜爆料 | 🔥 | Telegram guaba_bl |
+| AI短劇 | 🎬 | Telegram ai_drama |
+| **xvideo** | **🔞** | **xvideos.com/maderotic** |
 
 ## 成功標準
 
-- 現有 + 新增的單元測試全數通過（`python3 -m unittest discover tests`）
-- 手機瀏覽器（以 390px 寬度為基準）呈現雙欄 waterfall 卡片、底部導覽列
-- 桌面瀏覽器開啟時，套用同一份手機版版型並置中（不需額外的寬螢幕排版）
-- 現有 4 個頻道分類、搜尋、時間篩選、燈箱瀏覽功能皆正常運作，無功能倒退
-- UAT 簽核通過後成功部署到 http://8.213.209.231/dream/
+- [ ] `python3 src/xv_spider.py` 成功爬取 xvideos.com/maderotic 的影片列表
+- [ ] `download/xvideos/videos.jsonl` 包含有效的影片 metadata
+- [ ] `python3 src/generate_html.py` 成功產生包含 xvideo tab 的 index.html
+- [ ] 底部導覽列顯示 xvideo 頁籤，點擊可切換
+- [ ] xvideo 頁籤以 waterfall 雙欄顯示影片卡片（縮圖 + 標題 + 時長）
+- [ ] 點擊影片卡片 → 燈箱以 iframe 嵌入播放 xvideos 影片
+- [ ] 所有既有功能無回歸問題
+- [ ] 所有單元測試通過（`python3 -m unittest discover tests`）
 
-## 部署資訊（供 Phase 7 參考）
+## 風險
 
-- 線上網址：http://8.213.209.231/dream/
-- GitHub repo：https://github.com/leeyinsheng/manfantasy
-- 伺服器可用專案根目錄的 SSH key（`id_ed25519`）登入部署（該金鑰已在 `.gitignore` 中排除，不會進版控）
+| 風險 | 影響 | 緩解方式 |
+|------|------|---------|
+| xvideos 封鎖爬蟲 | 無法取得影片列表 | 增加請求間隔、輪換 User-Agent；引導使用者手動更新 |
+| xvideos embed 被封鎖（X-Frame-Options） | 影片無法內嵌播放 | 備案：點擊後開新分頁連到 xvideos 原始頁面 |
+| xvideos HTML 結構變更 | 爬蟲解析失敗 | 模組化 parser 函數，減少變更時的修復成本 |
+| 版權或合規問題 | 法律風險 | 僅嵌入播放，不下載儲存；使用者自行確認合規性 |

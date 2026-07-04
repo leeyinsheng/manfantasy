@@ -28,11 +28,18 @@ CSS-only casino-gold/phone-frame attempt. Rolled back, never shipped. Live site 
 | 6 | Feature Verification | ✅ |
 | 7 | User Acceptance | ✅ signed off, deployed |
 
+## v8 Cycle — xvideos 嵌入式播放整合
+
+| Phase | Name | Status |
+|-------|------|--------|
+| 1 | Product Ideation | ✅ |
+| 2 | Product Design | ⏳ |
+| 3 | Feature Dev + Unit Tests | |
+| 4 | Code Review | |
+| 5 | Regression Testing | |
+| 6 | Feature Verification | |
+| 7 | User Acceptance | |
+
 ## Status
 
-**Current**: v7 — 小紅書風格 waterfall 卡片 + 手機直向專屬版型. Signed off and deployed to http://8.213.209.231/dream/ (2026-07-04).
-Deployment: pushed `master` to GitHub (`leeyinsheng/manfantasy`), copied `src/generate_html.py` to
-`/opt/adult-dream/src/` on the server, ran `python3 src/generate_html.py` there to regenerate
-`download/index.html` from the existing production data. Server's `channels.json` has a local tweak
-(`javfh` fetch_limit 500 vs repo's 50) — intentionally left untouched, not overwritten by this deploy.
-Cron (`*/30 * * * *`) continues to regenerate the page automatically going forward.
+**Current**: v8 — 新增 xvideo 類別頁籤，以 iframe embed 方式播放 xvideos.com/maderotic 影片，不下載影片檔案。
