@@ -1,80 +1,48 @@
-# 01 - PRD v10：xvideo 影片下載到 OSS 播放
+# 01 - PRD v12：小紅書風格 UI 改版
 
 ## 背景
 
-v8 xvideo 整合嘗試用 iframe embed 播放 xvideos 影片，但 embedframe 端點已失效且 xvideos 設有 `X-Frame-Options: SAMEORIGIN`，無法嵌入。改用「在 xvideos 觀看」連結（開新分頁），不是真正的播放體驗。
-
-本輪目標：用 yt-dlp 從 xvideos 下載影片 → 上傳 OSS → 站內 `<video>` 播放。
+目前 v7 是深色 waterfall 卡片版面，UI 風格偏部落格/論壇。小紅書的卡片式瀏覽體驗更符合手機用戶習慣，但保留深色主題以維持既有品牌識別。
 
 ## 版本變更
 
-v9 → v10。在既有 xvideo tab 基礎上，改進播放方式。
+v11 → v12。僅改 CSS + HTML 結構 + JS 互動，不改資料層。
 
 ## 目標
 
-1. xvideo 卡片點擊後，在燈箱中以 `<video>` 標籤直接播放影片
-2. 影片儲存在 OSS（與 Telegram 媒體相同 bucket）
-3. 不下載全部影片，只下載最新 N 個（節省流量）
-4. 下載後記錄在 videos.jsonl 中，重複爬取時跳過已下載
+1. **卡片風格**：小紅書式卡片（大圖 + 標題 3 行 + 頭像 + 愛心數 + 留言數）
+2. **搜尋欄**：頂部常駐搜尋（不再藏在 🔍 圖示後）
+3. **分類標籤**：頂部水平滾動分類 chips（異想/大事件/吃瓜/AI短劇/xvideo）
+4. **底部導覽**：圖示 + 文字（恢復文字標籤，5 tab）
+5. **卡片比例**：圖片比例接近 3:4，更緊湊的間距
 
 ## 範圍
 
 ### In Scope
-- `src/xv_downloader.py` — **新增**：用 yt-dlp 下載 xvideos 影片，上傳 OSS
-- `src/xv_spider.py` — 爬取 metadata 時記錄完整 video URL（含 eid/slug），供下載器使用
-- `src/generate_html.py` — xvideo 卡片點擊改為 `<video>` 播放 OSS 上的 mp4
-- `src/xvideos.json` — 新增下載設定（latest N，下載開關）
+- `src/generate_html.py`：CSS 重寫（卡片、導覽、搜尋、標籤列、間距）、HTML 結構調整、JS 互動更新
+- `docs/prototype/design.html`：新視覺原型
 
 ### Out of Scope
-- 不修改 Telegram 下載邏輯
-- 不修改 OSS 上傳模組（沿用 oss_uploader.py）
-- 不下載歷史影片（只下載新爬取的）
+- 後端/資料層
+- 用戶系統（按讚/留言為假資料）
+- xvideo 功能邏輯
 
-## 技術方案
+## 小紅書特徵對照
 
-### 下載流程
-
-```
-xv_spider.py (爬取 metadata + video URL)
-    │
-    v
-xv_videos.jsonl (含 video_id, title, url, thumbnail)
-    │
-    v
-xv_downloader.py (逐筆處理)
-    │
-    ├── yt-dlp 下載影片到 /tmp/
-    ├── 上傳到 OSS (xvideos/{video_id}.mp4)
-    ├── 記錄 OSS URL 到 videos.jsonl
-    └── 清理 /tmp/
-    │
-    v
-generate_html.py (讀取 videos.jsonl)
-    │
-    ├── media.path = OSS mp4 URL
-    └── cardImageHtml → <video src="oss_url"> 播放
-```
-
-### 播放方式
-
-點擊 xvideo 卡片 → 燈箱以 `<video src="..." controls autoplay>` 播放：
-
-```html
-<video src="https://dream20260711.oss-ap-southeast-7.aliyuncs.com/xvideos/49709194.mp4"
-       controls autoplay style="max-width:92vw;max-height:85vh">
-</video>
-```
-
-### yt-dlp 命令
-
-```bash
-yt-dlp -f best -o /tmp/xv_{video_id}.mp4 "https://www.xvideos.com/video.{eid}/{video_id}/0/{slug}"
-```
+| 特徵 | 實作方式 |
+|------|---------|
+| 大圖卡片 | 封面圖比例 3:4，圓角卡片 |
+| 標題 | 最多 3 行，clamp 截斷 |
+| 頭像 + 名稱 | 圓形頭像 + 頻道名稱 |
+| 愛心數 | 隨機假數字（100-9999） |
+| 分類標籤 | 水平滾動 pill 按鈕 |
+| 底部導覽 | 圖示 + 兩字標籤 |
+| 搜尋 | 頂部常駐，含篩選圖示 |
+| 瀑布流 | 雙欄，gap 縮小至 0.4rem |
 
 ## 成功標準
 
-- [ ] yt-dlp 成功從 xvideos 下載影片
-- [ ] 影片上傳 OSS 成功
-- [ ] 點擊 xvideo 卡片 → 燈箱內 `<video>` 播放
-- [ ] 所有測試通過
-- [ ] UAT 部署驗收通過
+- 所有既有測試通過
+- 視覺效果比照小紅書卡片風格
+- 分類標籤可切換對應頻道群組
+- UAT 部署驗收通過

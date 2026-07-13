@@ -73,6 +73,14 @@ CSS-only casino-gold/phone-frame attempt. Rolled back, never shipped. Live site 
 | 0 | 需求釐清 | ✅ |
 | 1-7 | 設定完成 | ✅ (OSS Referer 白名單，零程式碼) |
 
+## v12 Cycle — 小紅書 UI 改版
+
+| Phase | Name | Status |
+|-------|------|--------|
+| 0 | 需求釐清 | ✅ |
+| 1 | Product Ideation | ✅ |
+| 2 | Product Design | ⏳ |
+
 ## Status
 
-**Current**: v11 結案。OSS 防盜鏈已啟用，僅允許 referer: http://8.213.209.231。
+**Current**: v12 — 小紅書卡片風格，深色底。說「start phase 2」繼續設計。
