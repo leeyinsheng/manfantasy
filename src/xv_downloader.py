@@ -56,7 +56,10 @@ def download_video(url):
             "python3", "-m", "yt_dlp",
             "--dump-json", "--no-download",
             url,
-        ], capture_output=True, text=True, check=True, timeout=60)
+        ], capture_output=True, text=True, timeout=60)
+        if meta_result.returncode != 0 or not meta_result.stdout.strip():
+            print(f"  [ERR] yt-dlp metadata failed")
+            return None
         meta = json.loads(meta_result.stdout.strip().split("\n")[-1])
         video_id = meta.get("id", "")
 
