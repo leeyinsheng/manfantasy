@@ -1,47 +1,60 @@
-# 00 - Clarification v9：多媒體檔案遷移至 OSS
+# 00 - Clarification v10：xvideo 影片線上播放方案
 
 ## 我對目標的理解
 
-目前從 Telegram 下載的圖片與影片全部存在伺服器本地磁碟（`/opt/adult-dream/download/`），已經遇過磁碟滿載（99G/99G）且需要手動清理的問題。你希望把媒體檔案搬到 OSS（物件儲存服務），徹底解決儲存空間問題。
+目前 v8 xvideo 頁籤只能在點擊後開啟 xvideos 原始頁面（新分頁），不能在本站內播放。你希望在站內燈箱中直接播放 xvideos 影片。
 
-最終結果：
-- Telegram 爬蟲下載檔案後，上傳到 OSS，不長期存放在伺服器本地
-- 前端 HTML 中的圖片/影片 URL 指向 OSS（而非本地相對路徑）
-- 不需要 3 天自動清理機制（OSS 儲存成本低，可長期保留）
+最終結果：點擊 xvideo 卡片 → 燈箱內播放影片（不需離開本站）
+
+## 研究結論
+
+| 方案 | 狀態 |
+|------|------|
+| iframe embed (`embedframe/{id}`) | ❌ 404，端點已失效 |
+| iframe 嵌入 xvideos 原始頁面 | ❌ `X-Frame-Options: SAMEORIGIN`，禁止嵌入 |
+| 直接連結新分頁 | ✅ 目前方案，但不算"播放" |
+
+## 可行方案
+
+### 方案 A：下載影片到 OSS，本站直接播放
+
+用 `yt-dlp` 從 xvideos 下載影片 → 上傳 OSS → HTML 中直接引用 OSS 的 mp4 URL → `<video>` 標籤播放。
+
+- ✅ 完全可控，播放體驗最佳
+- ✅ OSS 已就緒，儲存不是問題
+- ❌ OSS 流量費用（預估：每 1GB 下載約 NT$2-3）
+- ❌ 下載耗時（每個影片可能 50-500MB）
+
+### 方案 B：爬取原始 mp4 URL，直接引用播放
+
+從 xvideos 頁面解析出實際影片 URL（通常是 CDN 上的 mp4 或 m3u8），直接作為 `<video src>`。
+
+- ✅ 不需儲存/下載
+- ❌ URL 會過期（通常幾小時）
+- ❌ 需要動態解析，而非靜態 HTML（需要後端 proxy）
+- ❌ xvideos 會輪換 CDN 域名，維護成本高
 
 ## 我的假設
 
-1. **OSS 提供商**：阿里雲 OSS ✅ 已確認
+1. **方案 A 優先**：下載到 OSS + 本地 `<video>` 播放。OSS 流量費用可接受。
 
-2. **連線資訊（已確認）**：
-   - Endpoint: `https://oss-ap-southeast-7.aliyuncs.com`
-   - Bucket: `dream20260711`
-   - Region: `ap-southeast-7`
-   - 公開 URL: `https://dream20260711.oss-ap-southeast-7.aliyuncs.com/`
+2. **實作方式**：
+   - 新增 `src/xv_downloader.py`：用 `yt-dlp` 從 xvideos 下載影片
+   - 修改 `xv_spider.py`：爬取 metadata 後，可選下載影片
+   - 下載到 `/tmp/`，上傳 OSS，清理暫存
+   - `messages.jsonl` 中的 `media.path` 指向 OSS 上的 mp4 URL
+   - 前端直接用 `<video src="...oss-url...">` 播放
 
-3. **公開讀取**：OSS bucket 設為公開讀取（public-read），前端直接用 `<img src="https://dream20260711.oss-ap-southeast-7.aliyuncs.com/...">` 載入，不經由伺服器轉發。
+3. **範圍**：只限 maderotic 頻道，每個影片下載一次。
 
-4. **儲存路徑不變**：OSS 上的目錄結構與目前本地一致：`{channel_id}/photo/filename.jpg`、`{channel_id}/video/filename.mp4`。messages.jsonl 中的 path 格式改為完整 OSS URL。
+4. **隱含假設**：你接受 OSS 流量費用。xvideo 內容體積較大（影片 50-500MB），觀看次數多的話流量費用可觀。
 
-5. **上傳流程**：Telegram 下載到本地暫存 → 立即上傳 OSS → 記錄 OSS URL 到 messages.jsonl → 清理本地暫存。
+## 盲點 / 模糊點
 
-6. **縮圖**：影片縮圖一同上傳 OSS，保持現有 `.thumb/` 目錄結構。
+1. **OSS 流量費用是否在預算內？** 一個 200MB 影片被觀看 100 次 = 20GB 流量 ≈ NT$40-60。若每天上千次觀看，費用會可觀。
 
-7. **現有檔案處理**：清空現有媒體，之後重新下載的才上傳 OSS ✅ 已確認
+2. **要不要限制下載數量？** 只下載最新 N 個影片，還是全部 maderotic 影片？
 
-9. **Python SDK**：使用阿里雲官方 `oss2` 套件。認證資訊將存放在 `src/oss_config.json`，納入版控。
+3. **下載後清理策略？** OSS 容量無限且便宜，要保留多久？
 
-10. **Bucket 公開讀取**：需要確保 bucket 讀取權限設為 public-read（或對特定目錄設為 public），否則前端圖片無法載入。若尚未設定，Phase 3 實作時提醒你設定。
-
-11. **CORS**：若 bucket 需要 CORS 設定（瀏覽器跨域請求），Phase 3 時一併處理。
-
-## 確認狀態
-
-| 項目 | 狀態 |
-|------|------|
-| OSS 提供商 | ✅ 阿里雲 OSS |
-| Endpoint / Bucket / Region | ✅ 已提供 |
-| AccessKey | ✅ 已提供 |
-| 現有檔案處理 | ✅ 清空重新開始 |
-| 優先順序 | ✅ OSS 遷移優先於 xvideo |
-| 確認開始 | ⏳ 等你說「確認」或「進 phase 1」 |
+4. **yt-dlp 合規性？** xvideos ToS 可能禁止自動下載。風險自負。
