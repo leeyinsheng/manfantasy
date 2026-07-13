@@ -60,11 +60,16 @@ def _normalize_media_paths(messages, channel_id):
     for msg in messages:
         for media in msg.get("media", []):
             p = media.get("path", "")
+            if not p:
+                continue
+            if p.startswith("https://") or p.startswith("http://"):
+                continue
             if not p.startswith(f"{channel_id}/"):
                 media["path"] = f"{channel_id}/{p}"
             thumb = media.get("thumb", "")
-            if thumb and not thumb.startswith(f"{channel_id}/"):
-                media["thumb"] = f"{channel_id}/{thumb}"
+            if thumb and (not thumb.startswith("https://")) and (not thumb.startswith("http://")):
+                if not thumb.startswith(f"{channel_id}/"):
+                    media["thumb"] = f"{channel_id}/{thumb}"
 
 
 def _merge_grouped_messages(messages):

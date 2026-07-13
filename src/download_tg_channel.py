@@ -1,6 +1,7 @@
 import os
 import subprocess
 import asyncio
+import tempfile
 from pathlib import Path
 
 from telethon import TelegramClient
@@ -24,6 +25,11 @@ from tg_core import (
     message_to_record,
     append_message_record,
 )
+import oss_uploader
+
+TMP_DIR = Path(tempfile.gettempdir()) / "adult_dream"
+OSS_CONFIG = oss_uploader.load_oss_config()
+USE_OSS = bool(OSS_CONFIG)
 
 
 async def download_media_message(message, channel_id, client, video_only=False):
@@ -41,6 +47,8 @@ async def download_media_message(message, channel_id, client, video_only=False):
         if video_only:
             return []
         filename = generate_photo_filename(message.date, message.id)
+        if USE_OSS:
+            return await _download_to_oss(message, channel_id, filename, "photo", client)
         filepath = photo_dir / filename
         try:
             photo_dir.mkdir(parents=True, exist_ok=True)
@@ -54,6 +62,11 @@ async def download_media_message(message, channel_id, client, video_only=False):
     elif media_type == "document":
         original_name = get_original_filename(message.media.document.attributes)
         filename = generate_document_filename(message.date, message.id, original_name, mime_type)
+
+        if USE_OSS:
+            target_dir = video_dir if is_video_mime(mime_type) else photo_dir
+            subdir = "video" if is_video_mime(mime_type) else "photo"
+            return await _download_to_oss(message, channel_id, filename, subdir, client)
 
         target_dir = video_dir if is_video_mime(mime_type) else photo_dir
         filepath = target_dir / filename
@@ -73,7 +86,7 @@ async def download_media_message(message, channel_id, client, video_only=False):
                 thumb_dir = video_dir / ".thumb"
                 raw_name = Path(filename).stem
                 thumb_name = f".thumb_{raw_name}.jpg"
-                thumb_path = _generate_thumbnail(filepath, thumb_dir, thumb_name)
+                thumb_path = _generate_thumbnail_video(filepath, thumb_dir, thumb_name)
                 if thumb_path:
                     thumb = f"{channel_id}/video/.thumb/{thumb_name}"
             print(f"  [OK] {label}: {filename} ({size_mb:.1f}MB)")
@@ -90,7 +103,37 @@ async def download_media_message(message, channel_id, client, video_only=False):
     return media_files
 
 
-def _generate_thumbnail(video_path, thumb_dir, thumb_name):
+async def _download_to_oss(message, channel_id, filename, subdir, client):
+    TMP_DIR.mkdir(parents=True, exist_ok=True)
+    tmp_path = TMP_DIR / f"{channel_id}_{filename}"
+    try:
+        await client.download_media(message, file=str(tmp_path))
+        size_mb = os.path.getsize(tmp_path) / (1024 * 1024)
+        oss_key = f"{channel_id}/{subdir}/{filename}"
+        oss_url = oss_uploader.upload_file(OSS_CONFIG, str(tmp_path), oss_key)
+        tmp_path.unlink()
+
+        label = "影片" if subdir == "video" else "圖片"
+        print(f"  [OK] {label}: {filename} ({size_mb:.1f}MB) → OSS")
+
+        record = {
+            "type": "video" if subdir == "video" else "photo",
+            "path": oss_url,
+            "size_mb": round(size_mb, 1),
+        }
+        if subdir == "video":
+            thumb_url = _generate_thumbnail_oss(str(tmp_path), channel_id, filename)
+            if thumb_url:
+                record["thumb"] = thumb_url
+        return [record]
+    except Exception as e:
+        print(f"  [ERR] OSS 上傳失敗 msg#{message.id}: {e}")
+        if tmp_path.exists():
+            tmp_path.unlink()
+        return []
+
+
+def _generate_thumbnail_video(video_path, thumb_dir, thumb_name):
     thumb_path = thumb_dir / thumb_name
     if thumb_path.exists():
         return str(thumb_path)
@@ -109,7 +152,29 @@ def _generate_thumbnail(video_path, thumb_dir, thumb_name):
     return None
 
 
+def _generate_thumbnail_oss(video_path, channel_id, filename):
+    try:
+        thumb_name = f".thumb_{Path(filename).stem}.jpg"
+        thumb_path = TMP_DIR / thumb_name
+        result = subprocess.run([
+            "ffmpeg", "-y", "-loglevel", "error",
+            "-ss", "1", "-i", str(video_path),
+            "-vf", "thumbnail=15", "-vframes", "1",
+            str(thumb_path)
+        ], check=False, timeout=30)
+        if result.returncode == 0 and thumb_path.exists():
+            oss_key = f"{channel_id}/video/.thumb/{thumb_name}"
+            thumb_url = oss_uploader.upload_file(OSS_CONFIG, str(thumb_path), oss_key)
+            thumb_path.unlink()
+            return thumb_url
+    except Exception:
+        pass
+    return None
+
+
 def _get_existing_media_records(message, channel_id):
+    if USE_OSS:
+        return []
     media = message.media
     if not media:
         return []
@@ -151,7 +216,7 @@ def _get_existing_media_records(message, channel_id):
                 thumb_dir = video_dir / ".thumb"
                 raw_name = Path(filename).stem
                 thumb_name = f".thumb_{raw_name}.jpg"
-                thumb_path = _generate_thumbnail(filepath, thumb_dir, thumb_name)
+                    thumb_path = _generate_thumbnail_video(filepath, thumb_dir, thumb_name)
                 if thumb_path:
                     record["thumb"] = f"{channel_id}/video/.thumb/{thumb_name}"
             return [record]

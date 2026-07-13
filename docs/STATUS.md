@@ -28,18 +28,31 @@ CSS-only casino-gold/phone-frame attempt. Rolled back, never shipped. Live site 
 | 6 | Feature Verification | ✅ |
 | 7 | User Acceptance | ✅ signed off, deployed |
 
-## v8 Cycle — xvideos 嵌入式播放整合
+## v8 Cycle — xvideos 嵌入式播放整合 (UAT 失敗，已回滾)
 
 | Phase | Name | Status |
 |-------|------|--------|
 | 1 | Product Ideation | ✅ |
 | 2 | Product Design | ✅ |
-| 3 | Feature Dev + Unit Tests | ✅ (102 tests pass) |
-| 4 | Code Review | ✅ (clean) |
-| 5 | Regression Testing | ✅ (102/102 pass) |
-| 6 | Feature Verification | ✅ |
+| 3 | Feature Dev + Unit Tests | ⏳ (xvideos embedframe 404，需重新設計播放方案) |
+| 4 | Code Review | |
+| 5 | Regression Testing | |
+| 6 | Feature Verification | |
+| 7 | User Acceptance | ❌
+
+## v9 Cycle — OSS 遷移
+
+| Phase | Name | Status |
+|-------|------|--------|
+| 0 | 需求釐清 | ✅ |
+| 1 | Product Ideation | ✅ |
+| 2 | Product Design | ✅ |
+| 3 | Feature Dev + Unit Tests | ✅ (113/114 pass) |
+| 4 | Code Review | ✅ (clean, 1 expected bucket ACL issue) |
+| 5 | Regression Testing | ✅ (113/114 pass, 1 expected) |
+| 6 | Feature Verification | ✅ (bucket ACL blocking - needs Alibaba Cloud console) |
 | 7 | User Acceptance | ⏳ |
 
 ## Status
 
-**Current**: v8 — 新增 xvideo 類別頁籤，以 iframe embed 方式播放 xvideos.com/maderotic 影片，不下載影片檔案。
+**Current**: v9 — 多媒體檔案從本地磁碟遷移至阿里雲 OSS（ap-southeast-7, bucket: dream20260711）。說「start phase 2」繼續產品設計。

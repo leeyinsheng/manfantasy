@@ -351,5 +351,17 @@ class TestXvideoTab(unittest.TestCase):
         self.assertEqual(msgs[1]["text"], "Test Video")
 
 
+    def test_oss_urls_not_modified_by_normalize(self):
+        from generate_html import _normalize_media_paths
+        msgs = [
+            {"media": [{"type": "photo", "path": "https://dream20260711.oss-ap-southeast-7.aliyuncs.com/ch/photo/test.jpg"}]},
+            {"media": [{"type": "video", "path": "https://dream20260711.oss-ap-southeast-7.aliyuncs.com/ch/video/test.mp4", "thumb": "https://dream20260711.oss-ap-southeast-7.aliyuncs.com/ch/video/.thumb/test.jpg"}]},
+        ]
+        _normalize_media_paths(msgs, "ch")
+        self.assertEqual(msgs[0]["media"][0]["path"], "https://dream20260711.oss-ap-southeast-7.aliyuncs.com/ch/photo/test.jpg")
+        self.assertEqual(msgs[1]["media"][0]["path"], "https://dream20260711.oss-ap-southeast-7.aliyuncs.com/ch/video/test.mp4")
+        self.assertEqual(msgs[1]["media"][0]["thumb"], "https://dream20260711.oss-ap-southeast-7.aliyuncs.com/ch/video/.thumb/test.jpg")
+
+
 if __name__ == "__main__":
     unittest.main()

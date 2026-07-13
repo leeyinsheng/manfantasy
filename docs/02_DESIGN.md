@@ -1,136 +1,139 @@
-# 02 - Design v8：xvideos 嵌入式播放整合
+# 02 - Design v9：OSS 儲存層架構
 
-## 前提
-
-v7 設計（waterfall 卡片、底部導覽、深色主題）全部保留。v8 僅在既有架構上新增一個 xvideo 頁籤，不修改既有 tab 的樣式或行為。
-
-## Layout 變更
+## 資料流
 
 ```
-         body (深色底, 內容置中, 手機版寬度)
-   ┌─────────────────────────────────┐
-   │ .app (max-width: 560px, 置中)     │
-   │  ┌──────────────────────────┐   │
-   │  │ MAN'S FANTASY   🔍  更新..│   │ ← compact header（不變）
-   │  ├──────────────────────────┤   │
-   │  │ [搜尋/時間篩選面板]        │   │ ← 預設收合（不變）
-   │  ├──────────────────────────┤   │
-   │  │ ┌───────┐ ┌───────┐      │   │
-   │  │ │卡片A(高)│ │卡片B   │      │   │ ← 雙欄 waterfall（不變）
-   │  │ │        │ └───────┘      │   │
-   │  │ │        │ ┌───────┐      │   │
-   │  │ └───────┘ │卡片C   │      │   │
-   │  │ ┌───────┐ ┌───────┐      │   │
-   │  │ │卡片D   │ │卡片E   │      │   │
-   │  │ └───────┘ └───────┘      │   │
-   │  ├──────────────────────────┤   │
-   │  │ 🏠  📰  🔥  🎬  ❌   │   │ ← 5 個 tab，字體縮小
-   │  │異想 大事件 吃瓜 AI短 xv   │   │ ← 底部導覽（5 項）
-   │  └──────────────────────────┘   │
-   └─────────────────────────────────┘
+Telegram API
+    │
+    v
+download_tg_channel.py
+    │
+    ├── client.download_media() → 下載到本地暫存
+    ├── oss.upload() → 上傳到 OSS
+    ├── 記錄 OSS URL 到 messages.jsonl
+    └── os.unlink() → 刪除本地暫存
+    │
+    v
+messages.jsonl (media.path = OSS URL)
+    │
+    v
+generate_html.py
+    │
+    ├── _normalize_media_paths() → 不需修改 (path 已是完整 URL)
+    └── HTML 中 img/video src 直接使用 OSS URL
+    │
+    v
+download/index.html
+    │
+    v
+Nginx 只服務 HTML，媒體流量走 OSS
 ```
 
-## 底部導覽（變更）
+## 檔案變更
 
-原有 4 tab → 5 tab。**僅顯示圖示，不顯示文字標籤**，確保 5 個 tab 在手機窄螢幕上不擁擠。
-
-| Tab | 圖示 | 寬度 |
-|-----|------|------|
-| 異想空間 | 🏠 | 20% |
-| 東南亞大事件 | 📰 | 20% |
-| 吃瓜爆料 | 🔥 | 20% |
-| AI短劇 | 🎬 | 20% |
-| xvideo | ❌ | 20% |
-
-- `nav-item` 寬度 `flex: 1`（等分 20%）
-- 圖示字體 `1.65rem`
-- 移除 `.label` 文字元素
-- active 狀態：圖示變 `--accent` 色 + 底部紅色指示條（`::after`，寬度 24px，`transition: width .2s`）
-- 點擊反饋：`opacity: 0.6` 微縮效果
-- 保留 `aria-label` 屬性以維持無障礙瀏覽
-
-## xvideo 卡片設計
-
-與現有 waterfall 卡片一致，僅增加**時長徽章**：
-
-```
-┌──────────────────┐
-│  ┌────────────┐   │
-│  │            │   │
-│  │  縮圖      │   │
-│  │            │   │
-│  │     ▶      │   │  ← play 圖示（與 v7 影片卡片相同）
-│  │            │   │
-│  └────────────┘   │
-│  ⏱ 12:34          │  ← 時長徽章（右上角）
-│                    │
-│  影片標題兩行      │  ← -webkit-line-clamp:2
-│  來源 · 3天前     │  ← 來源/時間小字
-└──────────────────┘
-```
-
-### 資料格式 (`download/xvideos/videos.jsonl`)
+### 新增：`src/oss_config.json`
 
 ```json
 {
-  "source": "maderotic",
-  "eid": "maderotic_12345678",
-  "video_id": "12345678",
-  "title": "影片標題",
-  "duration": "12:34",
-  "thumbnail": "https://img-thumbnail-url.jpg",
-  "uploader": "maderotic",
-  "quality": "HD",
-  "url": "https://www.xvideos.com/video12345678/",
-  "ts": 1712345678
+  "endpoint": "https://oss-ap-southeast-7.aliyuncs.com",
+  "bucket": "dream20260711",
+  "access_key_id": "FROM_ENV_OSS_KEY_ID",
+  "access_key_secret": "FROM_ENV_OSS_KEY_SECRET",
+  "public_url": "https://dream20260711.oss-ap-southeast-7.aliyuncs.com"
 }
 ```
 
-## 播放方式：iframe embed
+### 新增：`src/oss_uploader.py`
 
-不使用 `<video>` 標籤播放本地檔案，改以 iframe 嵌入 xvideos 播放器：
-
-```html
-<div class="xv-embed-container" style="position:relative;width:100%;padding-top:56.25%">
-  <iframe src="https://www.xvideos.com/embedframe/{video_id}"
-          style="position:absolute;inset:0;width:100%;height:100%"
-          frameborder="0" scrolling="no" allowfullscreen>
-  </iframe>
-</div>
+```python
+def load_oss_config():        # 讀取 oss_config.json
+def upload_file(local_path, oss_key):  # 單檔上傳
+def upload_media(channel_id, filename, subdir):  # 上傳並回傳 OSS URL
+def get_oss_url(oss_key):     # 構建完整 OSS URL
 ```
 
-點擊流程：
-1. 使用者點擊 xvideo 卡片 → 開啟詳情 sheet（顯示完整標題 + 縮圖）
-2. 點擊縮圖或播放按鈕 → 開啟燈箱
-3. 燈箱內以 iframe 取代原生的 `<video>` 標籤
-4. 關閉燈箱 → iframe 從 DOM 移除（避免背景繼續播放）
+### 變更：`src/download_tg_channel.py`
 
-## Color System
+`download_media_message()` 函數改造：
 
-無變更。沿用 v7 深色主題色票。
+```
+Before:
+  await client.download_media(message, file=str(filepath))
+  media_files.append({"type": "photo", "path": f"{channel_id}/photo/{filename}"})
+
+After:
+  await client.download_media(message, file=str(tmp_path))
+  oss_url = upload_media(channel_id, filename, "photo")
+  os.unlink(tmp_path)
+  media_files.append({"type": "photo", "path": oss_url})
+```
+
+同樣改造 `_generate_thumbnail()`（縮圖也上傳 OSS）。
+
+### 變更：`src/generate_html.py`
+
+不需改動 URL 邏輯。`_normalize_media_paths()` 目前檢查 `path.startswith(f"{channel_id}/")` 並加前綴 — 當 path 已是完整 OSS URL（以 `https://` 開頭）時，不會觸發前綴邏輯，無需修改。
+
+唯一確認：卡片渲染 `cardImageHtml` 使用 `src = cover.thumb || cover.path`，直接作為 `<img src>` — OSS URL 可直接使用。
+
+### 移除或簡化：`src/cleanup_old.py`
+
+OSS 無容量限制，不需要定期清理。可移除或保留為 no-op。
+
+## OSS 上傳流程
+
+```python
+# download_media_message 中的媒體處理流程
+
+tmp_dir = Path("/tmp/adult_dream")
+tmp_dir.mkdir(parents=True, exist_ok=True)
+tmp_path = tmp_dir / filename
+
+await client.download_media(message, file=str(tmp_path))  # 下載
+
+oss_key = f"{channel_id}/{subdir}/{filename}"              # OSS key
+oss_url = upload_file(str(tmp_path), oss_key)              # 上傳 OSS
+
+tmp_path.unlink()                                          # 清理暫存
+
+media_files.append({"type": ..., "path": oss_url})         # 記錄 OSS URL
+```
+
+縮圖同樣流程：
+
+```python
+thumb_path = ffmpeg_generate(video_path)
+oss_thumb_url = upload_file(str(thumb_path), f"{channel_id}/video/.thumb/{thumb_name}")
+thumb_path.unlink()
+```
+
+## messages.jsonl 格式變更
+
+```
+Before:
+{"path": "ai_guoman/photo/2025-07-01_test.jpg"}
+
+After:
+{"path": "https://dream20260711.oss-ap-southeast-7.aliyuncs.com/ai_guoman/photo/2025-07-01_test.jpg"}
+```
+
+## 測試策略
+
+| 測試項目 | 說明 |
+|---------|------|
+| `test_oss_config_loading` | 驗證 oss_config.json 讀取 |
+| `test_oss_url_building` | `get_oss_url("ai_guoman/photo/test.jpg")` → 完整 URL |
+| `test_normalize_skips_oss_url` | _normalize_media_paths 不修改 https:// 開頭的 path |
+| `test_upload_media` | Mock OSS client，驗證上傳後回傳正確 URL |
+| 既有測試 | 確保 _normalize_media_paths 行為對 OSS URL 正確 |
 
 ## What Changes
 
 | 檔案 | 變更 |
 |------|------|
-| `src/xv_spider.py` | 新增 `user/channel` URL 模式支援（`/maderotic` 格式） |
-| `src/xvideos.json` | 加入 maderotic 來源設定 |
-| `src/generate_html.py` | 新增 xvideos 資料載入函數（`_load_xvideos()`）；底部導覽改為 5 tab，`flex-basis: 20%`；燈箱播放邏輯新增 iframe embed 分支 |
-| `tests/test_xv_spider.py` | 新增 channel 模式爬蟲測試 |
-| `tests/test_html.py` | 新增 xvideo tab 渲染測試、iframe embed 測試 |
-
-## 使用者體驗流程
-
-```
-開啟網站 → 底部導覽顯示 5 個 tab（包含 ❌ xv）
-    ↓
-點擊 ❌ xv → 切換到 xvideo tab
-    ↓
-顯示 xvideos 影片瀑布流卡片（雙欄）
-    ↓
-點擊卡片 → 詳情 sheet
-    ↓
-點擊播放 → 燈箱內以 iframe 播放 xvideos 影片
-    ↓
-關閉燈箱 → 回到瀑布流
-```
+| `src/oss_config.json` | **新增** — OSS 連線設定 |
+| `src/oss_uploader.py` | **新增** — OSS 上傳模組 |
+| `src/download_tg_channel.py` | 下載後上傳 OSS → 記錄 OSS URL → 清理暫存 |
+| `src/generate_html.py` | 不變（OSS URL 直接可用） |
+| `src/cleanup_old.py` | 移除或 no-op |
+| `tests/` | 新增 OSS 相關測試 |
