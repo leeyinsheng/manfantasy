@@ -79,8 +79,9 @@ CSS-only casino-gold/phone-frame attempt. Rolled back, never shipped. Live site 
 |-------|------|--------|
 | 0 | 需求釐清 | ✅ |
 | 1 | Product Ideation | ✅ |
-| 2 | Product Design | ⏳ |
+| 2 | Product Design | ✅ |
+| 3 | Feature Dev + Unit Tests | ⏳ |
 
 ## Status
 
-**Current**: v12 — 小紅書卡片風格，深色底。說「start phase 2」繼續設計。
+**Current**: v12 — 說「start phase 3」開始實作。

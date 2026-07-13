@@ -1,101 +1,118 @@
-# 02 - Design v10：xvideos 影片下載到 OSS
+# 02 - Design v12：小紅書卡片 + 分類標籤
 
-## 架構
-
-```
-xv_spider.py (metadata only)
-    │  outputs: eid, video_id, title, duration, thumbnail, url
-    v
-videos.jsonl (每行一筆，含完整 video URL)
-    │
-    v
-xv_downloader.py (每日執行，下載最新 50 部)
-    │  yt-dlp → /tmp/ → oss_uploader → OSS
-    v
-videos.jsonl (更新 media path = OSS mp4 URL)
-    │
-    v
-generate_html.py → index.html
-    │  xvideo tab: card with thumbnail, click → <video> lightbox
-    v
-使用者瀏覽器 <video src="https://dream20260711.oss-ap-southeast-7...">
-```
-
-## 檔案變更
-
-### 新增：`src/xv_downloader.py`
-
-```python
-def load_videos():         # 讀取 videos.jsonl
-def save_videos():         # 寫回 videos.jsonl
-def download_video():      # yt-dlp 下載單一影片
-def download_pending():    # 遍歷未下載的影片，下載並上傳 OSS
-```
-
-下載流程：
-1. 讀取 `videos.jsonl`，找出 `media_uploaded != true` 的影片
-2. 取最新 50 筆
-3. 逐筆 yt-dlp 下載到 `/tmp/xv_{video_id}.mp4`
-4. `oss_uploader.upload_media()` 上傳 OSS
-5. 更新 record: `media_path = oss_url, media_uploaded = true`
-6. 刪除 `/tmp/` 暫存
-
-### 變更：`src/xv_spider.py`
-
-- 改寫 `_parse_video_blocks()`：新增擷取完整 video URL
-- 改寫 `_build_url()`：user 型態 URL 改用 `/maderotic`（頁碼從 0 開始）
-- 影片記錄新增 `url` 欄位
-
-影片 URL 格式：`https://www.xvideos.com/video.{eid}/{video_id}/0/{title}`
-
-### 變更：`src/generate_html.py`
-
-- `_load_xvideos()`：新增 `media` 陣列（當 `media_uploaded == true` 時）
-- `cardXvHtml()`：不變，卡片外觀相同
-- 點擊處理：檢查 `media` 是否存在，有的話用 `<video>` 播放，沒有的話用舊邏輯
-- `openLbEmbed()`：改為 `openLbVideo(videoUrl)` → `<video src>` 播放
-
-## OSS Key 格式
+## Layout
 
 ```
-xvideos/{video_id}.mp4
+┌──────────────────────────────┐
+│ 🔍 搜尋小紅書筆記…      ⏳ ⚙ │ ← 頂部搜尋列（常駐）
+├──────────────────────────────┤
+│ [異想] [大事件] [吃瓜] [AI短]│ ← 分類標籤（水平滾動）
+│ [xv]                         │
+├──────────────────────────────┤
+│ ┌────────┐ ┌────────┐       │
+│ │        │ │        │       │ ← 雙欄 waterfall
+│ │  圖片   │ │  圖片   │       │   卡片 3:4 比例
+│ │  3:4   │ │  3:4   │       │
+│ │        │ │        │       │
+│ │標題兩行 │ │標題兩行 │       │
+│ │👤 頻道  │ │👤 頻道  │       │   ← 頭像 + 名稱
+│ │♥ 1.2k  │ │♥ 856   │       │   ← 愛心數 + 留言數
+│ └────────┘ └────────┘       │
+├──────────────────────────────┤
+│ 🏠      📰     🔥     🎬   ❌│ ← 底部導覽
+│ 異想    大事件  吃瓜   AI短  xv│   （圖示 + 文字）
+└──────────────────────────────┘
 ```
 
-完整 OSS URL：
+## 卡片設計
+
 ```
-https://dream20260711.oss-ap-southeast-7.aliyuncs.com/xvideos/49709194.mp4
+┌─────────────────┐
+│                 │
+│                 │
+│   Cover Image   │  ← aspect-ratio: 3/4
+│                 │
+│                 │
+├─────────────────┤
+│ 標題文字最多三行  │  ← font-size: 0.82rem, -webkit-line-clamp: 3
+│ 第二行…          │
+├─────────────────┤
+│ 👤 頻道名        │  ← 左側 18px 圓形頭像 + 來源名稱
+│ ♥ 1.2k  💬 89  │  ← 右側互動數據
+└─────────────────┘
 ```
 
-## videos.jsonl 格式變更
+### CSS 關鍵值
 
-```json
-{
-  "eid": "oplmapafe9c",
-  "video_id": "49709194",
-  "title": "video title",
-  "duration": "12:34",
-  "thumbnail": "https://...",
-  "uploader": "maderotic",
-  "url": "https://www.xvideos.com/video.oplmapafe9c/49709194/0/title",
-  "media_path": "https://dream20260711.oss.../xvideos/49709194.mp4",
-  "media_uploaded": true,
-  "tags": ["maderotic"],
-  "fetched_at": "2026-07-13T..."
+```css
+.card { background: var(--surface); border-radius: 8px; overflow: hidden; }
+.card-cover { position: relative; aspect-ratio: 3 / 4; }
+.card-cover img { width: 100%; height: 100%; object-fit: cover; }
+.card-body { padding: 0.5rem 0.6rem; }
+.card-title { font-size: 0.82rem; line-height: 1.4; -webkit-line-clamp: 3; }
+.card-footer { display: flex; align-items: center; justify-content: space-between; padding: 0 0.6rem 0.5rem; }
+.card-author { display: flex; align-items: center; gap: 0.35rem; font-size: 0.68rem; }
+.card-author-avatar { width: 18px; height: 18px; border-radius: 50%; background: var(--accent); }
+.card-stats { display: flex; gap: 0.6rem; font-size: 0.68rem; color: var(--muted); }
+```
+
+## 分類標籤列
+
+```html
+<div class="chip-bar">
+  <button class="chip active">異想空間</button>
+  <button class="chip">大事件</button>
+  <button class="chip">吃瓜爆料</button>
+  <button class="chip">AI短劇</button>
+  <button class="chip">xvideo</button>
+</div>
+```
+
+```css
+.chip-bar { display: flex; gap: 0.5rem; padding: 0.6rem 0.75rem; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.chip-bar::-webkit-scrollbar { display: none; }
+.chip { flex-shrink: 0; padding: 0.35rem 0.8rem; border-radius: 20px; font-size: 0.78rem; background: var(--surface-2); color: var(--muted); border: none; }
+.chip.active { background: var(--accent); color: #fff; }
+```
+
+## 搜尋列
+
+```html
+<div class="search-bar">
+  <div class="search-input-wrapper">
+    <span class="search-icon">🔍</span>
+    <input placeholder="搜尋筆記…">
+  </div>
+</div>
+```
+
+## 互動數據
+
+```javascript
+function fakeStats() {
+  return {
+    likes: Math.floor(Math.random() * 9000) + 100,
+    comments: Math.floor(Math.random() * 200)
+  };
+}
+function formatNum(n) {
+  return n >= 1000 ? (n/1000).toFixed(1).replace('.0','') + 'k' : n;
 }
 ```
 
-## 排程
+## 底部導覽（恢復文字）
 
-- xv_spider：每小時一次（更新 metadata）
-- xv_downloader：每天一次（下載最新 50 部到 OSS）
-- generate_html：每 30 分鐘一次（與 Telegram 同步）
+恢復 icon + label 雙行顯示，5 tab 等寬：
+
+```css
+.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 0.3rem 0; color: var(--muted); }
+.nav-item .icon { font-size: 1.35rem; }
+.nav-item .label { font-size: 0.55rem; }
+```
 
 ## What Changes
 
 | 檔案 | 變更 |
 |------|------|
-| `src/xv_downloader.py` | **新增** — yt-dlp 下載 + OSS 上傳 |
-| `src/xv_spider.py` | 修正 URL 格式，新增完整 video URL |
-| `src/xvideos.json` | 新增 `download_latest: 50` 設定 |
-| `src/generate_html.py` | 燈箱 `<video>` 播放 OSS mp4 |
-| `tests/` | 新增 xv_downloader 測試 |
+| `src/generate_html.py` | CSS 全部重寫、HTML 新增 chip-bar + search-bar、JS 更新卡片渲染 + 假數據 + chip 切換 |
+| `tests/test_html.py` | 新增 chip-bar、search-bar、card 結構測試 |

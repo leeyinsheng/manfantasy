@@ -3,379 +3,259 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>MAN'S FANTASY — v7 Waterfall Prototype</title>
+<title>MAN'S FANTASY — v12 小紅書風格 Prototype</title>
 <style>
 :root {
   --bg:#0a0a0a; --surface:#161616; --surface-2:#1e1e1e;
   --fg:#e5e5e5; --fg2:#a0a0a0; --mut:#6a6a6a;
   --border:#2a2a2a; --accent:#d14334; --accent-hover:#e05545;
-  --radius:10px; --app-w:560px;
+  --radius:8px; --app-w:560px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{font-size:15px}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:#000;display:flex;justify-content:center;min-height:100dvh;color:var(--fg);line-height:1.5;-webkit-tap-highlight-color:transparent}
-button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
-img{display:block;width:100%}
+button{cursor:pointer;font:inherit;border:none;background:none;color:inherit}
+img{max-width:100%;display:block}
+.app{width:100%;max-width:var(--app-w);min-height:100dvh;background:var(--bg)}
 
-.app{width:100%;max-width:var(--app-w);min-height:100dvh;background:var(--bg);display:flex;flex-direction:column}
+/* search bar */
+.search-bar{position:sticky;top:0;z-index:10;padding:0.6rem 0.75rem;background:rgba(10,10,10,0.96);display:flex;align-items:center;gap:0.5rem}
+.search-input-wrap{flex:1;display:flex;align-items:center;gap:0.4rem;background:var(--surface-2);border-radius:20px;padding:0.4rem 0.8rem}
+.search-input-wrap .icon{font-size:0.9rem;color:var(--mut)}
+.search-input-wrap input{flex:1;border:none;background:none;color:var(--fg);font-size:0.82rem;outline:none}
+.search-input-wrap input::placeholder{color:var(--mut)}
+.search-bar .btn-icon{width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;border-radius:50%;color:var(--fg2)}
 
-/* header */
-.app-header{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:0.7rem 0.9rem;border-bottom:1px solid var(--border);background:rgba(10,10,10,0.96)}
-.app-header .title{font-size:0.95rem;font-weight:600;letter-spacing:0.03em}
-.app-header .right{display:flex;align-items:center;gap:0.6rem}
-.app-header .time{font-size:0.68rem;color:var(--mut)}
-.search-toggle{width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:1rem;border-radius:50%;color:var(--fg2)}
-.search-toggle.active{color:var(--accent);background:rgba(209,67,52,0.1)}
-
-/* search panel (collapsed by default) */
-.search-panel{max-height:0;overflow:hidden;transition:max-height .2s ease;border-bottom:1px solid transparent}
-.search-panel.open{max-height:120px;border-bottom-color:var(--border)}
-.search-panel-inner{display:flex;flex-wrap:wrap;gap:0.5rem;padding:0.75rem 0.9rem;align-items:center}
-.search-panel input[type="text"]{flex:1;min-width:120px;padding:0.5rem 0.7rem;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;font-size:0.82rem;color:var(--fg);outline:none}
-.search-panel input:focus{border-color:var(--accent)}
-.time-presets{display:flex;gap:4px;flex-wrap:wrap}
-.preset-btn{padding:0.35rem 0.6rem;font-size:0.72rem;color:var(--mut);background:var(--surface-2);border:1px solid var(--border);border-radius:6px}
-.preset-btn.active{color:var(--fg);border-color:var(--accent);background:rgba(209,67,52,0.08)}
+/* chip bar (horizontal scroll) */
+.chip-bar{display:flex;gap:0.5rem;padding:0 0.75rem 0.6rem;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.chip-bar::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;padding:0.35rem 0.85rem;border-radius:20px;font-size:0.78rem;background:var(--surface-2);color:var(--mut);white-space:nowrap}
+.chip.active{background:var(--accent);color:#fff}
 
 /* content */
-.app-content{flex:1;padding:0.75rem 0.75rem 5rem}
+.app-content{flex:1;padding:0 0.5rem 5rem}
 .tab-panel{display:none}
 .tab-panel.active{display:block}
+.waterfall{display:flex;gap:0.4rem}
+.wf-col{flex:1;display:flex;flex-direction:column;gap:0.4rem;min-width:0}
 
-.waterfall{display:flex;gap:0.6rem}
-.wf-col{flex:1;display:flex;flex-direction:column;gap:0.6rem;min-width:0}
+/* card */
+.card{background:var(--surface);border-radius:var(--radius);overflow:hidden}
+.card-cover{position:relative;aspect-ratio:3/4}
+.card-cover img{width:100%;height:100%;object-fit:cover}
+.badge-count{position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.55);color:#fff;font-size:0.62rem;padding:2px 6px;border-radius:10px}
+.badge-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:30px;height:30px;background:rgba(0,0,0,0.55);border-radius:50%;display:flex;align-items:center;justify-content:center}
+.badge-play::after{content:'';border-left:10px solid #fff;border-top:6px solid transparent;border-bottom:6px solid transparent;margin-left:2px}
+.badge-duration{position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.75);color:#fff;font-size:0.62rem;padding:2px 5px;border-radius:4px}
+.card-title{padding:0.5rem 0.55rem 0;font-size:0.8rem;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;white-space:pre-wrap}
+.card-footer{display:flex;align-items:center;justify-content:space-between;padding:0.45rem 0.55rem 0.5rem}
+.card-author{display:flex;align-items:center;gap:0.3rem;min-width:0}
+.card-author-avatar{width:16px;height:16px;border-radius:50%;background:var(--accent);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:0.5rem;color:#fff}
+.card-author-name{font-size:0.65rem;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card-stats{display:flex;align-items:center;gap:0.5rem;font-size:0.65rem;color:var(--mut);flex-shrink:0}
+.card-stats span{display:flex;align-items:center;gap:2px}
 
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
-.card-cover{position:relative}
-.card-cover img{object-fit:cover}
-.badge-count{position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.6);color:#fff;font-size:0.66rem;padding:2px 6px;border-radius:10px;display:flex;align-items:center;gap:2px}
-.badge-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:34px;height:34px;background:rgba(0,0,0,0.55);border-radius:50%;display:flex;align-items:center;justify-content:center}
-.badge-play::after{content:'';border-left:11px solid #fff;border-top:7px solid transparent;border-bottom:7px solid transparent;margin-left:3px}
-.card-body{padding:0.6rem 0.65rem}
-.card-text{font-size:0.82rem;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin-bottom:0.4rem}
-.card-foot{display:flex;justify-content:space-between;align-items:center;font-size:0.68rem;color:var(--mut)}
-.card-source{display:inline-flex;align-items:center;gap:4px}
-.card-source::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent)}
-
-/* text-only card: full width */
-.card.text-only{width:100%;margin-bottom:0.6rem;padding:0}
-.card.text-only .card-body{padding:0.75rem 0.8rem}
-.card.text-only .card-text{-webkit-line-clamp:3;font-size:0.86rem}
-.card.text-only.expanded .card-text{-webkit-line-clamp:unset}
-.card.text-only .card-expand{font-size:0.7rem;color:var(--mut);text-align:center;padding-top:0.4rem;margin-top:0.4rem;border-top:1px solid var(--border)}
-
-.sentinel{text-align:center;font-size:0.72rem;color:var(--mut);padding:1rem 0}
-
-/* detail sheet */
-.sheet-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:50}
-.sheet-backdrop.open{display:block}
-.sheet{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:100%;max-width:var(--app-w);max-height:85vh;background:var(--surface);border-radius:16px 16px 0 0;z-index:51;display:flex;flex-direction:column;overflow:hidden}
-.sheet-header{display:flex;justify-content:space-between;align-items:center;padding:0.8rem 1rem;border-bottom:1px solid var(--border)}
-.sheet-close{font-size:1.3rem;color:var(--fg2)}
-.sheet-body{overflow-y:auto;padding:0.9rem 1rem}
-.sheet-body .full-text{font-size:0.88rem;line-height:1.7;margin-bottom:0.8rem;white-space:pre-wrap}
-.sheet-thumbs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-.sheet-thumbs .thumb{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden}
-.sheet-thumbs img{width:100%;height:100%;object-fit:cover}
-
-/* lightbox (reused pattern from v3) */
-.lightbox{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.94);align-items:center;justify-content:center}
-.lightbox.open{display:flex}
-.lightbox img{max-width:92vw;max-height:85vh;object-fit:contain;width:auto}
-.lb-close{position:absolute;top:1rem;right:1rem;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.1);color:#fff;font-size:1.4rem;display:flex;align-items:center;justify-content:center}
+/* text-only card */
+.card.text-only{margin-bottom:0.4rem}
+.card.text-only .card-title{padding:0.6rem 0.65rem 0;font-size:0.84rem;-webkit-line-clamp:4}
+.card.text-only.expanded .card-title{-webkit-line-clamp:unset}
+.card.text-only .card-expand{text-align:center;font-size:0.68rem;color:var(--mut);padding:0.35rem 0 0.5rem;border-top:1px solid var(--border);margin:0.4rem 0.65rem 0}
+.sentinel{text-align:center;font-size:0.7rem;color:var(--mut);padding:1rem 0}
 
 /* bottom nav */
-.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:var(--app-w);display:flex;justify-content:space-around;background:rgba(10,10,10,0.97);border-top:1px solid var(--border);z-index:20;padding:0.35rem 0 max(0.35rem,env(safe-area-inset-bottom))}
-.nav-item{display:flex;align-items:center;justify-content:center;padding:0.5rem 0 0.35rem;flex:1;min-width:0;color:var(--mut);position:relative;transition:color .15s}
-.nav-item .icon{font-size:1.65rem;line-height:1}
-.nav-item::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:0;height:3px;border-radius:2px;background:var(--accent);transition:width .2s ease}
-.nav-item.active::after{width:24px}
-.nav-item:active{opacity:0.6}
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:var(--app-w);display:flex;background:rgba(10,10,10,0.97);border-top:1px solid var(--border);z-index:20;padding:0.3rem 0 max(0.3rem,env(safe-area-inset-bottom))}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:0.25rem 0;color:var(--mut);position:relative}
+.nav-item .icon{font-size:1.25rem;line-height:1}
+.nav-item .label{font-size:0.55rem}
+.nav-item::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:0;height:2px;border-radius:1px;background:var(--accent);transition:width .2s}
 .nav-item.active{color:var(--accent)}
-/* xvideo duration badge */
-.badge-duration{position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.8);color:#fff;font-size:0.66rem;padding:2px 5px;border-radius:4px;display:flex;align-items:center;gap:3px}
-/* xv iframe embed container */
-.xv-embed{position:relative;width:100%;padding-top:56.25%;background:#000;border-radius:8px;overflow:hidden}
-.xv-embed iframe{position:absolute;inset:0;width:100%;height:100%}
+.nav-item.active::after{width:20px}
+
+/* lightbox */
+.lightbox{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.94);align-items:center;justify-content:center}
+.lightbox.open{display:flex}
+.lightbox img,.lightbox video{max-width:92vw;max-height:85vh;object-fit:contain;border-radius:4px}
+.lb-close{position:absolute;top:1rem;right:1rem;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.1);color:#fff;font-size:1.4rem;display:flex;align-items:center;justify-content:center}
 </style>
 </head>
 <body>
 <div class="app">
 
-  <header class="app-header">
-    <span class="title">MAN'S FANTASY</span>
-    <div class="right">
-      <span class="time">更新 07-04 08:30</span>
-      <button class="search-toggle" id="search-toggle">🔍</button>
-    </div>
-  </header>
-
-  <div class="search-panel" id="search-panel">
-    <div class="search-panel-inner">
-      <input type="text" placeholder="搜尋訊息…">
-      <div class="time-presets">
-        <button class="preset-btn active">全部</button>
-        <button class="preset-btn">今日</button>
-        <button class="preset-btn">近3日</button>
-        <button class="preset-btn">近7日</button>
-        <button class="preset-btn">本月</button>
-      </div>
-    </div>
+<div class="search-bar">
+  <div class="search-input-wrap">
+    <span class="icon">🔍</span>
+    <input type="text" placeholder="搜尋筆記…" id="search-input">
   </div>
-
-  <main class="app-content">
-    <div class="tab-panel active" id="panel-fantasy">
-      <div class="waterfall" id="wf-fantasy"></div>
-      <div class="sentinel">— 捲動載入更多 —</div>
-    </div>
-    <div class="tab-panel" id="panel-news">
-      <div class="waterfall" id="wf-news"></div>
-      <div class="sentinel">— 捲動載入更多 —</div>
-    </div>
-    <div class="tab-panel" id="panel-xv">
-      <div class="waterfall" id="wf-xv"></div>
-      <div class="sentinel">— 捲動載入更多 —</div>
-    </div>
-  </main>
-
-  <nav class="bottom-nav">
-    <div class="nav-item active" data-tab="fantasy" aria-label="異想空間"><span class="icon">🏠</span></div>
-    <div class="nav-item" data-tab="news" aria-label="大事件"><span class="icon">📰</span></div>
-    <div class="nav-item" data-tab="guaba" aria-label="吃瓜爆料"><span class="icon">🔥</span></div>
-    <div class="nav-item" data-tab="drama" aria-label="AI短劇"><span class="icon">🎬</span></div>
-    <div class="nav-item" data-tab="xv" aria-label="xvideo"><span class="icon">❌</span></div>
-  </nav>
+  <button class="btn-icon">⏳</button>
 </div>
 
-<div class="sheet-backdrop" id="sheet-backdrop">
-  <div class="sheet" id="sheet">
-    <div class="sheet-header">
-      <span>貼文詳情</span>
-      <span class="sheet-close" id="sheet-close">&times;</span>
-    </div>
-    <div class="sheet-body" id="sheet-body"></div>
+<div class="chip-bar" id="chip-bar">
+  <button class="chip active" data-chip="fantasy">異想空間</button>
+  <button class="chip" data-chip="news">大事件</button>
+  <button class="chip" data-chip="guaba">吃瓜爆料</button>
+  <button class="chip" data-chip="drama">AI短劇</button>
+  <button class="chip" data-chip="xv">xvideo</button>
+</div>
+
+<main class="app-content">
+  <div class="tab-panel active" id="panel-fantasy">
+    <div class="waterfall" id="wf-fantasy"></div>
+    <div class="sentinel">— 載入更多 —</div>
   </div>
+  <div class="tab-panel" id="panel-news">
+    <div class="waterfall" id="wf-news"></div>
+    <div class="sentinel">— 載入更多 —</div>
+  </div>
+</main>
+
+<nav class="bottom-nav">
+  <button class="nav-item active" data-tab="fantasy"><span class="icon">🏠</span><span class="label">異想</span></button>
+  <button class="nav-item" data-tab="news"><span class="icon">📰</span><span class="label">大事件</span></button>
+  <button class="nav-item" data-tab="guaba"><span class="icon">🔥</span><span class="label">吃瓜</span></button>
+  <button class="nav-item" data-tab="drama"><span class="icon">🎬</span><span class="label">AI短</span></button>
+  <button class="nav-item" data-tab="xv"><span class="icon">❌</span><span class="label">xv</span></button>
+</nav>
 </div>
 
 <div class="lightbox" id="lightbox">
   <span class="lb-close" id="lb-close">&times;</span>
-  <img id="lb-img" src="" alt="" style="display:none">
+  <img id="lb-img" src="" alt="">
   <div id="lb-embed" style="display:none;width:92vw;max-width:500px"></div>
 </div>
 
 <script>
 'use strict';
 function ph(w,h,label,color){
-  var svg = "<svg xmlns='http://www.w3.org/2000/svg' width='"+w+"' height='"+h+"'>"
-    + "<rect fill='"+color+"' width='"+w+"' height='"+h+"'/>"
-    + "<text x='"+(w/2)+"' y='"+(h/2)+"' text-anchor='middle' fill='#524f4a' font-size='22' dy='.3em'>"+label+"</text></svg>";
-  return "data:image/svg+xml," + encodeURIComponent(svg);
+  return "data:image/svg+xml,"+encodeURIComponent(
+    "<svg xmlns='http://www.w3.org/2000/svg' width='"+w+"' height='"+h+"'>"
+    +"<rect fill='"+color+"' width='"+w+"' height='"+h+"'/>"
+    +"<text x='"+(w/2)+"' y='"+(h/2)+"' text-anchor='middle' fill='#524f4a' font-size='20' dy='.3em'>"+label+"</text></svg>");
 }
+var COLORS=['#141822','#181414','#141a18','#1a1620'];
+function fmtNum(n){ return n>=1000?(n/1000).toFixed(1).replace('.0','')+'k':String(n); }
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-var COLORS = ['#141822','#181414','#141a18','#1a1620'];
-function mockMedia(n, tall){
-  var out = [];
-  for(var i=0;i<n;i++){
-    var h = tall ? (300 + (i%3)*90) : 220;
-    out.push({ type: (i===0 && n===1 && tall==='video') ? 'video' : 'photo',
-      src: ph(400, h, '🖼', COLORS[i%COLORS.length]), h: h });
-  }
-  return out;
-}
-
-var MOCK = {
-  fantasy: [
-    { text:'今日最新夢幻美圖合集，精選多張高畫質寫真，內容更新於凌晨整理完成。', media: mockMedia(4,true) },
-    { text:'單張封面精選', media: mockMedia(1,true) },
-    { text:'影片預覽 — 點擊查看完整版本', media: mockMedia(1,'video') },
-    { text:'', media: null, textOnly:true, full:'今天沒有配圖，純文字快訊：頻道整理公告，近期更新頻率為每日兩次，感謝大家支持與回饋，如有問題歡迎留言反應，我們會盡快處理。' },
-    { text:'三連圖', media: mockMedia(3,true) },
-    { text:'雙拼', media: mockMedia(2,true) },
+var MOCK={
+  fantasy:[
+    {text:'今日最新夢幻美圖合集，精選多張寫真',cover:ph(400,530,'🖼 #1','#141822'),badge:'📷 4',author:'男人的幻想',likes:2300,comments:45,
+     media:[{src:ph(800,600,'🖼','#141822'),type:'photo'},{src:ph(800,500,'🖼','#181414'),type:'photo'}]},
+    {text:'單張封面精選，高畫質寫真不容錯過',cover:ph(400,480,'🖼 #2','#181414'),author:'AIguoman18',likes:856,comments:12},
+    {text:'影片預覽 — 點擊查看完整精彩版本',cover:ph(400,510,'🎬 ','#141a18'),author:'AIguoman18',likes:3400,comments:89,isVideo:true},
+    {text:'',cover:null,textOnly:true,full:'今天沒有配圖，純文字快訊：頻道整理公告，近期更新頻率為每日兩次，感謝大家支持與回饋，如有問題歡迎留言反應，我們會盡快處理。',author:'男人的幻想',likes:120,comments:5},
+    {text:'三連圖系列',cover:ph(400,450,'🖼 #3','#1a1620'),badge:'📷 3',author:'ciyuanb',likes:5600,comments:234},
+    {text:'雙拼寫真',cover:ph(400,520,'🖼 #4','#141822'),badge:'📷 2',author:'llcosfc',likes:980,comments:67},
   ],
-  news: [
-    { text:'東南亞地區今日快訊摘要，多起事件同步追蹤中。', media: mockMedia(2,true) },
-    { text:'', media: null, textOnly:true, full:'純文字新聞快報：今日重點整理，包含區域政策變動與相關單位回應，詳細內容持續更新中。' },
-    { text:'現場圖集', media: mockMedia(3,true) },
-  ],
-  xv: [
-    { text:'Maderotic 最新熱門影片合集，性感內衣秀精彩剪輯。', thumbnail: ph(400,260,'🎬 #1a1620'), duration:'14:32', vid:'12345601' },
-    { text:'火辣身材完美展現，高清畫質帶你體驗極致誘惑。', thumbnail: ph(400,300,'🎬 #141822'), duration:'8:15', vid:'12345602' },
-    { text:'亞洲精選系列，甜美臉蛋魔鬼身材不容錯過。', thumbnail: ph(400,230,'🎬 #181414'), duration:'11:47', vid:'12345603' },
-    { text:'私密鏡頭特別企劃，第一視角讓你身歷其境。', thumbnail: ph(400,280,'🎬 #141a18'), duration:'19:03', vid:'12345604' },
-    { text:'性感舞者表演，火辣律動與迷人曲線。', thumbnail: ph(400,250,'🎬 #1a1620'), duration:'6:21', vid:'12345605' },
-    { text:'浴室系列特輯，濕身誘惑挑戰你的感官極限。', thumbnail: ph(400,310,'🎬 #141822'), duration:'22:10', vid:'12345606' },
+  news:[
+    {text:'東南亞地區今日快訊摘要',cover:ph(400,500,'📰 ','#181414'),author:'東南亞大事件',likes:1500,comments:88},
+    {text:'純文字新聞快報：今日重點整理',cover:null,textOnly:true,full:'純文字新聞快報：今日重點事件整理，包含區域政策變動與相關單位回應，詳細內容持續更新中，請留意後續報導。',author:'dashijian',likes:320,comments:15},
+    {text:'現場圖集',cover:ph(400,460,'📰 ','#141a18'),badge:'📷 3',author:'xinwen1',likes:780,comments:34},
   ]
 };
 
 function renderWaterfall(tabId){
-  var wrap = document.getElementById('wf-' + tabId);
-  var items = MOCK[tabId] || [];
-  var col0 = document.createElement('div'); col0.className = 'wf-col';
-  var col1 = document.createElement('div'); col1.className = 'wf-col';
-  var textOnlyHtml = '';
-  var ci = 0;
-  items.forEach(function(m, idx){
+  var wrap=document.getElementById('wf-'+tabId);
+  var items=MOCK[tabId]||[];
+  var col0=document.createElement('div');col0.className='wf-col';
+  var col1=document.createElement('div');col1.className='wf-col';
+  var ci=0;
+  items.forEach(function(m,idx){
     if(m.textOnly){
-      textOnlyHtml += '<div class="card text-only" data-full="' + escAttr(m.full) + '">'
-        + '<div class="card-body">'
-        + '<div class="card-text">' + esc(m.full) + '</div>'
-        + '<div class="card-expand">展開詳情 ▾</div>'
-        + '</div></div>';
+      col0.insertAdjacentHTML('beforeend','<div class="card text-only"><div class="card-title">'+esc(m.full)+'</div><div class="card-footer"><div class="card-author"><div class="card-author-avatar">'+m.author[0]+'</div><span class="card-author-name">'+esc(m.author)+'</span></div><div class="card-stats"><span>♥ '+fmtNum(m.likes)+'</span><span>💬 '+m.comments+'</span></div></div><div class="card-expand">展開詳情 ▾</div></div>');
       return;
     }
-    if(m.vid){
-      /* xvideos card */
-      var cardHtml = '<div class="card" data-idx="' + idx + '" data-tab="' + tabId + '">'
-        + '<div class="card-cover"><img src="' + m.thumbnail + '" loading="lazy">'
-        + '<span class="badge-play"></span>'
-        + '<span class="badge-duration">⏱ ' + m.duration + '</span></div>'
-        + '<div class="card-body">'
-        + '<div class="card-text">' + esc(m.text) + '</div>'
-        + '<div class="card-foot"><span class="card-source">xvideos</span><span>maderotic</span></div>'
-        + '</div></div>';
-      var target = (ci % 2 === 0) ? col0 : col1;
-      target.insertAdjacentHTML('beforeend', cardHtml);
-      ci++;
-      return;
-    }
-    var cover = m.media[0];
-    var badge = '';
-    if(m.media.length > 1) badge = '<span class="badge-count">📷 ' + m.media.length + '</span>';
-    var play = cover.type === 'video' ? '<span class="badge-play"></span>' : '';
-    var cardHtml = '<div class="card" data-idx="' + idx + '" data-tab="' + tabId + '">'
-      + '<div class="card-cover"><img src="' + cover.src + '" loading="lazy">' + badge + play + '</div>'
-      + '<div class="card-body">'
-      + '<div class="card-text">' + esc(m.text) + '</div>'
-      + '<div class="card-foot"><span class="card-source">telegram_ch</span><span>07-04 0' + (idx+1) + ':00</span></div>'
-      + '</div></div>';
-    var target = (ci % 2 === 0) ? col0 : col1;
-    target.insertAdjacentHTML('beforeend', cardHtml);
+    var badge=m.badge||'';
+    var play=m.isVideo?'<span class="badge-play"></span>':'';
+    var html='<div class="card" data-idx="'+idx+'" data-tab="'+tabId+'">'
+      +'<div class="card-cover"><img src="'+m.cover+'" loading="lazy">'+badge+play+'</div>'
+      +'<div class="card-title">'+esc(m.text)+'</div>'
+      +'<div class="card-footer">'
+      +'<div class="card-author"><div class="card-author-avatar">'+m.author[0]+'</div><span class="card-author-name">'+esc(m.author)+'</span></div>'
+      +'<div class="card-stats"><span>♥ '+fmtNum(m.likes)+'</span><span>💬 '+m.comments+'</span></div>'
+      +'</div></div>';
+    var target=(ci%2===0)?col0:col1;
+    target.insertAdjacentHTML('beforeend',html);
     ci++;
   });
-  wrap.innerHTML = '';
-  wrap.appendChild(col0);
-  wrap.appendChild(col1);
-  if(textOnlyHtml) wrap.insertAdjacentHTML('afterend', textOnlyHtml);
+  wrap.innerHTML='';
+  wrap.appendChild(col0);wrap.appendChild(col1);
 }
-
-function esc(s){
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-function escAttr(s){ return esc(s).replace(/"/g,'&quot;'); }
 
 renderWaterfall('fantasy');
 renderWaterfall('news');
-renderWaterfall('xv');
 
-/* search panel toggle */
-var searchToggle = document.getElementById('search-toggle');
-var searchPanel = document.getElementById('search-panel');
-searchToggle.addEventListener('click', function(){
-  searchPanel.classList.toggle('open');
-  searchToggle.classList.toggle('active');
-});
-document.querySelectorAll('.preset-btn').forEach(function(btn){
-  btn.addEventListener('click', function(){
-    btn.parentNode.querySelectorAll('.preset-btn').forEach(function(b){ b.classList.remove('active'); });
-    btn.classList.add('active');
+/* chip bar */
+document.querySelectorAll('.chip').forEach(function(c){
+  c.addEventListener('click',function(){
+    document.querySelectorAll('.chip').forEach(function(x){x.classList.remove('active');});
+    c.classList.add('active');
+    var chip=c.getAttribute('data-chip');
+    var tabMap={fantasy:'fantasy',news:'news',guaba:'fantasy',drama:'fantasy',xv:'fantasy'};
+    document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
+    document.getElementById('panel-'+tabMap[chip]).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
+    var nb=document.querySelector('.nav-item[data-tab="'+tabMap[chip]+'"]');
+    if(nb)nb.classList.add('active');
   });
 });
 
-/* bottom nav tab switching */
+/* bottom nav */
 document.querySelectorAll('.nav-item').forEach(function(item){
-  item.addEventListener('click', function(){
-    var tab = item.getAttribute('data-tab');
-    if(!MOCK[tab]) return; /* guaba / drama are visual-only in this prototype */
-    document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
+  item.addEventListener('click',function(){
+    var tab=item.getAttribute('data-tab');
+    if(!MOCK[tab])return;
+    document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
     item.classList.add('active');
-    document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
-    document.getElementById('panel-' + tab).classList.add('active');
+    document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
+    document.getElementById('panel-'+tab).classList.add('active');
   });
 });
 
-/* card tap -> detail sheet (image cards) / inline expand (text-only cards) */
-var sheetBackdrop = document.getElementById('sheet-backdrop');
-var sheetBody = document.getElementById('sheet-body');
-document.addEventListener('click', function(e){
-  var textOnly = e.target.closest('.card.text-only');
-  if(textOnly){
-    textOnly.classList.toggle('expanded');
-    var exp = textOnly.querySelector('.card-expand');
-    exp.textContent = textOnly.classList.contains('expanded') ? '收合 ▴' : '展開詳情 ▾';
-    return;
-  }
-  var card = e.target.closest('.card:not(.text-only)');
-  if(card){
-    var tabId = card.getAttribute('data-tab');
-    var idx = parseInt(card.getAttribute('data-idx'));
-    var m = MOCK[tabId][idx];
-    var thumbs = m.media.map(function(item, i){
-      return '<div class="thumb" data-src="' + item.src + '"><img src="' + item.src + '"></div>';
-    }).join('');
-    sheetBody.innerHTML = '<div class="full-text">' + esc(m.text) + '</div><div class="sheet-thumbs">' + thumbs + '</div>';
-    sheetBackdrop.classList.add('open');
-    return;
+/* text card expand */
+document.addEventListener('click',function(e){
+  var tc=e.target.closest('.card.text-only');
+  if(tc){
+    tc.classList.toggle('expanded');
+    var exp=tc.querySelector('.card-expand');
+    exp.textContent=tc.classList.contains('expanded')?'收合 ▴':'展開詳情 ▾';
   }
 });
-document.getElementById('sheet-close').addEventListener('click', function(){ sheetBackdrop.classList.remove('open'); });
-sheetBackdrop.addEventListener('click', function(e){ if(e.target === sheetBackdrop) sheetBackdrop.classList.remove('open'); });
 
-/* lightbox from sheet thumb */
-var lightbox = document.getElementById('lightbox');
-var lbImg = document.getElementById('lb-img');
-var lbEmbed = document.getElementById('lb-embed');
-function openLbImage(src){
-  lbEmbed.style.display = 'none';
-  lbEmbed.innerHTML = '';
-  lbImg.style.display = '';
-  lbImg.src = src;
-  lightbox.classList.add('open');
-}
-function openLbEmbed(vid){
-  lbImg.style.display = 'none';
-  lbImg.src = '';
-  lbEmbed.style.display = '';
-  lbEmbed.innerHTML = '<div class="xv-embed"><iframe src="https://www.xvideos.com/embedframe/' + vid + '" frameborder="0" scrolling="no" allowfullscreen></iframe></div>';
-  lightbox.classList.add('open');
-}
-function closeLightbox(){
-  lightbox.classList.remove('open');
-  lbEmbed.innerHTML = '';
-  lbEmbed.style.display = 'none';
-  lbImg.style.display = '';
-  lbImg.src = '';
-}
-/* card click: xv -> embed, regular -> sheet */
-document.addEventListener('click', function(e){
-  var card = e.target.closest('.card:not(.text-only)');
+/* search */
+document.getElementById('search-input').addEventListener('input',function(){
+  var kw=this.value.toLowerCase();
+  document.querySelectorAll('.card').forEach(function(c){
+    var title=c.querySelector('.card-title');
+    if(!title)return;
+    c.style.display=title.textContent.toLowerCase().includes(kw)?'':'none';
+  });
+});
+
+/* lightbox */
+var lightbox=document.getElementById('lightbox');
+var lbImg=document.getElementById('lb-img');
+document.addEventListener('click',function(e){
+  var card=e.target.closest('.card:not(.text-only)');
   if(card){
-    var tabId = card.getAttribute('data-tab');
-    if(tabId === 'xv'){
-      var idx = parseInt(card.getAttribute('data-idx'));
-      var m = MOCK[tabId][idx];
-      openLbEmbed(m.vid);
-      return;
+    var idx=parseInt(card.getAttribute('data-idx'));
+    var tab=card.getAttribute('data-tab');
+    var m=MOCK[tab][idx];
+    if(m.isVideo){
+      document.getElementById('lb-embed').innerHTML='<video src="" controls autoplay style="max-width:92vw;max-height:85vh;border-radius:4px"><p>影片播放示範</p></video>';
+      document.getElementById('lb-embed').style.display='';
+      lbImg.style.display='none';
+    }else{
+      document.getElementById('lb-embed').style.display='none';
+      lbImg.style.display='';
+      lbImg.src=m.cover;
     }
+    lightbox.classList.add('open');
   }
 });
-sheetBody.addEventListener && document.addEventListener('click', function(e){
-  var thumb = e.target.closest('.sheet-thumbs .thumb');
-  if(thumb){
-    openLbImage(thumb.getAttribute('data-src'));
-  }
+document.getElementById('lb-close').addEventListener('click',function(){
+  lightbox.classList.remove('open');
+  document.getElementById('lb-embed').innerHTML='';
 });
-document.getElementById('lb-close').addEventListener('click', closeLightbox);
-lightbox.addEventListener('click', function(e){ if(e.target === lightbox) closeLightbox(); });
-
-/* infinite-scroll sentinel demo: just visually indicate it would load more */
-document.querySelectorAll('.sentinel').forEach(function(s){
-  var io = new IntersectionObserver(function(entries){
-    entries.forEach(function(en){
-      if(en.isIntersecting){ s.textContent = '（已是最新資料，示範用，Phase 3 會接上真實分批載入）'; }
-    });
-  });
-  io.observe(s);
-});
+lightbox.addEventListener('click',function(e){if(e.target===lightbox)lightbox.classList.remove('open');});
 </script>
 </body>
 </html>
