@@ -66,6 +66,13 @@ CSS-only casino-gold/phone-frame attempt. Rolled back, never shipped. Live site 
 | 6 | Feature Verification | ✅ |
 | 7 | User Acceptance | ✅ signed off, deployed |
 
+## v11 Cycle — OSS 防盜鏈
+
+| Phase | Name | Status |
+|-------|------|--------|
+| 0 | 需求釐清 | ✅ |
+| 1-7 | 設定完成 | ✅ (OSS Referer 白名單，零程式碼) |
+
 ## Status
 
-**Current**: v10 deployed. 2 xvideo videos on OSS, video playback in lightbox.
+**Current**: v11 結案。OSS 防盜鏈已啟用，僅允許 referer: http://8.213.209.231。
