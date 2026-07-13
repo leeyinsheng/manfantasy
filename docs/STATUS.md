@@ -59,8 +59,9 @@ CSS-only casino-gold/phone-frame attempt. Rolled back, never shipped. Live site 
 |-------|------|--------|
 | 0 | 需求釐清 | ✅ |
 | 1 | Product Ideation | ✅ |
-| 2 | Product Design | ⏳ |
+| 2 | Product Design | ✅ |
+| 3 | Feature Dev + Unit Tests | ⏳ |
 
 ## Status
 
-**Current**: v10 — 用 yt-dlp 下載 xvideos 影片到 OSS，站內 `<video>` 播放。說「start phase 2」繼續。
+**Current**: v10 — yt-dlp 下載到 OSS，站內影片播放。說「start phase 3」開始實作。

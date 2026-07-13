@@ -1,139 +1,101 @@
-# 02 - Design v9：OSS 儲存層架構
+# 02 - Design v10：xvideos 影片下載到 OSS
 
-## 資料流
+## 架構
 
 ```
-Telegram API
+xv_spider.py (metadata only)
+    │  outputs: eid, video_id, title, duration, thumbnail, url
+    v
+videos.jsonl (每行一筆，含完整 video URL)
     │
     v
-download_tg_channel.py
-    │
-    ├── client.download_media() → 下載到本地暫存
-    ├── oss.upload() → 上傳到 OSS
-    ├── 記錄 OSS URL 到 messages.jsonl
-    └── os.unlink() → 刪除本地暫存
+xv_downloader.py (每日執行，下載最新 50 部)
+    │  yt-dlp → /tmp/ → oss_uploader → OSS
+    v
+videos.jsonl (更新 media path = OSS mp4 URL)
     │
     v
-messages.jsonl (media.path = OSS URL)
-    │
+generate_html.py → index.html
+    │  xvideo tab: card with thumbnail, click → <video> lightbox
     v
-generate_html.py
-    │
-    ├── _normalize_media_paths() → 不需修改 (path 已是完整 URL)
-    └── HTML 中 img/video src 直接使用 OSS URL
-    │
-    v
-download/index.html
-    │
-    v
-Nginx 只服務 HTML，媒體流量走 OSS
+使用者瀏覽器 <video src="https://dream20260711.oss-ap-southeast-7...">
 ```
 
 ## 檔案變更
 
-### 新增：`src/oss_config.json`
-
-```json
-{
-  "endpoint": "https://oss-ap-southeast-7.aliyuncs.com",
-  "bucket": "dream20260711",
-  "access_key_id": "FROM_ENV_OSS_KEY_ID",
-  "access_key_secret": "FROM_ENV_OSS_KEY_SECRET",
-  "public_url": "https://dream20260711.oss-ap-southeast-7.aliyuncs.com"
-}
-```
-
-### 新增：`src/oss_uploader.py`
+### 新增：`src/xv_downloader.py`
 
 ```python
-def load_oss_config():        # 讀取 oss_config.json
-def upload_file(local_path, oss_key):  # 單檔上傳
-def upload_media(channel_id, filename, subdir):  # 上傳並回傳 OSS URL
-def get_oss_url(oss_key):     # 構建完整 OSS URL
+def load_videos():         # 讀取 videos.jsonl
+def save_videos():         # 寫回 videos.jsonl
+def download_video():      # yt-dlp 下載單一影片
+def download_pending():    # 遍歷未下載的影片，下載並上傳 OSS
 ```
 
-### 變更：`src/download_tg_channel.py`
+下載流程：
+1. 讀取 `videos.jsonl`，找出 `media_uploaded != true` 的影片
+2. 取最新 50 筆
+3. 逐筆 yt-dlp 下載到 `/tmp/xv_{video_id}.mp4`
+4. `oss_uploader.upload_media()` 上傳 OSS
+5. 更新 record: `media_path = oss_url, media_uploaded = true`
+6. 刪除 `/tmp/` 暫存
 
-`download_media_message()` 函數改造：
+### 變更：`src/xv_spider.py`
 
-```
-Before:
-  await client.download_media(message, file=str(filepath))
-  media_files.append({"type": "photo", "path": f"{channel_id}/photo/{filename}"})
+- 改寫 `_parse_video_blocks()`：新增擷取完整 video URL
+- 改寫 `_build_url()`：user 型態 URL 改用 `/maderotic`（頁碼從 0 開始）
+- 影片記錄新增 `url` 欄位
 
-After:
-  await client.download_media(message, file=str(tmp_path))
-  oss_url = upload_media(channel_id, filename, "photo")
-  os.unlink(tmp_path)
-  media_files.append({"type": "photo", "path": oss_url})
-```
-
-同樣改造 `_generate_thumbnail()`（縮圖也上傳 OSS）。
+影片 URL 格式：`https://www.xvideos.com/video.{eid}/{video_id}/0/{title}`
 
 ### 變更：`src/generate_html.py`
 
-不需改動 URL 邏輯。`_normalize_media_paths()` 目前檢查 `path.startswith(f"{channel_id}/")` 並加前綴 — 當 path 已是完整 OSS URL（以 `https://` 開頭）時，不會觸發前綴邏輯，無需修改。
+- `_load_xvideos()`：新增 `media` 陣列（當 `media_uploaded == true` 時）
+- `cardXvHtml()`：不變，卡片外觀相同
+- 點擊處理：檢查 `media` 是否存在，有的話用 `<video>` 播放，沒有的話用舊邏輯
+- `openLbEmbed()`：改為 `openLbVideo(videoUrl)` → `<video src>` 播放
 
-唯一確認：卡片渲染 `cardImageHtml` 使用 `src = cover.thumb || cover.path`，直接作為 `<img src>` — OSS URL 可直接使用。
-
-### 移除或簡化：`src/cleanup_old.py`
-
-OSS 無容量限制，不需要定期清理。可移除或保留為 no-op。
-
-## OSS 上傳流程
-
-```python
-# download_media_message 中的媒體處理流程
-
-tmp_dir = Path("/tmp/adult_dream")
-tmp_dir.mkdir(parents=True, exist_ok=True)
-tmp_path = tmp_dir / filename
-
-await client.download_media(message, file=str(tmp_path))  # 下載
-
-oss_key = f"{channel_id}/{subdir}/{filename}"              # OSS key
-oss_url = upload_file(str(tmp_path), oss_key)              # 上傳 OSS
-
-tmp_path.unlink()                                          # 清理暫存
-
-media_files.append({"type": ..., "path": oss_url})         # 記錄 OSS URL
-```
-
-縮圖同樣流程：
-
-```python
-thumb_path = ffmpeg_generate(video_path)
-oss_thumb_url = upload_file(str(thumb_path), f"{channel_id}/video/.thumb/{thumb_name}")
-thumb_path.unlink()
-```
-
-## messages.jsonl 格式變更
+## OSS Key 格式
 
 ```
-Before:
-{"path": "ai_guoman/photo/2025-07-01_test.jpg"}
-
-After:
-{"path": "https://dream20260711.oss-ap-southeast-7.aliyuncs.com/ai_guoman/photo/2025-07-01_test.jpg"}
+xvideos/{video_id}.mp4
 ```
 
-## 測試策略
+完整 OSS URL：
+```
+https://dream20260711.oss-ap-southeast-7.aliyuncs.com/xvideos/49709194.mp4
+```
 
-| 測試項目 | 說明 |
-|---------|------|
-| `test_oss_config_loading` | 驗證 oss_config.json 讀取 |
-| `test_oss_url_building` | `get_oss_url("ai_guoman/photo/test.jpg")` → 完整 URL |
-| `test_normalize_skips_oss_url` | _normalize_media_paths 不修改 https:// 開頭的 path |
-| `test_upload_media` | Mock OSS client，驗證上傳後回傳正確 URL |
-| 既有測試 | 確保 _normalize_media_paths 行為對 OSS URL 正確 |
+## videos.jsonl 格式變更
+
+```json
+{
+  "eid": "oplmapafe9c",
+  "video_id": "49709194",
+  "title": "video title",
+  "duration": "12:34",
+  "thumbnail": "https://...",
+  "uploader": "maderotic",
+  "url": "https://www.xvideos.com/video.oplmapafe9c/49709194/0/title",
+  "media_path": "https://dream20260711.oss.../xvideos/49709194.mp4",
+  "media_uploaded": true,
+  "tags": ["maderotic"],
+  "fetched_at": "2026-07-13T..."
+}
+```
+
+## 排程
+
+- xv_spider：每小時一次（更新 metadata）
+- xv_downloader：每天一次（下載最新 50 部到 OSS）
+- generate_html：每 30 分鐘一次（與 Telegram 同步）
 
 ## What Changes
 
 | 檔案 | 變更 |
 |------|------|
-| `src/oss_config.json` | **新增** — OSS 連線設定 |
-| `src/oss_uploader.py` | **新增** — OSS 上傳模組 |
-| `src/download_tg_channel.py` | 下載後上傳 OSS → 記錄 OSS URL → 清理暫存 |
-| `src/generate_html.py` | 不變（OSS URL 直接可用） |
-| `src/cleanup_old.py` | 移除或 no-op |
-| `tests/` | 新增 OSS 相關測試 |
+| `src/xv_downloader.py` | **新增** — yt-dlp 下載 + OSS 上傳 |
+| `src/xv_spider.py` | 修正 URL 格式，新增完整 video URL |
+| `src/xvideos.json` | 新增 `download_latest: 50` 設定 |
+| `src/generate_html.py` | 燈箱 `<video>` 播放 OSS mp4 |
+| `tests/` | 新增 xv_downloader 測試 |
