@@ -53,6 +53,14 @@ CSS-only casino-gold/phone-frame attempt. Rolled back, never shipped. Live site 
 | 6 | Feature Verification | ✅ (bucket ACL blocking - needs Alibaba Cloud console) |
 | 7 | User Acceptance | ✅ signed off, deployed |
 
+## v10 Cycle — xvideo OSS 播放
+
+| Phase | Name | Status |
+|-------|------|--------|
+| 0 | 需求釐清 | ✅ |
+| 1 | Product Ideation | ✅ |
+| 2 | Product Design | ⏳ |
+
 ## Status
 
-**Current**: v9 — 多媒體檔案從本地磁碟遷移至阿里雲 OSS（ap-southeast-7, bucket: dream20260711）。說「start phase 2」繼續產品設計。
+**Current**: v10 — 用 yt-dlp 下載 xvideos 影片到 OSS，站內 `<video>` 播放。說「start phase 2」繼續。
