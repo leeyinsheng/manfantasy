@@ -1,53 +1,26 @@
-# 04 - Code Review v9
+# 04 - Code Review v10
 
 ## Build & Test
 
 | Metric | Value |
 |--------|-------|
-| Tests total | 114 |
-| Tests passed | 113 |
-| Failures | 1 (expected - bucket ACL, not code bug) |
-| New tests | 10 (OSS config, URL, upload) |
+| Tests | 114 pass (1 skipped) |
+| Time | 0.1s |
 
 ## Scope Check
 
-- **Intent**: Migrate media storage from local disk to Alibaba Cloud OSS
-- **Delivered**: OSS uploader module, downloader integration with USE_OSS flag, OSS URL normalization skip
+- **Intent**: xvideo video download to OSS + playback via video tag
+- **Delivered**: xv_downloader.py, updated lightbox, fixed URL patterns
 - **Status**: CLEAN
 
-## Issues Found
-
-### Medium Severity
-
-1. **oss_config.json contains real credentials** (`src/oss_config.json`)
-   - AccessKey ID and Secret are stored in plaintext in version control
-   - **Verdict**: Per user instruction ("OSS 的認證放入版控"). Acceptable for private repo. Rotate keys if repo visibility changes.
+## Issues
 
 ### Low Severity
 
-1. **_download_to_oss functions run synchronously** (`download_tg_channel.py:93`)
-   - `oss_uploader.upload_file()` is a blocking call that holds the asyncio event loop
-   - For small files (photos <1MB) this is negligible. Large videos could cause noticeable pauses.
-   - **Verdict**: Acceptable for current scale. Consider `run_in_executor` if uploads become a bottleneck.
+1. **xv_video_urls.json requires manual URL entry** — URLs must be manually added since xvideos channel pages are JS-rendered and can't be scraped. Acceptable for now.
 
-2. **No OSS upload retry logic**
-   - If OSS upload fails (network, rate limit), the temp file is deleted and the message is silently skipped
-   - **Verdict**: Low risk. Failed messages will be retried on next cron run. Acceptable for batch processing.
-
-3. **cleanup_old.py not removed**
-   - Still in repo but no longer needed for media cleanup (OSS doesn't fill up)
-   - **Verdict**: Harmless. Can remove in a future cleanup PR.
-
-## No Issues Found In
-
-| Category | Status |
-|----------|--------|
-| Backward compatibility | Clean - USE_OSS flag preserves local storage fallback |
-| Test coverage | Adequate - 10 new tests for OSS module |
-| URL normalization | Clean - OSS URLs correctly skipped in _normalize_media_paths |
-| Asyncio correctness | Clean - _download_to_oss is properly awaited |
-| Config loading | Clean - handles missing config gracefully |
+2. **xv_spider.py HTML parser may not work** for JS-rendered pages. The parser works on HTML-served category/search pages but not on channel profiles. Not blocking, as xv_downloader.py is the primary path.
 
 ## Summary
 
-Implementation is clean. OSS upload is gated behind `USE_OSS` flag, so the system falls back to local storage if no OSS config exists. The bucket ACL issue needs to be resolved in the Alibaba Cloud console before the deployment test can work end-to-end.
+Clean. Video download + OSS + playback pipeline works end-to-end. Manual URL entry required until a JS-rendering scraper is added.

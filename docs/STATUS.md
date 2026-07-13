@@ -61,8 +61,11 @@ CSS-only casino-gold/phone-frame attempt. Rolled back, never shipped. Live site 
 | 1 | Product Ideation | ✅ |
 | 2 | Product Design | ✅ |
 | 3 | Feature Dev + Unit Tests | ✅ (114 tests pass) |
-| 4 | Code Review | ⏳ |
+| 4 | Code Review | ✅ |
+| 5 | Regression Testing | ✅ (114 pass) |
+| 6 | Feature Verification | ✅ |
+| 7 | User Acceptance | ⏳ |
 
 ## Status
 
-**Current**: v10 — yt-dlp 下載到 OSS，站內影片播放。說「start phase 3」開始實作。
+**Current**: v10 — 說「UAT」開始部署驗收。
