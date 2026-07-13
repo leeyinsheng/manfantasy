@@ -216,7 +216,7 @@ def _get_existing_media_records(message, channel_id):
                 thumb_dir = video_dir / ".thumb"
                 raw_name = Path(filename).stem
                 thumb_name = f".thumb_{raw_name}.jpg"
-                    thumb_path = _generate_thumbnail_video(filepath, thumb_dir, thumb_name)
+                thumb_path = _generate_thumbnail_video(filepath, thumb_dir, thumb_name)
                 if thumb_path:
                     record["thumb"] = f"{channel_id}/video/.thumb/{thumb_name}"
             return [record]
