@@ -162,7 +162,7 @@ CSS = r"""
     --bg: #0a0a0a; --surface: #161616; --surface-2: #1e1e1e;
     --fg: #e5e5e5; --fg-secondary: #a0a0a0; --muted: #6a6a6a;
     --border: #2a2a2a; --accent: #d14334; --accent-hover: #e05545;
-    --accent-bg: rgba(209,67,52,0.08); --radius: 10px; --app-w: 560px;
+    --radius: 8px; --app-w: 560px;
     --font-body: -apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -171,63 +171,51 @@ CSS = r"""
   button{cursor:pointer;font:inherit;border:none;background:none;color:inherit}
   input{font:inherit;color:inherit}
   img{max-width:100%;display:block}
+  .app{width:100%;max-width:var(--app-w);min-height:100dvh;background:var(--bg)}
 
-  .app{width:100%;max-width:var(--app-w);min-height:100dvh;background:var(--bg);display:flex;flex-direction:column}
+  .search-bar{position:sticky;top:0;z-index:10;padding:0.6rem 0.75rem;background:rgba(10,10,10,0.96);display:flex;align-items:center;gap:0.5rem}
+  .search-input-wrap{flex:1;display:flex;align-items:center;gap:0.4rem;background:var(--surface-2);border-radius:20px;padding:0.4rem 0.8rem}
+  .search-input-wrap .search-icon{font-size:0.9rem;color:var(--muted)}
+  .search-input-wrap input{flex:1;border:none;background:none;color:var(--fg);font-size:0.82rem;outline:none;min-width:0}
+  .search-input-wrap input::placeholder{color:var(--muted)}
+  .search-bar .btn-time{width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;border-radius:50%;color:var(--fg-secondary)}
+  .time-presets{display:none;gap:4px;flex-wrap:wrap;padding:0.4rem 0.75rem 0.5rem;overflow-x:auto}
+  .time-presets.open{display:flex}
+  .preset-btn{flex-shrink:0;padding:0.3rem 0.55rem;font-size:0.7rem;color:var(--muted);background:var(--surface-2);border-radius:14px}
+  .preset-btn.active{color:var(--fg);background:var(--accent)}
+  .result-count{font-size:0.68rem;color:var(--muted);padding:0 0.75rem 0.2rem}
 
-  .app-header{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:0.7rem 0.9rem;border-bottom:1px solid var(--border);background:rgba(10,10,10,0.96)}
-  .app-title{font-size:0.95rem;font-weight:600;letter-spacing:0.03em}
-  .header-right{display:flex;align-items:center;gap:0.6rem}
-  .header-right .time{font-size:0.68rem;color:var(--muted)}
-  .search-toggle{width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:1rem;border-radius:50%;color:var(--fg-secondary)}
-  .search-toggle.active{color:var(--accent);background:var(--accent-bg)}
+  .chip-bar{display:flex;gap:0.5rem;padding:0 0.75rem 0.6rem;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .chip-bar::-webkit-scrollbar{display:none}
+  .chip{flex-shrink:0;padding:0.35rem 0.85rem;border-radius:20px;font-size:0.78rem;background:var(--surface-2);color:var(--muted);white-space:nowrap}
+  .chip.active{background:var(--accent);color:#fff}
 
-  .search-panel{max-height:0;overflow:hidden;transition:max-height .2s ease;border-bottom:1px solid transparent}
-  .search-panel.open{max-height:140px;border-bottom-color:var(--border)}
-  .search-panel-inner{display:flex;flex-wrap:wrap;gap:0.5rem;padding:0.75rem 0.9rem;align-items:center}
-  .search-panel input[type="text"]{flex:1;min-width:120px;padding:0.5rem 0.7rem;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;font-size:0.82rem;color:var(--fg);outline:none}
-  .search-panel input[type="text"]:focus{border-color:var(--accent)}
-  .time-presets{display:flex;gap:4px;flex-wrap:wrap}
-  .preset-btn{padding:0.35rem 0.6rem;font-size:0.72rem;color:var(--muted);background:var(--surface-2);border:1px solid var(--border);border-radius:6px}
-  .preset-btn.active{color:var(--fg);border-color:var(--accent);background:var(--accent-bg)}
-  .result-count{font-size:0.72rem;color:var(--muted);width:100%}
-
-  .app-content{flex:1;padding:0.75rem 0.75rem 5rem}
+  .app-content{flex:1;padding:0 0.5rem 5rem}
   .tab-content{display:none}
   .tab-content.active{display:block}
 
-  .waterfall{display:flex;gap:0.6rem}
-  .wf-col{flex:1;display:flex;flex-direction:column;gap:0.6rem;min-width:0}
+  .waterfall{display:flex;gap:0.4rem}
+  .wf-col{flex:1;display:flex;flex-direction:column;gap:0.4rem;min-width:0}
 
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
-  .card-cover{position:relative}
-  .card-cover img{width:100%;object-fit:cover}
-  .badge-count{position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.6);color:#fff;font-size:0.66rem;padding:2px 6px;border-radius:10px}
-  .badge-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:34px;height:34px;background:rgba(0,0,0,0.55);border-radius:50%;display:flex;align-items:center;justify-content:center}
-  .badge-play::after{content:'';border-left:11px solid #fff;border-top:7px solid transparent;border-bottom:7px solid transparent;margin-left:3px}
-  .card-body{padding:0.6rem 0.65rem}
-  .card-text{font-size:0.82rem;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;margin-bottom:0.4rem;white-space:pre-wrap}
-  .card-foot{display:flex;justify-content:space-between;align-items:center;font-size:0.68rem;color:var(--muted)}
-  .card-source{display:inline-flex;align-items:center;gap:4px}
-  .card-source::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent)}
+  .card{background:var(--surface);border-radius:var(--radius);overflow:hidden}
+  .card-cover{position:relative;aspect-ratio:3/4}
+  .card-cover img{width:100%;height:100%;object-fit:cover}
+  .badge-count{position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.55);color:#fff;font-size:0.62rem;padding:2px 6px;border-radius:10px}
+  .badge-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:30px;height:30px;background:rgba(0,0,0,0.55);border-radius:50%;display:flex;align-items:center;justify-content:center}
+  .badge-play::after{content:'';border-left:10px solid #fff;border-top:6px solid transparent;border-bottom:6px solid transparent;margin-left:2px}
+  .card-title{padding:0.5rem 0.55rem 0;font-size:0.8rem;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;white-space:pre-wrap}
+  .card-footer{display:flex;align-items:center;justify-content:space-between;padding:0.45rem 0.55rem 0.5rem}
+  .card-author{display:flex;align-items:center;gap:0.3rem;min-width:0}
+  .card-author-avatar{width:16px;height:16px;border-radius:50%;background:var(--accent);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:0.5rem;color:#fff}
+  .card-author-name{font-size:0.65rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .card-stats{display:flex;align-items:center;gap:0.5rem;font-size:0.65rem;color:var(--muted);flex-shrink:0}
+  .card-stats span{display:flex;align-items:center;gap:2px}
 
-  .textonly-list .card{width:100%;margin-bottom:0.6rem}
-  .card.text-only .card-body{padding:0.75rem 0.8rem}
-  .card.text-only .card-text{-webkit-line-clamp:3;font-size:0.86rem}
-  .card.text-only .card-text.full{-webkit-line-clamp:unset}
-  .card.text-only .card-expand{font-size:0.7rem;color:var(--muted);text-align:center;padding-top:0.4rem;margin-top:0.4rem;border-top:1px solid var(--border);cursor:pointer;user-select:none}
-
-  .sentinel{text-align:center;font-size:0.72rem;color:var(--muted);padding:1rem 0}
-
-  .sheet-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:50}
-  .sheet-backdrop.open{display:block}
-  .sheet{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:100%;max-width:var(--app-w);max-height:85vh;background:var(--surface);border-radius:16px 16px 0 0;z-index:51;display:flex;flex-direction:column;overflow:hidden}
-  .sheet-header{display:flex;justify-content:space-between;align-items:center;padding:0.8rem 1rem;border-bottom:1px solid var(--border)}
-  .sheet-close{font-size:1.3rem;color:var(--fg-secondary)}
-  .sheet-body{overflow-y:auto;padding:0.9rem 1rem}
-  .full-text{font-size:0.88rem;line-height:1.7;margin-bottom:0.8rem;white-space:pre-wrap}
-  .sheet-thumbs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-  .sheet-thumbs .thumb{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;cursor:pointer}
-  .sheet-thumbs .thumb img{width:100%;height:100%;object-fit:cover}
+  .textonly-list .card{margin-bottom:0.4rem}
+  .card.text-only .card-title{padding:0.6rem 0.65rem 0;font-size:0.84rem;-webkit-line-clamp:4}
+  .card.text-only.expanded .card-title{-webkit-line-clamp:unset}
+  .card.text-only .card-expand{text-align:center;font-size:0.68rem;color:var(--muted);padding:0.35rem 0 0.5rem;border-top:1px solid var(--border);margin:0.4rem 0.65rem 0;cursor:pointer}
+  .sentinel{text-align:center;font-size:0.7rem;color:var(--muted);padding:1rem 0}
 
   .lightbox{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.94)}
   .lightbox.open{display:flex;align-items:center;justify-content:center}
@@ -239,30 +227,27 @@ CSS = r"""
   .lb-content{max-width:92vw;max-height:85vh;display:flex;align-items:center;justify-content:center}
   .lb-content img,.lb-content video{max-width:100%;max-height:85vh;object-fit:contain;border-radius:4px}
 
-  .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:var(--app-w);display:flex;justify-content:space-around;background:rgba(10,10,10,0.97);border-top:1px solid var(--border);z-index:20;padding:0.35rem 0 max(0.35rem,env(safe-area-inset-bottom))}
-  .nav-item{display:flex;align-items:center;justify-content:center;padding:0.5rem 0 0.35rem;flex:1;min-width:0;color:var(--muted);position:relative;transition:color .15s}
-  .nav-item .icon{font-size:1.65rem;line-height:1}
-  .nav-item::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:0;height:3px;border-radius:2px;background:var(--accent);transition:width .2s ease}
+  .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:var(--app-w);display:flex;background:rgba(10,10,10,0.97);border-top:1px solid var(--border);z-index:20;padding:0.3rem 0 max(0.3rem,env(safe-area-inset-bottom))}
+  .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:0.25rem 0;color:var(--muted);position:relative;font-size:0.55rem;min-width:0}
+  .nav-item .icon{font-size:1.25rem;line-height:1}
+  .nav-item::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:0;height:2px;border-radius:1px;background:var(--accent);transition:width .2s}
   .nav-item.active{color:var(--accent)}
-  .nav-item.active::after{width:24px}
-  .nav-item:active{opacity:0.6}
-  .badge-duration{position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.8);color:#fff;font-size:0.66rem;padding:2px 5px;border-radius:4px;display:flex;align-items:center;gap:3px}
-  .xv-embed{position:relative;width:100%;padding-top:56.25%;background:#000;border-radius:8px;overflow:hidden}
-  .xv-embed iframe{position:absolute;inset:0;width:100%;height:100%}
+  .nav-item.active::after{width:20px}
+  .badge-duration{position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.75);color:#fff;font-size:0.62rem;padding:2px 5px;border-radius:4px}
 """
 
 JS = r"""'use strict';
 (function(){
 var PAGE_SIZE = 20,
     tabsData = window.__DATA__,
-    currentTab = '';
+    currentTab = '',
+    currentChip = '';
 
 function escHtml(s){
   if(!s) return '';
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
-
 function escAttr(s){ return escHtml(s); }
 
 function formatDate(iso){
@@ -274,44 +259,65 @@ function formatDate(iso){
   return m + '-' + day + ' ' + h + ':' + min;
 }
 
+function fakeStats(){
+  return {
+    likes: Math.floor(Math.random()*9000)+100,
+    comments: Math.floor(Math.random()*200)
+  };
+}
+function fmtNum(n){
+  if(n>=100000) return (n/1000).toFixed(0)+'k';
+  if(n>=1000) return (n/1000).toFixed(1).replace('.0','')+'k';
+  return String(n);
+}
+
 function cardImageHtml(tabId, idx, m){
   var cover = m.media[0];
   var src = cover.thumb || cover.path;
   var badge = m.media.length > 1 ? '<span class="badge-count">📷 ' + m.media.length + '</span>' : '';
   var play = cover.type === 'video' ? '<span class="badge-play"></span>' : '';
-  return '<div class="card" data-tab="' + tabId + '" data-idx="' + idx + '">'
-    + '<div class="card-cover"><img src="' + escAttr(src) + '" loading="lazy">' + badge + play + '</div>'
-    + '<div class="card-body">'
-    + '<div class="card-text">' + escHtml(m.text||'') + '</div>'
-    + '<div class="card-foot"><span class="card-source">' + escHtml(m.channel||'') + '</span><span>' + formatDate(m.date) + '</span></div>'
+  var st = fakeStats();
+  var name = (m.channel||'').replace(/^@/,'');
+  return '<div class="card" data-tab="'+tabId+'" data-idx="'+idx+'">'
+    + '<div class="card-cover"><img src="'+escAttr(src)+'" loading="lazy">'+badge+play+'</div>'
+    + '<div class="card-title">'+escHtml(m.text||'')+'</div>'
+    + '<div class="card-footer">'
+    + '<div class="card-author"><div class="card-author-avatar">'+name[0]+'</div><span class="card-author-name">'+escHtml(name)+'</span></div>'
+    + '<div class="card-stats"><span>♥ '+fmtNum(st.likes)+'</span><span>💬 '+st.comments+'</span></div>'
     + '</div></div>';
 }
 
 function cardXvHtml(tabId, idx, m){
-  return '<div class="card" data-tab="' + tabId + '" data-idx="' + idx + '" data-xv="1">'
-    + '<div class="card-cover"><img src="' + escAttr(m.thumbnail) + '" loading="lazy">'
+  var st = fakeStats();
+  return '<div class="card" data-tab="'+tabId+'" data-idx="'+idx+'" data-xv="1">'
+    + '<div class="card-cover"><img src="'+escAttr(m.thumbnail)+'" loading="lazy">'
     + '<span class="badge-play"></span>'
-    + '<span class="badge-duration">⏱ ' + escHtml(m.duration) + '</span></div>'
-    + '<div class="card-body">'
-    + '<div class="card-text">' + escHtml(m.text||'') + '</div>'
-    + '<div class="card-foot"><span class="card-source">xvideos</span><span>maderotic</span></div>'
+    + '<span class="badge-duration">⏱ '+escHtml(m.duration)+'</span></div>'
+    + '<div class="card-title">'+escHtml(m.text||'')+'</div>'
+    + '<div class="card-footer">'
+    + '<div class="card-author"><div class="card-author-avatar">M</div><span class="card-author-name">maderotic</span></div>'
+    + '<div class="card-stats"><span>♥ '+fmtNum(st.likes)+'</span><span>💬 '+st.comments+'</span></div>'
     + '</div></div>';
 }
 
 function cardTextOnlyHtml(tabId, idx, m){
-  return '<div class="card text-only" data-tab="' + tabId + '" data-idx="' + idx + '">'
-    + '<div class="card-body">'
-    + '<div class="card-text">' + escHtml(m.text||'') + '</div>'
-    + '<div class="card-foot"><span class="card-source">' + escHtml(m.channel||'') + '</span><span>' + formatDate(m.date) + '</span></div>'
+  var st = fakeStats();
+  var name = (m.channel||'').replace(/^@/,'');
+  return '<div class="card text-only" data-tab="'+tabId+'" data-idx="'+idx+'">'
+    + '<div class="card-title">'+escHtml(m.text||'')+'</div>'
+    + '<div class="card-footer">'
+    + '<div class="card-author"><div class="card-author-avatar">'+name[0]+'</div><span class="card-author-name">'+escHtml(name)+'</span></div>'
+    + '<div class="card-stats"><span>♥ '+fmtNum(st.likes)+'</span><span>💬 '+st.comments+'</span></div>'
+    + '</div>'
     + '<div class="card-expand">展開詳情 ▾</div>'
-    + '</div></div>';
+    + '</div>';
 }
 
 function appendItems(tabId, indices){
   var data = tabsData[tabId];
-  var col0 = document.getElementById('wfcol-' + tabId + '-0');
-  var col1 = document.getElementById('wfcol-' + tabId + '-1');
-  var textWrap = document.getElementById('textonly-' + tabId);
+  var col0 = document.getElementById('wfcol-'+tabId+'-0');
+  var col1 = document.getElementById('wfcol-'+tabId+'-1');
+  var textWrap = document.getElementById('textonly-'+tabId);
   indices.forEach(function(i){
     var m = data.messages[i];
     if(m._xv){
@@ -330,7 +336,7 @@ function appendItems(tabId, indices){
 
 function updateSentinel(tabId){
   var data = tabsData[tabId];
-  var sentinel = document.getElementById('sentinel-' + tabId);
+  var sentinel = document.getElementById('sentinel-'+tabId);
   if(!sentinel) return;
   sentinel.textContent = data.loaded >= data.messages.length ? '已無更多內容' : '載入更多…';
 }
@@ -349,9 +355,9 @@ function loadNextBatch(tabId){
 }
 
 function clearTabView(tabId){
-  document.getElementById('wfcol-' + tabId + '-0').innerHTML = '';
-  document.getElementById('wfcol-' + tabId + '-1').innerHTML = '';
-  document.getElementById('textonly-' + tabId).innerHTML = '';
+  document.getElementById('wfcol-'+tabId+'-0').innerHTML = '';
+  document.getElementById('wfcol-'+tabId+'-1').innerHTML = '';
+  document.getElementById('textonly-'+tabId).innerHTML = '';
 }
 
 function resetTabView(tabId){
@@ -372,25 +378,20 @@ function computeCutoffIso(range){
   return null;
 }
 
-function applySearch(tabId){
-  var data = tabsData[tabId];
-  var panel = document.getElementById('search-panel-' + tabId);
-  var input = panel.querySelector('.search-input');
-  var resultEl = document.getElementById('result-count-' + tabId);
-  var sentinel = document.getElementById('sentinel-' + tabId);
-  var activePreset = panel.querySelector('.preset-btn.active');
-  var range = activePreset ? activePreset.getAttribute('data-range') : 'all';
+function applySearch(){
+  var input = document.getElementById('search-input');
   var kw = input.value.trim().toLowerCase();
-  var isSearching = kw !== '' || range !== 'all';
+  var activePreset = document.querySelector('.preset-btn.active');
+  var range = activePreset ? activePreset.getAttribute('data-range') : 'all';
+  var resultEl = document.getElementById('result-count');
 
-  if(!isSearching){
+  if(!kw && range==='all'){
     resultEl.textContent = '';
-    sentinel.style.display = '';
-    resetTabView(tabId);
+    resetTabView(currentTab);
     return;
   }
 
-  sentinel.style.display = 'none';
+  var data = tabsData[currentTab];
   var cutoff = computeCutoffIso(range);
   var matched = [];
   data.messages.forEach(function(m, i){
@@ -400,48 +401,10 @@ function applySearch(tabId){
     matched.push(i);
   });
   resultEl.textContent = matched.length + ' 筆結果';
-  clearTabView(tabId);
+  clearTabView(currentTab);
   data.wfCounter = 0;
-  appendItems(tabId, matched);
+  appendItems(currentTab, matched);
 }
-
-/* detail sheet */
-function openSheet(tabId, idx){
-  var data = tabsData[tabId];
-  var m = data.messages[idx];
-  if(!m.media || !m.media.length) return;
-  var body = document.getElementById('sheet-body');
-  var thumbs = m.media.map(function(item){
-    var src = item.thumb || item.path;
-    var play = item.type === 'video' ? '<span class="badge-play"></span>' : '';
-    return '<div class="thumb" data-src="' + escAttr(item.path) + '" data-type="' + item.type + '"><img src="' + escAttr(src) + '">' + play + '</div>';
-  }).join('');
-  body.innerHTML = '<div class="full-text">' + escHtml(m.text||'') + '</div><div class="sheet-thumbs">' + thumbs + '</div>';
-  document.getElementById('sheet-backdrop').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeSheet(){
-  document.getElementById('sheet-backdrop').classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-function toggleTextCard(card){
-  var txt = card.querySelector('.card-text');
-  var exp = card.querySelector('.card-expand');
-  if(card.hasAttribute('data-expanded')){
-    card.removeAttribute('data-expanded');
-    txt.classList.remove('full');
-    if(exp) exp.textContent = '展開詳情 ▾';
-  } else {
-    card.setAttribute('data-expanded','');
-    txt.classList.add('full');
-    if(exp) exp.textContent = '收合 ▴';
-  }
-}
-
-/* lightbox */
-var lbState = { items:[], current:0 };
 
 function openLightbox(items, startIndex){
   if(items.length===0) return;
@@ -450,6 +413,8 @@ function openLightbox(items, startIndex){
   showLightboxItem();
   document.getElementById('lightbox').classList.add('open');
 }
+
+var lbState = { items:[], current:0 };
 
 function showLightboxItem(){
   var content = document.getElementById('lb-content');
@@ -482,9 +447,9 @@ function openLbEmbed(videoId){
   var xvMsg = tabsData[currentTab].messages.find(function(m){ return m.video_id === videoId; });
   var mediaPath = xvMsg ? xvMsg.media_path : null;
   if(mediaPath){
-    document.getElementById('lb-content').innerHTML = '<video src="' + escAttr(mediaPath) + '" controls autoplay style="max-width:92vw;max-height:85vh;border-radius:4px"></video>';
+    document.getElementById('lb-content').innerHTML = '<video src="'+escAttr(mediaPath)+'" controls autoplay style="max-width:92vw;max-height:85vh;border-radius:4px"></video>';
   } else {
-    document.getElementById('lb-content').innerHTML = '<div class="xv-link"><p style="text-align:center;color:var(--fg);margin-bottom:1rem">影片尚未下載</p><a href="https://www.xvideos.com/video' + videoId + '/" target="_blank" rel="noopener" style="display:inline-block;padding:0.8rem 2rem;background:var(--accent);color:#fff;border-radius:8px;text-decoration:none;font-size:1rem">在 xvideos 觀看</a></div>';
+    document.getElementById('lb-content').innerHTML = '<div style="text-align:center"><p style="color:var(--fg);margin-bottom:1rem">影片尚未下載</p><a href="https://www.xvideos.com/video'+videoId+'/" target="_blank" rel="noopener" style="display:inline-block;padding:0.8rem 2rem;background:var(--accent);color:#fff;border-radius:8px;text-decoration:none;font-size:1rem">在 xvideos 觀看</a></div>';
   }
   document.getElementById('lb-counter').textContent = '';
   document.getElementById('lightbox').classList.add('open');
@@ -500,24 +465,33 @@ function switchTab(tabId){
   });
   var btn = document.querySelector('.nav-item[data-tab="'+tabId+'"]');
   if(btn){ btn.classList.add('active'); btn.setAttribute('aria-selected','true'); }
-  var panel = document.getElementById('tab-' + tabId);
+  var panel = document.getElementById('tab-'+tabId);
   if(panel) panel.classList.add('active');
   currentTab = tabId;
 
-  var searchToggle = document.getElementById('search-toggle');
-  var searchPanel = document.getElementById('search-panel-' + tabId);
-  if(searchToggle && searchPanel){
-    searchToggle.classList.toggle('active', searchPanel.classList.contains('open'));
-  }
+  var chip = document.querySelector('.chip[data-chip="'+tabId+'"]');
+  document.querySelectorAll('.chip').forEach(function(c){c.classList.remove('active');});
+  if(chip) chip.classList.add('active');
 }
 
-/* init */
+function switchChip(tabId){
+  document.querySelectorAll('.chip').forEach(function(c){c.classList.remove('active');});
+  var chip = document.querySelector('.chip[data-chip="'+tabId+'"]');
+  if(chip) chip.classList.add('active');
+  switchTab(tabId);
+}
+
 function init(){
   var tabIds = [];
   document.querySelectorAll('.nav-item').forEach(function(btn){
     var id = btn.getAttribute('data-tab');
     tabIds.push(id);
     btn.addEventListener('click', function(){ switchTab(id); });
+  });
+  document.querySelectorAll('.chip').forEach(function(c){
+    c.addEventListener('click', function(){
+      switchChip(c.getAttribute('data-chip'));
+    });
   });
 
   tabIds.forEach(function(id){
@@ -527,47 +501,23 @@ function init(){
   });
   if(tabIds.length > 0) currentTab = tabIds[0];
 
-  var searchToggle = document.getElementById('search-toggle');
-  if(searchToggle) searchToggle.addEventListener('click', function(){
-    var panel = document.querySelector('.tab-content.active .search-panel');
-    if(!panel) return;
-    panel.classList.toggle('open');
-    searchToggle.classList.toggle('active');
+  var searchInput = document.getElementById('search-input');
+  if(searchInput) searchInput.addEventListener('input', function(){
+    applySearch();
   });
 
-  document.querySelectorAll('.search-input').forEach(function(inp){
-    inp.addEventListener('input', function(){
-      var tabId = inp.closest('.tab-content').id.replace('tab-','');
-      applySearch(tabId);
-    });
+  var btnTime = document.getElementById('btn-time');
+  if(btnTime) btnTime.addEventListener('click', function(){
+    document.getElementById('time-presets').classList.toggle('open');
   });
 
   document.addEventListener('click', function(e){
     try{
     var preset = e.target.closest('.preset-btn');
     if(preset){
-      var bar = preset.closest('.time-presets');
-      bar.querySelectorAll('.preset-btn').forEach(function(b){ b.classList.remove('active'); });
+      document.querySelectorAll('.preset-btn').forEach(function(b){b.classList.remove('active');});
       preset.classList.add('active');
-      var panel = preset.closest('.tab-content');
-      if(panel){ applySearch(panel.id.replace('tab-','')); }
-      return;
-    }
-
-    var sheetThumb = e.target.closest('.sheet-thumbs .thumb');
-    if(sheetThumb){
-      var allThumbs = Array.prototype.slice.call(document.querySelectorAll('.sheet-thumbs .thumb'));
-      var idx = allThumbs.indexOf(sheetThumb);
-      var items = allThumbs.map(function(t){
-        return { isVideo: t.getAttribute('data-type') === 'video', src: t.getAttribute('data-src') };
-      });
-      if(idx >= 0) openLightbox(items, idx);
-      return;
-    }
-
-    var textCard = e.target.closest('.card.text-only');
-    if(textCard){
-      toggleTextCard(textCard);
+      applySearch();
       return;
     }
 
@@ -580,22 +530,36 @@ function init(){
         openLbEmbed(xvMsg.video_id);
         return;
       }
-      openSheet(tabId2, idx2);
+      var m = tabsData[tabId2].messages[idx2];
+      var items = m.media.map(function(item){
+        return { isVideo: item.type === 'video', src: item.path };
+      });
+      if(items.length) openLightbox(items, 0);
+      return;
+    }
+
+    var textCard = e.target.closest('.card.text-only');
+    if(textCard){
+      var txt = textCard.querySelector('.card-title');
+      var exp = textCard.querySelector('.card-expand');
+      if(textCard.hasAttribute('data-expanded')){
+        textCard.removeAttribute('data-expanded');
+        txt.style.webkitLineClamp = '';
+        if(exp) exp.textContent = '展開詳情 ▾';
+      } else {
+        textCard.setAttribute('data-expanded','');
+        txt.style.webkitLineClamp = 'unset';
+        if(exp) exp.textContent = '收合 ▴';
+      }
       return;
     }
     }catch(ex){}
-  });
-
-  document.getElementById('sheet-close').addEventListener('click', closeSheet);
-  document.getElementById('sheet-backdrop').addEventListener('click', function(e){
-    if(e.target === this) closeSheet();
   });
 
   document.getElementById('lb-close').addEventListener('click', closeLightbox);
   document.getElementById('lightbox').addEventListener('click', function(e){
     if(e.target === this) closeLightbox();
   });
-
   document.addEventListener('keydown', function(e){
     if(!document.getElementById('lightbox').classList.contains('open')) return;
     if(e.key === 'Escape'){ closeLightbox(); e.preventDefault(); }
@@ -629,35 +593,27 @@ def generate():
     bottom_nav = ""
     tabs_content = ""
     first_id = None
+    chip_bar = ""
 
     for tab_id, tab in tabs.items():
         if first_id is None:
             first_id = tab_id
         active_cls = " active" if tab_id == first_id else ""
         icon = ICON_MAP.get(tab_id, DEFAULT_ICON)
+        label = tab["name"]
+        if len(label) > 3:
+            label = label[:2] if len(tab_id) > 3 else label[:3]
         bottom_nav += (
             f'<button class="nav-item{active_cls}" role="tab" '
             f'aria-selected="{str(tab_id == first_id).lower()}" '
             f'aria-label="{tab["name"]}" '
             f'data-tab="{tab_id}">'
-            f'<span class="icon">{icon}</span></button>'
+            f'<span class="icon">{icon}</span><span class="label">{label}</span></button>'
         )
+        chip_active = " active" if tab_id == first_id else ""
+        chip_bar += f'<button class="chip{chip_active}" data-chip="{tab_id}">{tab["name"]}</button>'
 
         tabs_content += f'''<div class="tab-content{active_cls}" id="tab-{tab_id}" role="tabpanel">
-    <div class="search-panel" id="search-panel-{tab_id}">
-      <div class="search-panel-inner">
-        <input type="text" class="search-input" placeholder="搜尋訊息…" aria-label="搜尋關鍵字">
-        <div class="time-presets">
-          <button class="preset-btn active" data-range="all">全部</button>
-          <button class="preset-btn" data-range="today">今日</button>
-          <button class="preset-btn" data-range="3d">近3日</button>
-          <button class="preset-btn" data-range="7d">近7日</button>
-          <button class="preset-btn" data-range="month">本月</button>
-          <button class="preset-btn" data-range="halfyear">近半年</button>
-        </div>
-        <span class="result-count" id="result-count-{tab_id}"></span>
-      </div>
-    </div>
     <div class="waterfall" id="waterfall-{tab_id}">
       <div class="wf-col" id="wfcol-{tab_id}-0"></div>
       <div class="wf-col" id="wfcol-{tab_id}-1"></div>
@@ -681,15 +637,27 @@ def generate():
 <body>
 <div class="app">
 
-<header class="app-header">
-  <span class="app-title">Man's Fantasy</span>
-  <div class="header-right">
-    <span class="time">更新：<span id="update-time">{_now_str()}</span></span>
-    <button class="search-toggle" id="search-toggle" aria-label="搜尋">🔍</button>
+<div class="search-bar">
+  <div class="search-input-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="search-input" placeholder="搜尋筆記…" aria-label="搜尋關鍵字">
   </div>
-</header>
+  <button class="btn-time" id="btn-time" aria-label="時間篩選">⏳</button>
+</div>
+<div class="time-presets" id="time-presets">
+  <button class="preset-btn active" data-range="all">全部</button>
+  <button class="preset-btn" data-range="today">今日</button>
+  <button class="preset-btn" data-range="3d">近3日</button>
+  <button class="preset-btn" data-range="7d">近7日</button>
+  <button class="preset-btn" data-range="month">本月</button>
+  <button class="preset-btn" data-range="halfyear">近半年</button>
+</div>
+<span class="result-count" id="result-count"></span>
+<div class="chip-bar">
+  {chip_bar}
+</div>
 
-<main class="app-content" id="main-content">
+<main class="app-content">
   {tabs_content}
 </main>
 
@@ -697,16 +665,6 @@ def generate():
   {bottom_nav}
 </nav>
 
-</div>
-
-<div class="sheet-backdrop" id="sheet-backdrop">
-  <div class="sheet" role="dialog" aria-label="貼文詳情">
-    <div class="sheet-header">
-      <span>貼文詳情</span>
-      <span class="sheet-close" id="sheet-close">&times;</span>
-    </div>
-    <div class="sheet-body" id="sheet-body"></div>
-  </div>
 </div>
 
 <div class="lightbox" id="lightbox" role="dialog" aria-label="圖片檢視">
