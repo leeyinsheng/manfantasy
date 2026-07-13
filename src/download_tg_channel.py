@@ -294,6 +294,7 @@ async def process_channel(channel, client):
 
 
 async def main():
+    import os
     config = load_config()
     api_id = config.get("api_id")
     api_hash = config.get("api_hash")
@@ -301,7 +302,9 @@ async def main():
 
     client = TelegramClient(str(Path.home() / ".tg_downloader_session"), api_id, api_hash)
     password = config.get("password", "")
-    await client.start(phone=phone, password=password)
+    code = os.environ.get("TG_CODE")
+    cb = (lambda: code) if code else None
+    await client.start(phone=phone, password=password, code_callback=cb)
 
     me = await client.get_me()
     print(f"已登入: {me.first_name}")
