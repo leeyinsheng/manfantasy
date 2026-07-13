@@ -51,7 +51,7 @@ CSS-only casino-gold/phone-frame attempt. Rolled back, never shipped. Live site 
 | 4 | Code Review | ✅ (clean, 1 expected bucket ACL issue) |
 | 5 | Regression Testing | ✅ (113/114 pass, 1 expected) |
 | 6 | Feature Verification | ✅ (bucket ACL blocking - needs Alibaba Cloud console) |
-| 7 | User Acceptance | ⏳ |
+| 7 | User Acceptance | ✅ signed off, deployed |
 
 ## Status
 
