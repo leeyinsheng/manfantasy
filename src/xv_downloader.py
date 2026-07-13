@@ -12,6 +12,9 @@ XV_VIDEOS_FILE = XV_DIR / "videos.jsonl"
 XV_URLS_FILE = Path(__file__).parent / "xv_video_urls.json"
 
 TMP_DIR = Path("/tmp/adult_dream_xv")
+VENV_PYTHON = str(PROJECT_DIR / ".venv" / "bin" / "python3")
+if not Path(VENV_PYTHON).exists():
+    VENV_PYTHON = "python3"
 
 import oss_uploader
 OSS_CONFIG = oss_uploader.load_oss_config()
@@ -53,7 +56,7 @@ def download_video(url):
     try:
         TMP_DIR.mkdir(parents=True, exist_ok=True)
         meta_result = subprocess.run([
-            "python3", "-m", "yt_dlp",
+            VENV_PYTHON, "-m", "yt_dlp",
             "--dump-json", "--no-download",
             url,
         ], capture_output=True, text=True, timeout=60)
@@ -65,7 +68,7 @@ def download_video(url):
 
         out_path = TMP_DIR / f"{video_id}.mp4"
         subprocess.run([
-            "python3", "-m", "yt_dlp",
+            VENV_PYTHON, "-m", "yt_dlp",
             "-f", "best[height<=720]",
             "-o", str(out_path),
             url,
