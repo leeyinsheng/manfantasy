@@ -111,10 +111,10 @@ async def _download_to_oss(message, channel_id, filename, subdir, client):
         size_mb = os.path.getsize(tmp_path) / (1024 * 1024)
         oss_key = f"{channel_id}/{subdir}/{filename}"
         oss_url = oss_uploader.upload_file(OSS_CONFIG, str(tmp_path), oss_key)
-        tmp_path.unlink()
 
         label = "影片" if subdir == "video" else "圖片"
-        print(f"  [OK] {label}: {filename} ({size_mb:.1f}MB) → OSS")
+        size_str = f" ({size_mb:.1f}MB)" if size_mb >= 0.1 else ""
+        print(f"  [OK] {label}: {filename}{size_str} → OSS")
 
         record = {
             "type": "video" if subdir == "video" else "photo",
@@ -125,6 +125,8 @@ async def _download_to_oss(message, channel_id, filename, subdir, client):
             thumb_url = _generate_thumbnail_oss(str(tmp_path), channel_id, filename)
             if thumb_url:
                 record["thumb"] = thumb_url
+
+        tmp_path.unlink()
         return [record]
     except Exception as e:
         print(f"  [ERR] OSS 上傳失敗 msg#{message.id}: {e}")
