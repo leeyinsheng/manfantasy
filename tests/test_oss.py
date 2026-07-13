@@ -148,6 +148,8 @@ class TestUploadFileIntegration(unittest.TestCase):
     def test_real_upload_and_delete(self):
         if not self.config:
             self.skipTest("No OSS config available")
+        if "FROM_ENV" in self.config.get("access_key_id", ""):
+            self.skipTest("OSS env vars not set")
 
         test_path = Path(self.tmpdir.name) / "oss_test.txt"
         test_path.write_text("oss-integration-test-content")

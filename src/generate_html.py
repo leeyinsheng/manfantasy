@@ -25,6 +25,7 @@ def _load_xvideos():
                             "video_id": str(v.get("video_id", "")),
                             "thumbnail": v.get("thumbnail", ""),
                             "duration": v.get("duration", ""),
+                            "media_path": v.get("media_path", ""),
                         })
                     except (_json.JSONDecodeError, ValueError):
                         pass
@@ -478,7 +479,13 @@ function closeLightbox(){
 }
 
 function openLbEmbed(videoId){
-  document.getElementById('lb-content').innerHTML = '<div class="xv-link"><p style="text-align:center;color:var(--fg);margin-bottom:1rem">xvideos 影片無法內嵌播放</p><a href="https://www.xvideos.com/video' + videoId + '/" target="_blank" rel="noopener" style="display:inline-block;padding:0.8rem 2rem;background:var(--accent);color:#fff;border-radius:8px;text-decoration:none;font-size:1rem">在 xvideos 觀看</a></div>';
+  var xvMsg = tabsData[currentTab].messages.find(function(m){ return m.video_id === videoId; });
+  var mediaPath = xvMsg ? xvMsg.media_path : null;
+  if(mediaPath){
+    document.getElementById('lb-content').innerHTML = '<video src="' + escAttr(mediaPath) + '" controls autoplay style="max-width:92vw;max-height:85vh;border-radius:4px"></video>';
+  } else {
+    document.getElementById('lb-content').innerHTML = '<div class="xv-link"><p style="text-align:center;color:var(--fg);margin-bottom:1rem">影片尚未下載</p><a href="https://www.xvideos.com/video' + videoId + '/" target="_blank" rel="noopener" style="display:inline-block;padding:0.8rem 2rem;background:var(--accent);color:#fff;border-radius:8px;text-decoration:none;font-size:1rem">在 xvideos 觀看</a></div>';
+  }
   document.getElementById('lb-counter').textContent = '';
   document.getElementById('lightbox').classList.add('open');
 }

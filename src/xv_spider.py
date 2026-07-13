@@ -52,7 +52,9 @@ def _build_url(source, page):
             return f"{base}/c/{source['id']}?s={sort}"
         return f"{base}/c/{source['id']}/{page}?s={sort}"
     elif source["type"] == "user":
-        return f"{base}/{source['id']}/videos/{page}"
+        if page == 0:
+            return f"{base}/{source['id']}"
+        return f"{base}/{source['id']}/videos/new/{page}"
     else:
         keyword = urllib.parse.quote(source.get("keyword", source["id"]))
         sort = source.get("sort", "uploaddate")

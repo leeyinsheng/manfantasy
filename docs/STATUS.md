@@ -60,7 +60,8 @@ CSS-only casino-gold/phone-frame attempt. Rolled back, never shipped. Live site 
 | 0 | 需求釐清 | ✅ |
 | 1 | Product Ideation | ✅ |
 | 2 | Product Design | ✅ |
-| 3 | Feature Dev + Unit Tests | ⏳ |
+| 3 | Feature Dev + Unit Tests | ✅ (114 tests pass) |
+| 4 | Code Review | ⏳ |
 
 ## Status
 
