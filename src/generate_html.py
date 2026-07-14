@@ -220,7 +220,7 @@ CSS = r"""
   .sentinel{text-align:center;font-size:0.7rem;color:var(--muted);padding:1rem 0}
 
   .lightbox{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.94)}
-  .lightbox.open{display:flex;align-items:center;justify-content:center}
+  .lightbox.open{display:flex;flex-direction:column;align-items:center;justify-content:center}
   .lb-close{position:absolute;top:1rem;right:1rem;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:#fff;cursor:pointer;z-index:2;border-radius:50%;background:rgba(255,255,255,0.1)}
   .lb-prev,.lb-next{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:2rem;color:#fff;cursor:pointer;z-index:2;border-radius:50%;background:rgba(255,255,255,0.06)}
   .lb-prev{left:0.5rem}
@@ -228,6 +228,8 @@ CSS = r"""
   .lb-counter{position:absolute;bottom:1.5rem;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.6);font-size:0.85rem;z-index:2}
   .lb-content{max-width:92vw;max-height:85vh;display:flex;align-items:center;justify-content:center}
   .lb-content img,.lb-content video{max-width:100%;max-height:85vh;object-fit:contain;border-radius:4px}
+  .lb-text{display:none;max-width:92vw;padding:1rem 1rem 0.5rem;font-size:0.85rem;color:var(--fg-secondary);line-height:1.6;white-space:pre-wrap;max-height:30vh;overflow-y:auto;text-align:left}
+  .lb-text.show{display:block}
 
   .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:var(--app-w);display:flex;background:rgba(10,10,10,0.97);border-top:1px solid var(--border);z-index:20;padding:0.3rem 0 max(0.3rem,env(safe-area-inset-bottom))}
   .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:0.25rem 0;color:var(--muted);position:relative;font-size:0.55rem;min-width:0}
@@ -408,21 +410,29 @@ function applySearch(){
   appendItems(currentTab, matched);
 }
 
-function openLightbox(items, startIndex){
+function openLightbox(items, startIndex, text){
   if(items.length===0) return;
   lbState.items = items;
   lbState.current = startIndex;
+  lbState.text = text || '';
   showLightboxItem();
   document.getElementById('lightbox').classList.add('open');
 }
 
-var lbState = { items:[], current:0 };
+var lbState = { items:[], current:0, text:'' };
 
 function showLightboxItem(){
   var content = document.getElementById('lb-content');
   var counter = document.getElementById('lb-counter');
+  var textEl = document.getElementById('lb-text');
   var item = lbState.items[lbState.current];
   counter.textContent = (lbState.current+1) + ' / ' + lbState.items.length;
+  if(lbState.text){
+    textEl.textContent = lbState.text;
+    textEl.classList.add('show');
+  } else {
+    textEl.classList.remove('show');
+  }
   if(item.isVideo){
     content.innerHTML = '<video src="'+item.src+'" controls autoplay></video>';
   } else {
@@ -443,11 +453,13 @@ function lbNext(){
 function closeLightbox(){
   document.getElementById('lightbox').classList.remove('open');
   document.getElementById('lb-content').innerHTML = '';
+  document.getElementById('lb-text').classList.remove('show');
 }
 
 function openLbEmbed(videoId){
   var xvMsg = tabsData[currentTab].messages.find(function(m){ return m.video_id === videoId; });
   var mediaPath = xvMsg ? xvMsg.media_path : null;
+  document.getElementById('lb-text').classList.remove('show');
   if(mediaPath){
     document.getElementById('lb-content').innerHTML = '<video src="'+escAttr(mediaPath)+'" controls autoplay style="max-width:92vw;max-height:85vh;border-radius:4px"></video>';
   } else {
@@ -536,7 +548,7 @@ function init(){
       var items = m.media.map(function(item){
         return { isVideo: item.type === 'video', src: item.path };
       });
-      if(items.length) openLightbox(items, 0);
+      if(items.length) openLightbox(items, 0, m.text);
       return;
     }
 
@@ -675,6 +687,7 @@ def generate():
   <span class="lb-close" id="lb-close">&times;</span>
   <span class="lb-prev" id="lb-prev">&lsaquo;</span>
   <span class="lb-next" id="lb-next">&rsaquo;</span>
+  <div class="lb-text" id="lb-text"></div>
   <div class="lb-content" id="lb-content"></div>
   <span class="lb-counter" id="lb-counter"></span>
 </div>
