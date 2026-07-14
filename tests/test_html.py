@@ -252,10 +252,12 @@ class TestXvideoTab(unittest.TestCase):
         (xv_dir / "videos.jsonl").write_text(
             json.dumps({"eid": "eid001", "video_id": 12345, "title": "Test Video",
                         "duration": "12:34", "thumbnail": "https://img.test/1.jpg",
+                        "media_path": "https://oss.test/xv/eid001.mp4",
                         "fetched_at": "2025-07-01T12:00:00"},
                        ensure_ascii=False) + "\n"
             + json.dumps({"eid": "eid002", "video_id": 67890, "title": "Test Video 2",
                         "duration": "8:15", "thumbnail": "https://img.test/2.jpg",
+                        "media_path": "https://oss.test/xv/eid002.mp4",
                         "fetched_at": "2025-07-02T09:00:00"},
                        ensure_ascii=False) + "\n",
             encoding="utf-8"

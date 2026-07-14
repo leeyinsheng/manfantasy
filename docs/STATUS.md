@@ -101,6 +101,14 @@ CSS-only casino-gold/phone-frame attempt. Rolled back, never shipped. Live site 
 | 1-3 | 實作部署 | ✅ (移除 dashijian/yuanqubot，新增 dnyxst) |
 | 7 | 驗收 | ✅ UAT pass |
 
+## v15 Cycle — xvideo Pipeline (Spider + Downloader 串接)
+
+| Phase | Name | Status |
+|-------|------|--------|
+| 0 | 需求釐清 | ✅ |
+| 1-2 | 設計 | ✅ (方案 3: 單一 pipeline 依序 crawl → download) |
+| 3 | 功能開發 + UT | ✅ (121 tests pass) |
+
 ## Status
 
-**Current**: v14 結案。News group 現為 ll111、dnyxst、xinwen1。
+**Current**: v15 Phase 3 完成。待部署+執行 pipeline。
