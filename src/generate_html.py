@@ -15,6 +15,8 @@ def _load_xvideos():
                 if line:
                     try:
                         v = _json.loads(line)
+                        if not v.get("media_path"):
+                            continue
                         videos.append({
                             "id": f"xv_{v.get('eid', '')}",
                             "date": v.get("fetched_at", ""),
