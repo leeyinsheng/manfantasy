@@ -111,4 +111,4 @@ CSS-only casino-gold/phone-frame attempt. Rolled back, never shipped. Live site 
 
 ## Status
 
-**Current**: v15 Phase 3 完成。待部署+執行 pipeline。
+**Current**: v15 Phase 3 完成已部署。7 xvideo 卡片已顯示，pipeline 已加入 cron 每 30 分鐘下載 5 部。
