@@ -1,14 +1,6 @@
 {
   "channels": [
     {
-      "id": "dashijian",
-      "username": "dashijian",
-      "name": "東南亞大事件",
-      "mode": "text",
-      "group": "news",
-      "fetch_limit": 200
-    },
-    {
       "id": "ll111",
       "username": "ll111",
       "name": "東南亞大事件",
@@ -17,8 +9,8 @@
       "fetch_limit": 200
     },
     {
-      "id": "yuanqubot",
-      "username": "yuanqubot",
+      "id": "dnyxst",
+      "username": "dnyxst",
       "name": "東南亞大事件",
       "mode": "text",
       "group": "news",
