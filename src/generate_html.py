@@ -541,8 +541,10 @@ function init(){
       if(!img) return;
       var dir = parseInt(nav.getAttribute('data-dir'),10);
       var cur = 0;
+      var imgPath = new URL(img.src).pathname;
       for(var j=0;j<media.length;j++){
-        if(img.src.indexOf(media[j].path)!==-1 || img.src===media[j].path){ cur=j; break; }
+        var mp = media[j].path;
+        if(imgPath.endsWith(mp) || imgPath === '/'+mp){ cur=j; break; }
       }
       var next = (cur + dir + media.length) % media.length;
       img.src = media[next].thumb || media[next].path;
