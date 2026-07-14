@@ -236,6 +236,11 @@ CSS = r"""
   .nav-item.active{color:var(--accent)}
   .nav-item.active::after{width:20px}
   .badge-duration{position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.75);color:#fff;font-size:0.62rem;padding:2px 5px;border-radius:4px}
+
+  .card-nav{position:absolute;top:50%;transform:translateY(-50%);width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:#fff;cursor:pointer;z-index:2;border-radius:50%;background:rgba(0,0,0,0.45);opacity:0;transition:opacity .15s}
+  .card-cover:hover .card-nav{opacity:1}
+  .card-nav-l{left:4px}
+  .card-nav-r{right:4px}
 """
 
 JS = r"""'use strict';
@@ -280,8 +285,12 @@ function cardImageHtml(tabId, idx, m){
   var play = cover.type === 'video' ? '<span class="badge-play"></span>' : '';
   var st = fakeStats();
   var name = (m.channel||'').replace(/^@/,'');
-  return '<div class="card" data-tab="'+tabId+'" data-idx="'+idx+'">'
-    + '<div class="card-cover"><img src="'+escAttr(src)+'" loading="lazy">'+badge+play+'</div>'
+  var arrows = m.media.length > 1
+    ? '<span class="card-nav card-nav-l" data-dir="-1">‹</span><span class="card-nav card-nav-r" data-dir="1">›</span>'
+    : '';
+  var mediaAttr = m.media.length > 1 ? ' data-media="'+escAttr(JSON.stringify(m.media))+'"' : '';
+  return '<div class="card" data-tab="'+tabId+'" data-idx="'+idx+'"'+mediaAttr+'>'
+    + '<div class="card-cover"><img src="'+escAttr(src)+'" loading="lazy">'+badge+play+arrows+'</div>'
     + '<div class="card-title">'+escHtml(m.text||'')+'</div>'
     + '<div class="card-footer">'
     + '<div class="card-author"><div class="card-author-avatar">'+name[0]+'</div><span class="card-author-name">'+escHtml(name)+'</span></div>'
@@ -520,6 +529,23 @@ function init(){
       document.querySelectorAll('.preset-btn').forEach(function(b){b.classList.remove('active');});
       preset.classList.add('active');
       applySearch();
+      return;
+    }
+
+    var nav = e.target.closest('.card-nav');
+    if(nav){
+      var card0 = nav.closest('.card');
+      if(!card0 || !card0.getAttribute('data-media')) return;
+      var media = JSON.parse(card0.getAttribute('data-media'));
+      var img = card0.querySelector('.card-cover img');
+      if(!img) return;
+      var dir = parseInt(nav.getAttribute('data-dir'),10);
+      var cur = 0;
+      for(var j=0;j<media.length;j++){
+        if(img.src.indexOf(media[j].path)!==-1 || img.src===media[j].path){ cur=j; break; }
+      }
+      var next = (cur + dir + media.length) % media.length;
+      img.src = media[next].thumb || media[next].path;
       return;
     }
 
