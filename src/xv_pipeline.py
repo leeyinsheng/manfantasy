@@ -41,8 +41,13 @@ def get_pending_entries():
     return entries
 
 
-def build_video_url(eid):
-    return f"https://www.xvideos.com/video.{eid}/"
+def build_video_url(entry):
+    eid = entry.get("eid", "")
+    video_id = entry.get("video_id", "")
+    path = f"video.{eid}"
+    if video_id:
+        path += f"/{video_id}"
+    return f"https://www.xvideos.com/{path}/"
 
 
 def _download_single(url, tag=""):
@@ -88,7 +93,7 @@ def download_entry(entry):
     eid = entry.get("eid", "")
     if not eid:
         return None
-    url = build_video_url(eid)
+    url = build_video_url(entry)
     tag = (entry.get("tags") or ["unknown"])[0]
 
     print(f"[pipeline] Downloading: {url}")

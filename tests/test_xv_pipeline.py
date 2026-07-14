@@ -57,12 +57,16 @@ class TestGetPendingEntries(unittest.TestCase):
 
 
 class TestBuildVideoUrl(unittest.TestCase):
-    def test_builds_url_from_eid(self):
-        url = xv_pipeline.build_video_url("abc123def")
-        self.assertEqual(url, "https://www.xvideos.com/video.abc123def/")
+    def test_builds_url_from_eid_and_video_id(self):
+        url = xv_pipeline.build_video_url({"eid": "abc123", "video_id": 98765})
+        self.assertEqual(url, "https://www.xvideos.com/video.abc123/98765/")
+
+    def test_builds_url_without_video_id(self):
+        url = xv_pipeline.build_video_url({"eid": "abc123"})
+        self.assertEqual(url, "https://www.xvideos.com/video.abc123/")
 
     def test_empty_eid(self):
-        url = xv_pipeline.build_video_url("")
+        url = xv_pipeline.build_video_url({"eid": ""})
         self.assertEqual(url, "https://www.xvideos.com/video./")
 
 
