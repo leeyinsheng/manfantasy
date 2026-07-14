@@ -86,6 +86,13 @@ CSS-only casino-gold/phone-frame attempt. Rolled back, never shipped. Live site 
 | 6 | Feature Verification | ✅ |
 | 7 | User Acceptance | ✅ signed off, deployed |
 
+## v13 Cycle — 資料清理 + 90天保留
+
+| Phase | Name | Status |
+|-------|------|--------|
+| 0 | 需求釐清 | ✅ |
+| 1-7 | 實作完成 | ✅ (清除舊資料，90天保留，過濾未下載xvideo) |
+
 ## Status
 
-**Current**: v12 實作完成。說「UAT」部署驗收。
+**Current**: v13 結案。資料已全清重新下載，90天保留。
