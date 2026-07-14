@@ -93,6 +93,14 @@ CSS-only casino-gold/phone-frame attempt. Rolled back, never shipped. Live site 
 | 0 | 需求釐清 | ✅ |
 | 1-7 | 實作完成 | ✅ (清除舊資料，90天保留，過濾未下載xvideo) |
 
+## v14 Cycle — News 頻道整理
+
+| Phase | Name | Status |
+|-------|------|--------|
+| 0 | 需求釐清 | ✅ |
+| 1-3 | 實作部署 | ✅ (移除 dashijian/yuanqubot，新增 dnyxst) |
+| 7 | 驗收 | ✅ UAT pass |
+
 ## Status
 
-**Current**: v13 結案。資料已全清重新下載，90天保留。
+**Current**: v14 結案。News group 現為 ll111、dnyxst、xinwen1。
