@@ -7,7 +7,7 @@ from pathlib import Path
 
 PROJECT_DIR = Path(__file__).parent.parent
 DOWNLOAD_DIR = PROJECT_DIR / "download"
-RETENTION_DAYS = 3
+RETENTION_DAYS = 90
 
 
 def _load_messages(file_path):
