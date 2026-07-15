@@ -111,4 +111,4 @@ CSS-only casino-gold/phone-frame attempt. Rolled back, never shipped. Live site 
 
 ## Status
 
-**Current**: v15 進行中。lightbox 新聞文字顯示已修復 ✅ UAT pass。Pipeline 每 30 分下載 5 部 xvideo。
+**Current**: Cron 改為每 3 小時 ✅ UAT pass。12 部 xvideo 卡片正常顯示，pipeline 每 3 小時自動下載 5 部。
