@@ -116,8 +116,8 @@ CSS-only casino-gold/phone-frame attempt. Rolled back, never shipped. Live site 
 | 0 | 需求釐清 | ✅ |
 | 1-2 | 設計 | ✅ (方案 B: eporner spider) |
 | 3 | 功能開發 + UT | ✅ (137 tests pass) |
-| 4-7 | 部署 | ✅ 94 xvideo 卡片，含 eporner amateur 來源 |
+| 7 | 用戶驗收 | ✅ UAT pass |
 
 ## Status
 
-**Current**: v16 已部署。Eporner spider 每 3 小時自動爬 amateur 分類 + 下載到 OSS。
+**Current**: v16 結案。Eporner spider 每 3 小時自動爬 amateur 分類 + 下載到 OSS。
