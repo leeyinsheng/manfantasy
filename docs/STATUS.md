@@ -109,6 +109,15 @@ CSS-only casino-gold/phone-frame attempt. Rolled back, never shipped. Live site 
 | 1-2 | 設計 | ✅ (方案 3: 單一 pipeline 依序 crawl → download) |
 | 3 | 功能開發 + UT | ✅ (121 tests pass) |
 
+## v16 Cycle — eporner 來源
+
+| Phase | Name | Status |
+|-------|------|--------|
+| 0 | 需求釐清 | ✅ |
+| 1-2 | 設計 | ✅ (方案 B: eporner spider) |
+| 3 | 功能開發 + UT | ✅ (137 tests pass) |
+| 4-7 | 部署 | ✅ 94 xvideo 卡片，含 eporner amateur 來源 |
+
 ## Status
 
-**Current**: Cron 改為每 3 小時 ✅ UAT pass。12 部 xvideo 卡片正常顯示，pipeline 每 3 小時自動下載 5 部。
+**Current**: v16 已部署。Eporner spider 每 3 小時自動爬 amateur 分類 + 下載到 OSS。
