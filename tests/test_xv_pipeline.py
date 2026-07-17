@@ -69,6 +69,14 @@ class TestBuildVideoUrl(unittest.TestCase):
         url = xv_pipeline.build_video_url({"eid": ""})
         self.assertEqual(url, "https://www.xvideos.com/video./")
 
+    def test_eporner_url(self):
+        url = xv_pipeline.build_video_url({"source": "eporner", "page_url": "/video-abc123/some-title/"})
+        self.assertEqual(url, "https://www.eporner.com/video-abc123/some-title/")
+
+    def test_eporner_url_without_page_url(self):
+        url = xv_pipeline.build_video_url({"source": "eporner", "eid": "abc123"})
+        self.assertEqual(url, "https://www.eporner.com")
+
 
 class TestUpdateEntry(unittest.TestCase):
     def setUp(self):
@@ -115,17 +123,21 @@ class TestUpdateEntry(unittest.TestCase):
 
 class TestRunPipeline(unittest.TestCase):
     @patch("xv_pipeline.xv_spider.crawl", return_value=5)
+    @patch("xv_pipeline.eporner_spider.crawl", return_value=3)
     @patch("xv_pipeline.download_pending")
-    def test_pipeline_calls_spider_then_download(self, mock_dl, mock_crawl):
+    def test_pipeline_calls_spider_then_download(self, mock_dl, mock_ep, mock_xv):
         xv_pipeline.run_pipeline(max_downloads=10)
-        mock_crawl.assert_called_once()
+        mock_xv.assert_called_once()
+        mock_ep.assert_called_once()
         mock_dl.assert_called_once_with(max_downloads=10)
 
     @patch("xv_pipeline.xv_spider.crawl", return_value=0)
+    @patch("xv_pipeline.eporner_spider.crawl", return_value=0)
     @patch("xv_pipeline.download_pending")
-    def test_pipeline_works_with_zero_new(self, mock_dl, mock_crawl):
+    def test_pipeline_works_with_zero_new(self, mock_dl, mock_ep, mock_xv):
         xv_pipeline.run_pipeline(max_downloads=5)
-        mock_crawl.assert_called_once()
+        mock_xv.assert_called_once()
+        mock_ep.assert_called_once()
         mock_dl.assert_called_once_with(max_downloads=5)
 
 

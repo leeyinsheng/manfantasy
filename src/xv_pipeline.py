@@ -21,6 +21,7 @@ OSS_CONFIG = oss_uploader.load_oss_config()
 USE_OSS = bool(OSS_CONFIG)
 
 import xv_spider
+import eporner_spider
 
 
 def get_pending_entries():
@@ -42,6 +43,10 @@ def get_pending_entries():
 
 
 def build_video_url(entry):
+    source = entry.get("source", "xvideos")
+    if source == "eporner":
+        page_url = entry.get("page_url", "")
+        return f"https://www.eporner.com{page_url}"
     eid = entry.get("eid", "")
     video_id = entry.get("video_id", "")
     path = f"video.{eid}"
@@ -186,20 +191,20 @@ def download_pending(max_downloads=5):
 
 def run_pipeline(max_downloads=5):
     print("=" * 50)
-    print("[pipeline] Phase 1: Spider crawl")
+    print("[pipeline] Phase 1a: xvideos spider")
     print("=" * 50)
-    new_meta = xv_spider.crawl()
-    print(f"[pipeline] Spider found {new_meta} new entries")
+    xv_new = xv_spider.crawl()
+    print(f"[pipeline] xvideos: {xv_new} new entries")
 
     print("=" * 50)
-    print("[pipeline] Phase 2: Download pending")
+    print("[pipeline] Phase 1b: eporner spider")
     print("=" * 50)
-    downloaded = download_pending(max_downloads=max_downloads)
+    ep_new = eporner_spider.crawl()
+    print(f"[pipeline] eporner: {ep_new} new entries")
 
     print("=" * 50)
-    print(f"[pipeline] Complete. {new_meta} new metadata, {downloaded} downloaded.")
+    print(f"[pipeline] Phase 2: Download pending ({download_pending(max_downloads=max_downloads)} downloaded)")
     print("=" * 50)
-    return downloaded
 
 
 if __name__ == "__main__":
